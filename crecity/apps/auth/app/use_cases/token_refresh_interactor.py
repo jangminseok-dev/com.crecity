@@ -7,6 +7,7 @@ from auth.app.exceptions import InvalidRefreshTokenError
 from auth.app.ports.input.token_refresh_use_case import TokenRefreshUseCase
 from auth.app.ports.output.access_token_issuer import AccessTokenIssuer
 from auth.app.ports.output.refresh_token_store import RefreshTokenStore
+from auth.app.ports.output.role_repository import RoleRepository
 from auth.app.ports.output.user_repository import UserRepository
 
 
@@ -17,11 +18,13 @@ class TokenRefreshInteractor(TokenRefreshUseCase):
         users: UserRepository,
         refresh_tokens: RefreshTokenStore,
         access_tokens: AccessTokenIssuer,
+        roles: RoleRepository,
         refresh_ttl_seconds: int,
     ) -> None:
         self._users = users
         self._refresh_tokens = refresh_tokens
         self._access_tokens = access_tokens
+        self._roles = roles
         self._refresh_ttl_seconds = refresh_ttl_seconds
 
     async def refresh(self, command: TokenRefreshCommand) -> TokenRefreshResult:
@@ -34,6 +37,10 @@ class TokenRefreshInteractor(TokenRefreshUseCase):
         new_refresh_token = secrets.token_urlsafe(48)
         await self._refresh_tokens.save(new_refresh_token, user.id, self._refresh_ttl_seconds)
         return TokenRefreshResult(
-            access_token=self._access_tokens.issue(user),
+            access_token=self._access_tokens.issue(
+                user,
+                roles=await self._roles.roles_for_user(user.id),
+                permissions=await self._roles.permissions_for_user(user.id),
+            ),
             refresh_token=new_refresh_token,
         )

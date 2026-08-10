@@ -32,8 +32,19 @@ class _StubRefreshTokenStore:
 
 
 class _StubAccessTokenIssuer:
-    def issue(self, user):
+    def issue(self, user, roles, permissions):
         return f"access-{user.id}"
+
+
+class _StubRoleRepository:
+    async def roles_for_user(self, user_id):
+        return []
+
+    async def permissions_for_user(self, user_id):
+        return []
+
+    async def grant_role(self, user_id, role_name):
+        raise NotImplementedError
 
 
 def _user():
@@ -46,6 +57,7 @@ async def test_유효한_토큰이면_새_쌍을_발급하고_기존_토큰은_�
         users=_StubUserRepository(_user()),
         refresh_tokens=store,
         access_tokens=_StubAccessTokenIssuer(),
+        roles=_StubRoleRepository(),
         refresh_ttl_seconds=1209600,
     )
 
@@ -62,6 +74,7 @@ async def test_무효한_토큰이면_InvalidRefreshTokenError():
         users=_StubUserRepository(_user()),
         refresh_tokens=_StubRefreshTokenStore(),
         access_tokens=_StubAccessTokenIssuer(),
+        roles=_StubRoleRepository(),
         refresh_ttl_seconds=1209600,
     )
     with pytest.raises(InvalidRefreshTokenError):
@@ -73,6 +86,7 @@ async def test_탈퇴한_계정의_토큰이면_InvalidRefreshTokenError():
         users=_StubUserRepository(user=None),
         refresh_tokens=_StubRefreshTokenStore({"orphan": 99}),
         access_tokens=_StubAccessTokenIssuer(),
+        roles=_StubRoleRepository(),
         refresh_ttl_seconds=1209600,
     )
     with pytest.raises(InvalidRefreshTokenError):

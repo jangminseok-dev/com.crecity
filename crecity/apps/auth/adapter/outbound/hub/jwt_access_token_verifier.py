@@ -23,4 +23,7 @@ class JwtAccessTokenVerifier(AccessTokenVerifier):
             id=int(payload["sub"]),
             email=payload["email"],
             account_type=payload["account_type"],
+            # RBAC 도입 전 발급분은 클레임이 없다 — 빈 권한으로 간주(호환)
+            roles=tuple(payload.get("roles", ())),
+            permissions=tuple(payload.get("permissions", ())),
         )

@@ -4,6 +4,7 @@ from fastapi import Depends
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from auth.adapter.outbound.pg.role_pg_repository import RolePgRepository
 from auth.adapter.outbound.pg.user_pg_repository import UserPgRepository
 from auth.adapter.outbound.redis.refresh_token_redis_store import RefreshTokenRedisStore
 from auth.app.ports.input.token_refresh_use_case import TokenRefreshUseCase
@@ -22,5 +23,6 @@ def get_token_refresh_use_case(
         users=UserPgRepository(session=db),
         refresh_tokens=RefreshTokenRedisStore(redis=redis),
         access_tokens=_access_token_issuer(),
+        roles=RolePgRepository(session=db),
         refresh_ttl_seconds=AUTH_REFRESH_TOKEN_TTL_SECONDS,
     )

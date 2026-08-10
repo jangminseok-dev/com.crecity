@@ -13,6 +13,7 @@ from auth.app.exceptions import EmailNotProvidedError, UnsupportedProviderError
 from auth.app.ports.input.social_login_use_case import SocialLoginUseCase
 from auth.app.ports.output.access_token_issuer import AccessTokenIssuer
 from auth.app.ports.output.refresh_token_store import RefreshTokenStore
+from auth.app.ports.output.role_repository import RoleRepository
 from auth.app.ports.output.social_identity_repository import SocialIdentityRepository
 from auth.app.ports.output.social_profile_gateway import SocialProfileGateway
 from auth.app.ports.output.user_repository import UserRepository
@@ -37,6 +38,7 @@ class SocialLoginInteractor(SocialLoginUseCase):
         identities: SocialIdentityRepository,
         refresh_tokens: RefreshTokenStore,
         access_tokens: AccessTokenIssuer,
+        roles: RoleRepository,
         refresh_ttl_seconds: int,
     ) -> None:
         self._gateways = gateways
@@ -44,6 +46,7 @@ class SocialLoginInteractor(SocialLoginUseCase):
         self._identities = identities
         self._refresh_tokens = refresh_tokens
         self._access_tokens = access_tokens
+        self._roles = roles
         self._refresh_ttl_seconds = refresh_ttl_seconds
 
     def _resolve(self, raw_provider: str) -> tuple[SocialProvider, SocialProfileGateway]:
@@ -93,7 +96,11 @@ class SocialLoginInteractor(SocialLoginUseCase):
             await self._identities.create(user.id, provider, profile.provider_user_id)
 
         return SocialLoginResult(
-            access_token=self._access_tokens.issue(user),
+            access_token=self._access_tokens.issue(
+                user,
+                roles=await self._roles.roles_for_user(user.id),
+                permissions=await self._roles.permissions_for_user(user.id),
+            ),
             refresh_token=await self._issue_refresh_token(user),
             user=AuthenticatedUser(
                 id=user.id,

@@ -13,13 +13,15 @@ class JwtAccessTokenIssuer(AccessTokenIssuer):
         self._secret = secret
         self._ttl_seconds = ttl_seconds
 
-    def issue(self, user: User) -> str:
+    def issue(self, user: User, roles: list[str], permissions: list[str]) -> str:
         now = datetime.now(timezone.utc)
         return jwt.encode(
             {
                 "sub": str(user.id),
                 "email": user.email,
                 "account_type": user.account_type.value,
+                "roles": roles,
+                "permissions": permissions,
                 "iat": now,
                 "exp": now + timedelta(seconds=self._ttl_seconds),
             },

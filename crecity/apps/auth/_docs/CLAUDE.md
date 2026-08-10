@@ -22,4 +22,15 @@
   E2E 검증 완료. 런칭 전 비즈 앱 전환 후 동의항목만 켜면 코드 변경 없이 활성화된다.
 - JWT 검증은 허브 계약(`AccessTokenVerifier`)의 구현(`adapter/outbound/hub/`)으로 제공 —
   main.py가 조립하고 creator 등 스포크는 허브 `get_current_user`로 소비한다.
-- 예정: RBAC · 로그아웃(리프레시 폐기).
+
+## RBAC (정통 — 2026-08-10 도입)
+
+- 테이블 4종(3NF): `roles` · `permissions` · `role_permissions` · `user_roles`(복합 PK M:N).
+  역할·권한 정의는 **마이그레이션 시드가 소유**(런타임 생성 없음). 권한 코드 규약
+  `<도메인>.<행위>` (예: `profile.review`).
+- 발급 시 `roles`·`permissions` 클레임 스냅샷(RolePgRepository 조회) → 검증은 토큰만으로.
+  역할 변경은 토큰 재발급(액세스 TTL 30분) 시 반영 — 표준 트레이드오프.
+- 인가 검사 단위는 **permission** — 스포크는 허브 `require_permission("코드")` DI로 보호(403).
+- 역할 부여는 `scripts/auth_grant_role.py <이메일> <역할>` 스크립트로만(운영자 가입 플로우 없음).
+- 시드: `admin` 역할 ← `profile.review`(프로필 심사). 새 권한은 마이그레이션으로 추가.
+- 예정: 로그아웃(리프레시 폐기) · 역할 관리 API(실수요 시).

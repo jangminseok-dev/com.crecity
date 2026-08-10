@@ -37,3 +37,17 @@ def get_current_user(
         return verifier.verify(token)
     except InvalidAccessTokenError as error:
         raise HTTPException(status_code=401, detail=str(error))
+
+
+def require_permission(code: str):
+    """RBAC 인가 의존성 팩토리 — 해당 권한이 없으면 403.
+
+    사용: `user: VerifiedUser = Depends(require_permission("profile.review"))`
+    """
+
+    def _check(user: VerifiedUser = Depends(get_current_user)) -> VerifiedUser:
+        if not user.has_permission(code):
+            raise HTTPException(status_code=403, detail=f"권한이 없습니다: {code}")
+        return user
+
+    return _check

@@ -75,8 +75,26 @@ class _StubRefreshTokenStore:
 
 
 class _StubAccessTokenIssuer:
-    def issue(self, user):
+    def __init__(self):
+        self.issued = []  # (user_id, roles, permissions)
+
+    def issue(self, user, roles, permissions):
+        self.issued.append((user.id, roles, permissions))
         return f"access-{user.id}"
+
+
+class _StubRoleRepository:
+    def __init__(self, grants: dict[int, tuple[list[str], list[str]]] | None = None):
+        self.grants = grants or {}  # user_id → (roles, permissions)
+
+    async def roles_for_user(self, user_id):
+        return self.grants.get(user_id, ([], []))[0]
+
+    async def permissions_for_user(self, user_id):
+        return self.grants.get(user_id, ([], []))[1]
+
+    async def grant_role(self, user_id, role_name):
+        raise NotImplementedError
 
 
 def _interactor(
@@ -84,6 +102,8 @@ def _interactor(
     users=None,
     identities=None,
     refresh_store=None,
+    roles=None,
+    issuer=None,
 ):
     profile = profile or SocialProfile(
         provider_user_id="kakao-1", email="kim@example.com", name="김뷰티"
@@ -93,7 +113,8 @@ def _interactor(
         users=users or _StubUserRepository(),
         identities=identities or _StubIdentityRepository(),
         refresh_tokens=refresh_store or _StubRefreshTokenStore(),
-        access_tokens=_StubAccessTokenIssuer(),
+        access_tokens=issuer or _StubAccessTokenIssuer(),
+        roles=roles or _StubRoleRepository(),
         refresh_ttl_seconds=1209600,
     )
 
@@ -169,6 +190,29 @@ async def test_잘못된_계정_유형이면_ValueError():
     interactor = _interactor()
     with pytest.raises(ValueError):
         await interactor.login(_command(account_type="ADMIN"))
+
+
+async def test_로그인_토큰에_RBAC_스냅샷이_실린다():
+    user = User(id=7, email="kim@example.com", name="김뷰티", account_type=AccountType.CREATOR)
+    identity = SocialIdentity(
+        id=1, user_id=7, provider=SocialProvider.KAKAO, provider_user_id="kakao-1"
+    )
+    issuer = _StubAccessTokenIssuer()
+    interactor = _interactor(
+        users=_StubUserRepository([user]),
+        identities=_StubIdentityRepository([identity]),
+        roles=_StubRoleRepository({7: (["admin"], ["profile.review"])}),
+        issuer=issuer,
+    )
+    await interactor.login(_command())
+    assert issuer.issued == [(7, ["admin"], ["profile.review"])]
+
+
+async def test_역할이_없으면_빈_클레임으로_발급된다():
+    issuer = _StubAccessTokenIssuer()
+    interactor = _interactor(issuer=issuer)
+    await interactor.login(_command())
+    assert issuer.issued[0][1:] == ([], [])
 
 
 async def test_authorize_url은_게이트웨이에_위임한다():

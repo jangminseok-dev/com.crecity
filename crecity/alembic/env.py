@@ -31,6 +31,7 @@ import creator.adapter.outbound.orm.creator_profile_orm  # noqa: E402, F401
 import creator.adapter.outbound.orm.creator_package_orm  # noqa: E402, F401
 import auth.adapter.outbound.orm.user_orm  # noqa: E402, F401
 import auth.adapter.outbound.orm.social_identity_orm  # noqa: E402, F401
+import auth.adapter.outbound.orm.role_orm  # noqa: E402, F401
 import order.adapter.outbound.orm.order_orm  # noqa: E402, F401
 import order.adapter.outbound.orm.ledger_entry_orm  # noqa: E402, F401
 

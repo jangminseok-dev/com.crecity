@@ -10,6 +10,7 @@ from auth.adapter.outbound.gateways.google_oauth_gateway import GoogleOAuthGatew
 from auth.adapter.outbound.gateways.kakao_oauth_gateway import KakaoOAuthGateway
 from auth.adapter.outbound.gateways.naver_oauth_gateway import NaverOAuthGateway
 from auth.adapter.outbound.jwt_access_token_issuer import JwtAccessTokenIssuer
+from auth.adapter.outbound.pg.role_pg_repository import RolePgRepository
 from auth.adapter.outbound.pg.social_identity_pg_repository import SocialIdentityPgRepository
 from auth.adapter.outbound.pg.user_pg_repository import UserPgRepository
 from auth.adapter.outbound.redis.refresh_token_redis_store import RefreshTokenRedisStore
@@ -61,5 +62,6 @@ def get_social_login_use_case(
         identities=SocialIdentityPgRepository(session=db),
         refresh_tokens=RefreshTokenRedisStore(redis=redis),
         access_tokens=_access_token_issuer(),
+        roles=RolePgRepository(session=db),
         refresh_ttl_seconds=AUTH_REFRESH_TOKEN_TTL_SECONDS,
     )
