@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import { Suspense, useState } from "react";
 import { z } from "zod";
 
@@ -15,14 +16,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { PLATFORM_LABELS, formatKrw } from "@/lib/labels";
-import type { CreatorPackage, Order } from "@/lib/types";
+import type { CreatorPackage } from "@/lib/types";
 
 const orderSchema = z.object({
   requirements: z.string().min(10, "요구사항을 10자 이상 구체적으로 적어 주세요."),
 });
 
+type CheckoutResponse = {
+  pg_order_id: string;
+  amount_krw: number;
+  order_name: string;
+  client_key: string;
+};
+
 function OrderNewContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { status, user } = useAuthStore();
   const slug = searchParams.get("slug");
@@ -72,15 +79,35 @@ function OrderNewContent() {
     }
     setForm({ submitting: true, error: null });
     try {
-      const order = await apiFetch<Order>("/order/orders", {
+      // 1) 결제 준비 — 서버가 금액을 확정하고 결제창 파라미터를 내려준다
+      const checkout = await apiFetch<CheckoutResponse>("/payment/checkouts", {
         method: "POST",
         body: JSON.stringify({ package_id: pkg.id, requirements: parsed.data.requirements }),
       });
-      router.replace(`/dashboard/orders/${order.id}`);
+      if (!checkout.client_key) {
+        setForm({ submitting: false, error: "결제 설정이 아직 완료되지 않았습니다(토스 키 미설정)." });
+        return;
+      }
+      // 2) 토스 결제창(SDK v2) — 성공 시 successUrl로 리다이렉트되어 승인 단계로 이어진다
+      const tossPayments = await loadTossPayments(checkout.client_key);
+      const payment = tossPayments.payment({ customerKey: `crecity-user-${user!.id}` });
+      await payment.requestPayment({
+        method: "CARD",
+        amount: { currency: "KRW", value: checkout.amount_krw },
+        orderId: checkout.pg_order_id,
+        orderName: checkout.order_name,
+        successUrl: `${window.location.origin}/orders/pay/success`,
+        failUrl: `${window.location.origin}/orders/pay/fail`,
+      });
     } catch (error) {
       setForm({
         submitting: false,
-        error: error instanceof ApiError ? error.detail : "주문에 실패했습니다.",
+        error:
+          error instanceof ApiError
+            ? error.detail
+            : error instanceof Error && error.message
+              ? error.message // 결제창 닫힘 등 SDK 오류
+              : "결제 시작에 실패했습니다.",
       });
     }
   };
@@ -112,13 +139,12 @@ function OrderNewContent() {
           />
         </div>
         <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
-          주문 확정 시 플랫폼 수수료가 더해진 결제 총액이 안전거래(에스크로)로 보관되며, 콘텐츠
-          승인 후 크리에이터에게 정산됩니다. 크리에이터가 72시간 내 수락하지 않으면 자동
-          환불됩니다. (실제 카드 결제는 연동 준비 중 — 지금은 주문 기록만 생성됩니다)
+          결제하면 플랫폼 수수료가 더해진 총액이 안전거래(에스크로)로 보관되며, 콘텐츠 승인 후
+          크리에이터에게 정산됩니다. 크리에이터가 72시간 내 수락하지 않으면 자동 환불됩니다.
         </p>
         {form.error && <p className="text-sm text-destructive">{form.error}</p>}
         <Button type="submit" size="lg" disabled={form.submitting}>
-          {form.submitting ? "주문 생성 중…" : "주문하기"}
+          {form.submitting ? "결제창 여는 중…" : "결제하고 주문하기"}
         </Button>
       </form>
     </div>

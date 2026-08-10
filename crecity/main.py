@@ -34,14 +34,23 @@ from hub.dependencies.profile_review_provider import register_profile_review_por
 from order.adapter.inbound.api.v1.balance_lookup_router import balance_lookup_router
 from order.adapter.inbound.api.v1.bookkeeper_router import bookkeeper_router
 from order.adapter.inbound.api.v1.order_lookup_router import order_lookup_router
-from order.adapter.inbound.api.v1.order_placement_router import order_placement_router
 from order.adapter.inbound.api.v1.order_progress_router import order_progress_router
+from order.adapter.outbound.hub.order_placement_gateway import PaidOrderPlacementGateway
+from payment.adapter.inbound.api.v1.checkout_preparation_router import (
+    checkout_preparation_router,
+)
+from payment.adapter.inbound.api.v1.payment_confirmation_router import (
+    payment_confirmation_router,
+)
+from payment.adapter.inbound.api.v1.paymaster_router import paymaster_router
+from hub.dependencies.order_placement_provider import register_order_placement_port
 
 # 스타 토폴로지 조립 지점 — 스포크 구현체를 허브 계약에 등록한다
 # (스포크끼리는 허브 포트로만 협력한다).
 register_access_token_verifier(build_access_token_verifier())  # auth → 현재 사용자
 register_package_summary_port(CreatorPackageSummaryGateway())  # creator → 패키지 요약
 register_profile_review_port(CreatorProfileReviewGateway())  # creator → 프로필 심사
+register_order_placement_port(PaidOrderPlacementGateway())  # order → 결제 완료 주문 생성
 
 
 @asynccontextmanager
@@ -66,12 +75,14 @@ app.include_router(my_profile_lookup_router)
 app.include_router(profile_lookup_router)
 app.include_router(package_management_router)
 app.include_router(bookkeeper_router)
-app.include_router(order_placement_router)
 app.include_router(order_progress_router)
 app.include_router(order_lookup_router)
 app.include_router(balance_lookup_router)
 app.include_router(steward_router)
 app.include_router(profile_review_router)
+app.include_router(paymaster_router)
+app.include_router(checkout_preparation_router)
+app.include_router(payment_confirmation_router)
 
 
 @app.get("/health")

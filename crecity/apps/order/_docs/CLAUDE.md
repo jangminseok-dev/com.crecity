@@ -7,7 +7,7 @@
 | 슬라이스 | 엔드포인트 | 설명 |
 |---|---|---|
 | bookkeeper (myself) | `GET /order/myself` | 자기소개 |
-| order_placement | `POST /order/orders` | 주문 생성 — **브랜드 계정만(403)**. 금액·수수료율(§7-4)·패키지 제목 스냅샷, 72h 수락 마감, 에스크로 예치 기입. 패키지 검증은 허브 `PackageSummaryPort` 경유 |
+| order_placement | (HTTP 없음 — 결제 경유 전용) | 주문 생성 — payment 승인 후 허브 `OrderPlacementPort`(order 구현 `PaidOrderPlacementGateway`)로만 호출된다. 금액·수수료율(§7-4)·패키지 제목 스냅샷, 72h 수락 마감, 에스크로 예치 기입. 결제 금액과 현재 계산 불일치 시 생성 거부(None) |
 | order_progress | `POST /order/orders/{id}/accept·reject·submit·request-revision·approve` | 상태 전이 — 규칙·행위자 검증은 도메인 `Order`가 강제(403/409). 거절→크레딧 환불, 승인→적립+수수료 확정 |
 | order_lookup | `GET /order/orders` · `GET /order/orders/{id}` | 내 주문 목록(최신순)·상세 — **당사자만(403)** |
 | balance_lookup | `GET /order/balance` | 내 잔액 — 원장 적립성 기입 합산 |

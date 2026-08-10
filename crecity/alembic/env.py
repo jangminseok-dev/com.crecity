@@ -34,6 +34,7 @@ import auth.adapter.outbound.orm.social_identity_orm  # noqa: E402, F401
 import auth.adapter.outbound.orm.role_orm  # noqa: E402, F401
 import order.adapter.outbound.orm.order_orm  # noqa: E402, F401
 import order.adapter.outbound.orm.ledger_entry_orm  # noqa: E402, F401
+import payment.adapter.outbound.orm.payment_intent_orm  # noqa: E402, F401
 
 target_metadata = Base.metadata
 

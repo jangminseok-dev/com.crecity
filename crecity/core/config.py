@@ -26,6 +26,11 @@ GOOGLE_CLIENT_SECRET = _secrets.get("GOOGLE_CLIENT_SECRET")
 AUTH_ACCESS_TOKEN_TTL_SECONDS = int(_secrets.get("AUTH_ACCESS_TOKEN_TTL_SECONDS", "1800"))
 AUTH_REFRESH_TOKEN_TTL_SECONDS = int(_secrets.get("AUTH_REFRESH_TOKEN_TTL_SECONDS", "1209600"))
 
+# 토스페이먼츠(§7-3 확정 PG) — 미설정이면 서버는 뜨되 결제만 실패.
+# client는 공개 키(프론트 결제창), secret은 서버 전용(승인·취소 API).
+TOSS_CLIENT_KEY = _secrets.get("TOSS_CLIENT_KEY")
+TOSS_SECRET_KEY = _secrets.get("TOSS_SECRET_KEY")
+
 # 주문 수수료율(%) — 하드코딩 금지, 주문 생성 시점에 스냅샷된다(BOUNDARIES §7-4).
 # 초기값 브랜드 10 / 크리에이터 10 — 런칭 전 경쟁사 실사 후 재조정 전제.
 ORDER_BRAND_FEE_PERCENT = int(_secrets.get("ORDER_BRAND_FEE_PERCENT", "10"))
