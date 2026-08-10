@@ -27,6 +27,28 @@ export type CreatorProfile = {
   created_at: string | null;
 };
 
+export type Order = {
+  id: number;
+  package_id: number;
+  package_title: string;
+  brand_user_id: number;
+  creator_user_id: number;
+  amount_krw: number;
+  brand_total_krw: number;
+  creator_payout_krw: number;
+  brand_fee_percent: number;
+  creator_fee_percent: number;
+  requirements: string;
+  status: "PENDING_ACCEPT" | "IN_PROGRESS" | "IN_REVIEW" | "COMPLETED" | "REFUNDED" | "CANCELLED";
+  deadline_at: string | null;
+  created_at: string | null;
+};
+
+export type Balance = {
+  user_id: number;
+  balance_krw: number;
+};
+
 export type CreatorPackage = {
   id: number;
   profile_id: number;

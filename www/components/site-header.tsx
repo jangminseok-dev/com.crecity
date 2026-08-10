@@ -27,13 +27,20 @@ export default function SiteHeader() {
           )}
           {status === "authenticated" && user && (
             <>
-              {user.account_type === "CREATOR" && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  nativeButton={false} render={<Link href="/dashboard/profile">대시보드</Link>}
-                />
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                nativeButton={false}
+                render={
+                  <Link
+                    href={
+                      user.account_type === "CREATOR" ? "/dashboard/profile" : "/dashboard/orders"
+                    }
+                  >
+                    대시보드
+                  </Link>
+                }
+              />
               <span className="text-sm text-muted-foreground">{user.email}</span>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 로그아웃

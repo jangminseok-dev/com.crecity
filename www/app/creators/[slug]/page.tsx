@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { PLATFORM_LABELS, formatKrw } from "@/lib/labels";
@@ -82,7 +84,15 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   <p className="text-sm text-muted-foreground">{pkg.description}</p>
-                  <p className="text-xl font-bold">{formatKrw(pkg.price_krw)}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xl font-bold">{formatKrw(pkg.price_krw)}</p>
+                    <Link
+                      href={`/orders/new?slug=${profile.slug}&package=${pkg.id}`}
+                      className={buttonVariants({ size: "sm" })}
+                    >
+                      주문하기
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             ))}

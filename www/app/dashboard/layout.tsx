@@ -7,9 +7,16 @@ import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/lib/auth-store";
 
-const TABS = [
+const CREATOR_TABS = [
   { href: "/dashboard/profile", label: "내 프로필" },
   { href: "/dashboard/packages", label: "판매 패키지" },
+  { href: "/dashboard/orders", label: "주문 관리" },
+  { href: "/dashboard/balance", label: "잔액" },
+];
+
+const BRAND_TABS = [
+  { href: "/dashboard/orders", label: "주문 관리" },
+  { href: "/dashboard/balance", label: "크레딧" },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -21,7 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (status === "guest") router.replace("/login");
   }, [status, router]);
 
-  if (status === "loading" || status === "guest") {
+  if (status === "loading" || status === "guest" || !user) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-10">
         <Skeleton className="h-8 w-40" />
@@ -30,20 +37,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  // 크리에이터 전용 탭 구성 — 주문 화면(Phase 4)에서 브랜드용 탭이 추가된다
-  if (user?.account_type !== "CREATOR") {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-20 text-center text-muted-foreground">
-        크리에이터 계정 전용 화면입니다. 브랜드용 주문 관리 화면은 곧 제공됩니다.
-      </div>
-    );
-  }
+  const isCreator = user.account_type === "CREATOR";
+  const tabs = isCreator ? CREATOR_TABS : BRAND_TABS;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-bold">크리에이터 대시보드</h1>
+      <h1 className="text-2xl font-bold">{isCreator ? "크리에이터 대시보드" : "브랜드 대시보드"}</h1>
       <nav className="mt-6 flex gap-1 border-b">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <Link
             key={tab.href}
             href={tab.href}
