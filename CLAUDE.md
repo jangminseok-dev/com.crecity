@@ -151,6 +151,13 @@ cd www && pnpm run typecheck
 
 ---
 
+## 브랜치 전략
+
+- 원격: `https://github.com/redoceanmap/com.crecity.git`
+- `main` — 원격 기본 브랜치. `min` — 작업 브랜치(이 맥). 커밋·push는 사용자가 요청할 때만 한다.
+
+---
+
 ## 환경 변수
 
 - `.env` — 실제 값(git 제외). 키를 추가하면 **`.env.example`에도 반드시 등록**한 뒤
