@@ -7,8 +7,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "apps"))
 from fastapi import FastAPI
 
 from auth.adapter.inbound.api.v1.gatekeeper_router import gatekeeper_router
+from auth.adapter.inbound.api.v1.social_login_router import social_login_router
+from auth.adapter.inbound.api.v1.token_refresh_router import token_refresh_router
 from core.database import dispose_engine, init_engine
 from core.database import ping as database_ping
+from core.redis import dispose_redis, init_redis
 from creator.adapter.inbound.api.v1.package_management_router import (
     package_management_router,
 )
@@ -24,7 +27,9 @@ from hub.adapter.inbound.api.v1.dispatcher_router import dispatcher_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_engine()
+    init_redis()
     yield
+    await dispose_redis()
     await dispose_engine()
 
 
@@ -32,6 +37,8 @@ app = FastAPI(title="crecity API", lifespan=lifespan)
 
 app.include_router(dispatcher_router)
 app.include_router(gatekeeper_router)
+app.include_router(social_login_router)
+app.include_router(token_refresh_router)
 app.include_router(profile_router)
 app.include_router(profile_registration_router)
 app.include_router(profile_listing_router)
