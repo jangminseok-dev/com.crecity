@@ -3,6 +3,8 @@ from datetime import datetime
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from hub.adapter.outbound.pg.outbox_pg_store import enqueue_events
+from hub.app.dtos.outbox_event_dto import OutboxEvent
 from order.adapter.outbound.mappers.order_mapper import OrderMapper
 from order.adapter.outbound.orm.ledger_entry_orm import LedgerEntryOrm
 from order.adapter.outbound.orm.order_orm import OrderOrm
@@ -31,7 +33,9 @@ class OrderPgRepository(OrderRepository):
                 )
             )
 
-    async def create(self, order: Order, entries: list[LedgerEntryDraft]) -> Order:
+    async def create(
+        self, order: Order, entries: list[LedgerEntryDraft], events: list[OutboxEvent]
+    ) -> Order:
         result = await self._session.execute(
             insert(OrderOrm)
             .values(
@@ -50,6 +54,11 @@ class OrderPgRepository(OrderRepository):
         )
         orm = result.scalar_one()
         await self._insert_entries(orm.id, entries)
+        # 이벤트 payload에 발급된 주문 id를 채워 같은 트랜잭션에 적재한다
+        enqueue_events(
+            self._session,
+            [OutboxEvent(e.event_type, {**e.payload, "order_id": orm.id}) for e in events],
+        )
         await self._session.commit()
         return OrderMapper.to_entity(orm)
 
@@ -58,13 +67,16 @@ class OrderPgRepository(OrderRepository):
         orm = result.scalar_one_or_none()
         return OrderMapper.to_entity(orm) if orm is not None else None
 
-    async def save_transition(self, order: Order, entries: list[LedgerEntryDraft]) -> None:
+    async def save_transition(
+        self, order: Order, entries: list[LedgerEntryDraft], events: list[OutboxEvent]
+    ) -> None:
         await self._session.execute(
             update(OrderOrm)
             .where(OrderOrm.id == order.id)
             .values(status=order.status.value, deadline_at=order.deadline_at)
         )
         await self._insert_entries(order.id, entries)
+        enqueue_events(self._session, events)  # 전이·원장과 단일 커밋(BOUNDARIES §1)
         await self._session.commit()
 
     async def list_by_participant(self, user_id: int) -> list[Order]:

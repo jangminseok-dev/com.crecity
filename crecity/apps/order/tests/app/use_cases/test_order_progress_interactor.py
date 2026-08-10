@@ -17,14 +17,14 @@ class _StubOrderRepository:
         self.order = order
         self.saved = []  # (order, entries)
 
-    async def create(self, order, entries):
+    async def create(self, order, entries, events):
         raise NotImplementedError
 
     async def find_by_id(self, order_id):
         return self.order if self.order and self.order.id == order_id else None
 
-    async def save_transition(self, order, entries):
-        self.saved.append((order, entries))
+    async def save_transition(self, order, entries, events):
+        self.saved.append((order, entries, events))
 
     async def list_by_participant(self, user_id):
         raise NotImplementedError
@@ -58,16 +58,17 @@ async def test_수락하면_작업중으로_저장된다():
     interactor, repo = _interactor(_order())
     result = await interactor.accept(OrderTransitionCommand(order_id=1, actor_user_id=CREATOR))
     assert result.status == OrderStatus.IN_PROGRESS.value
-    saved_order, saved_entries = repo.saved[0]
+    saved_order, saved_entries, saved_events = repo.saved[0]
     assert saved_order.status is OrderStatus.IN_PROGRESS
     assert saved_entries == []
+    assert saved_events[0].event_type == "order.accepted"
 
 
 async def test_거절하면_환불_기입과_함께_저장된다():
     interactor, repo = _interactor(_order())
     result = await interactor.reject(OrderTransitionCommand(order_id=1, actor_user_id=CREATOR))
     assert result.status == OrderStatus.REFUNDED.value
-    _, entries = repo.saved[0]
+    _, entries, _events = repo.saved[0]
     assert entries[0].entry_type is LedgerEntryType.BRAND_CREDIT_REFUND
 
 
@@ -82,7 +83,7 @@ async def test_승인하면_적립·수수료_기입과_함께_저장된다():
     interactor, repo = _interactor(_order(OrderStatus.IN_REVIEW))
     result = await interactor.approve(OrderTransitionCommand(order_id=1, actor_user_id=BRAND))
     assert result.status == OrderStatus.COMPLETED.value
-    _, entries = repo.saved[0]
+    _, entries, _events = repo.saved[0]
     assert {e.entry_type for e in entries} == {
         LedgerEntryType.CREATOR_EARNING,
         LedgerEntryType.PLATFORM_REVENUE,

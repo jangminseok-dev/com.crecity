@@ -67,6 +67,9 @@ hub도 동일하다.
 | admin | 스포크 | 프로필 심사 · 운영(RBAC 보호, 허브 포트 소비형) | [[crecity/apps/admin/_docs/CLAUDE\|admin CLAUDE]] |
 | payment | 스포크 | 외부 결제 접점(토스페이먼츠 pay-in) | [[crecity/apps/payment/_docs/CLAUDE\|payment CLAUDE]] |
 | review | 스포크 | 3축 평점 · 리뷰 블러 정책 | [[crecity/apps/review/_docs/CLAUDE\|review CLAUDE]] |
+| campaign | 스포크 | 역경매 공고 · 크리에이터 지원 | [[crecity/apps/campaign/_docs/CLAUDE\|campaign CLAUDE]] |
+| chat | 스포크 | 주문 전 협상 메시징(폴링) | [[crecity/apps/chat/_docs/CLAUDE\|chat CLAUDE]] |
+| notification | 스포크 | 인앱 알림 · Outbox 첫 소비자 | [[crecity/apps/notification/_docs/CLAUDE\|notification CLAUDE]] |
 
 새 앱은 `crecity/apps/<app>/_docs/CLAUDE.md` + 심볼릭 링크 `<app>/CLAUDE.md → _docs/CLAUDE.md`를
 추가하고 위 표에 한 줄 등록한다. 후속 앱의 경계·소유 데이터·착수 순서는
@@ -76,8 +79,8 @@ hub도 동일하다.
 
 - **원자성이 필수인 상태 변경은 같은 스포크(=같은 DB 트랜잭션)에 둔다.** 교차 스포크 보상
   로직이 필요해 보이면 경계를 잘못 그은 것이다. Saga·인메모리 이벤트 버스는 도입하지 않는다.
-- 결과적 정합성으로 충분한 부수효과(알림 등)만 허브 이벤트로 뺀다 — 유실 불허 시 Outbox
-  (첫 소비자인 notification 앱과 함께 도입, 선제 구축 금지).
+- 결과적 정합성으로 충분한 부수효과(알림 등)만 허브 Outbox 이벤트로 뺀다 — 발행 측은
+  자기 트랜잭션에 `enqueue_events`로 함께 커밋, 소비는 notification 워커(2026-08-10 구축).
 - 외부 API(PG·이체·알림톡)는 원자적일 수 없다 — 상태 기록+재시도로 다루고 전용 스포크에 격리한다.
 - 단순 조회라도 어댑터에서 리포지토리 직접 접근 금지(CQRS 우회 기각 — 2026-08-10 확정).
   유스케이스 계층을 항상 관통한다.

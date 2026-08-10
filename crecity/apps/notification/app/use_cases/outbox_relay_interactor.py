@@ -1,0 +1,56 @@
+from __future__ import annotations
+
+from notification.app.dtos.outbox_relay_dto import (
+    NotificationDraft,
+    OutboxRecord,
+    RelayResult,
+)
+from notification.app.ports.input.outbox_relay_use_case import OutboxRelayUseCase
+from notification.app.ports.output.relay_store import RelayStore
+
+_BATCH_LIMIT = 100
+
+
+def _order_link(payload: dict) -> str:
+    return f"/dashboard/orders/{payload.get('order_id')}"
+
+
+def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
+    """이벤트 → 알림 변환 규칙(수신자·문구·링크). 미지의 타입은 빈 목록(발행 마킹만 — 전방 호환)."""
+    t, p = record.event_type, record.payload
+    title = p.get("package_title", "")
+    if t == "order.placed":
+        return [NotificationDraft(p["creator_user_id"], t, f"새 주문이 도착했습니다: {title}", _order_link(p))]
+    if t == "order.accepted":
+        return [NotificationDraft(p["brand_user_id"], t, f"주문이 수락되었습니다: {title}", _order_link(p))]
+    if t == "order.rejected":
+        return [NotificationDraft(p["brand_user_id"], t, f"주문이 거절·환불되었습니다(크레딧 적립): {title}", _order_link(p))]
+    if t == "order.submitted":
+        return [NotificationDraft(p["brand_user_id"], t, f"콘텐츠가 제출되었습니다 — 72시간 내 검토해 주세요: {title}", _order_link(p))]
+    if t == "order.revision_requested":
+        return [NotificationDraft(p["creator_user_id"], t, f"수정 요청이 도착했습니다: {title}", _order_link(p))]
+    if t == "order.completed":
+        payout = p.get("payout_krw")
+        suffix = f" — {payout:,}원 적립" if isinstance(payout, int) else ""
+        return [NotificationDraft(p["creator_user_id"], t, f"구매가 확정되었습니다{suffix}: {title}", _order_link(p))]
+    if t == "profile.approved":
+        return [NotificationDraft(p["creator_user_id"], t, "프로필 심사가 승인되었습니다 — 마켓 목록에 노출됩니다.", "/dashboard/profile")]
+    if t == "profile.rejected":
+        return [NotificationDraft(p["creator_user_id"], t, "프로필 심사가 반려되었습니다 — 내용을 보완해 보세요.", "/dashboard/profile")]
+    return []
+
+
+class OutboxRelayInteractor(OutboxRelayUseCase):
+
+    def __init__(self, store: RelayStore) -> None:
+        self._store = store
+
+    async def relay(self) -> RelayResult:
+        records = await self._store.fetch_unpublished(_BATCH_LIMIT)
+        if not records:
+            return RelayResult(consumed_events=0, created_notifications=0)
+        drafts: list[NotificationDraft] = []
+        for record in records:
+            drafts.extend(_to_drafts(record))
+        await self._store.publish([r.id for r in records], drafts)
+        return RelayResult(consumed_events=len(records), created_notifications=len(drafts))

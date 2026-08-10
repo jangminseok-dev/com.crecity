@@ -31,13 +31,13 @@ class _StubOrderRepository:
     def __init__(self, orders: list[Order]):
         self.orders = orders
 
-    async def create(self, order, entries):
+    async def create(self, order, entries, events):
         raise NotImplementedError
 
     async def find_by_id(self, order_id):
         return next((o for o in self.orders if o.id == order_id), None)
 
-    async def save_transition(self, order, entries):
+    async def save_transition(self, order, entries, events):
         raise NotImplementedError
 
     async def list_by_participant(self, user_id):

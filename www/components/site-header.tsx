@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import NotificationBell from "@/components/notification-bell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/lib/auth-store";
@@ -27,6 +28,7 @@ export default function SiteHeader() {
           )}
           {status === "authenticated" && user && (
             <>
+              <NotificationBell />
               <Button
                 variant="ghost"
                 size="sm"

@@ -3,6 +3,8 @@ from __future__ import annotations
 from core.database import session_scope
 from creator.adapter.outbound.pg.creator_profile_pg_repository import CreatorProfilePgRepository
 from creator.domain.entities.creator_profile_entity import CreatorProfile, ProfileStatus
+from hub.adapter.outbound.pg.outbox_pg_store import enqueue_events
+from hub.app.dtos.outbox_event_dto import OutboxEvent
 from hub.app.dtos.profile_review_dto import ProfileReviewSummary
 from hub.app.ports.output.profile_review_port import ProfileReviewPort
 
@@ -37,5 +39,25 @@ class CreatorProfileReviewGateway(ProfileReviewPort):
     async def review_profile(self, profile_id: int, approved: bool) -> ProfileReviewSummary | None:
         status = ProfileStatus.APPROVED if approved else ProfileStatus.REJECTED
         async with session_scope() as session:
-            profile = await CreatorProfilePgRepository(session).update_status(profile_id, status)
+            repository = CreatorProfilePgRepository(session)
+            target = await repository.find_by_id(profile_id)
+            if target is None:
+                return None
+            # 이벤트를 먼저 세션에 적재 — update_status의 커밋에 함께 실린다(단일 트랜잭션)
+            if target.user_id is not None:
+                enqueue_events(
+                    session,
+                    [
+                        OutboxEvent(
+                            event_type="profile.approved" if approved else "profile.rejected",
+                            payload={
+                                "profile_id": profile_id,
+                                "creator_user_id": target.user_id,
+                                "slug": target.slug,
+                                "name": target.name,
+                            },
+                        )
+                    ],
+                )
+            profile = await repository.update_status(profile_id, status)
         return _to_summary(profile) if profile is not None else None

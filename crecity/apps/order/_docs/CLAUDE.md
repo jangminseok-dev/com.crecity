@@ -24,7 +24,9 @@ PENDING_ACCEPT ──수락──▶ IN_PROGRESS ──제출──▶ IN_REVIEW
 - 상태 전이·수수료 계산은 **순수 도메인**(`Order`) — 정수 원 단위 내림, 부동소수 금지.
 - 브랜드 결제 총액 = 가격 + 브랜드 수수료(예치액) · 크리에이터 적립 = 가격 − 크리에이터 수수료.
   요율은 `core/config.py`(`ORDER_*_FEE_PERCENT`, 초기 10/10) — 주문 생성 시점 스냅샷.
-- **전이 + 원장 기입 = 단일 트랜잭션**(`OrderRepository.save_transition` — BOUNDARIES §1).
+- **전이 + 원장 기입 + Outbox 이벤트 = 단일 트랜잭션**(`OrderRepository.create/save_transition`의
+  `events` 인자 — BOUNDARIES §1). 이벤트는 `app/events.py`의 `order_event`로 만든다
+  (order.placed/accepted/rejected/submitted/revision_requested/completed — notification이 소비).
 - 원장(`ledger_entries`)은 append-only. 잔액 = 적립성 기입 합(`BALANCE_CREDIT_TYPES`).
 - `package_id`·user_id들은 타 스포크 논리 참조(DB FK 없음). 패키지 제목은 표시용 스냅샷
   (이력 보존 — 3NF 허용 예외).

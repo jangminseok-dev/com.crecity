@@ -28,14 +28,14 @@ class _StubOrderRepository:
         self.expired = expired
         self.saved = []  # (order, entries)
 
-    async def create(self, order, entries):
+    async def create(self, order, entries, events):
         raise NotImplementedError
 
     async def find_by_id(self, order_id):
         raise NotImplementedError
 
-    async def save_transition(self, order, entries):
-        self.saved.append((order, entries))
+    async def save_transition(self, order, entries, events):
+        self.saved.append((order, entries, events))
 
     async def list_by_participant(self, user_id):
         raise NotImplementedError
@@ -60,8 +60,10 @@ async def test_수락_만료는_환불_검토_만료는_승인으로_전이된�
     assert by_id[2] == OrderStatus.COMPLETED.value
 
     refund_entries = repo.saved[0][1]
+    refund_events = repo.saved[0][2]
     complete_entries = repo.saved[1][1]
     assert refund_entries[0].entry_type is LedgerEntryType.BRAND_CREDIT_REFUND
+    assert refund_events[0].event_type == "order.rejected"
     assert {e.entry_type for e in complete_entries} == {
         LedgerEntryType.CREATOR_EARNING,
         LedgerEntryType.PLATFORM_REVENUE,

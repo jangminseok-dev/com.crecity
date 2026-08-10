@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from order.app.dtos.order_progress_dto import OrderTransitionCommand
 from order.app.dtos.order_result_dto import OrderResult
+from order.app.events import order_event
 from order.app.exceptions import OrderNotFoundError
 from order.app.ports.input.order_progress_use_case import OrderProgressUseCase
 from order.app.ports.output.order_repository import OrderRepository
@@ -24,12 +25,14 @@ class OrderProgressInteractor(OrderProgressUseCase):
 
     async def accept(self, command: OrderTransitionCommand) -> OrderResult:
         order = (await self._get(command.order_id)).accept(command.actor_user_id)
-        await self._orders.save_transition(order, [])
+        await self._orders.save_transition(order, [], [order_event("order.accepted", order)])
         return OrderResult.from_order(order)
 
     async def reject(self, command: OrderTransitionCommand) -> OrderResult:
         order, entries = (await self._get(command.order_id)).reject(command.actor_user_id)
-        await self._orders.save_transition(order, entries)
+        await self._orders.save_transition(
+            order, entries, [order_event("order.rejected", order)]
+        )
         return OrderResult.from_order(order)
 
     async def submit(self, command: OrderTransitionCommand) -> OrderResult:
@@ -37,15 +40,21 @@ class OrderProgressInteractor(OrderProgressUseCase):
         order = (await self._get(command.order_id)).submit(
             command.actor_user_id, now, self._review_deadline
         )
-        await self._orders.save_transition(order, [])
+        await self._orders.save_transition(order, [], [order_event("order.submitted", order)])
         return OrderResult.from_order(order)
 
     async def request_revision(self, command: OrderTransitionCommand) -> OrderResult:
         order = (await self._get(command.order_id)).request_revision(command.actor_user_id)
-        await self._orders.save_transition(order, [])
+        await self._orders.save_transition(
+            order, [], [order_event("order.revision_requested", order)]
+        )
         return OrderResult.from_order(order)
 
     async def approve(self, command: OrderTransitionCommand) -> OrderResult:
         order, entries = (await self._get(command.order_id)).approve(command.actor_user_id)
-        await self._orders.save_transition(order, entries)
+        await self._orders.save_transition(
+            order,
+            entries,
+            [order_event("order.completed", order, payout_krw=order.creator_payout_krw())],
+        )
         return OrderResult.from_order(order)

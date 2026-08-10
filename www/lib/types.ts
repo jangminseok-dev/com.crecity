@@ -98,3 +98,17 @@ export type CreatorPackage = {
   price_krw: number;
   created_at: string | null;
 };
+
+export type NotificationItem = {
+  id: number;
+  event_type: string;
+  body: string;
+  link: string | null;
+  is_read: boolean;
+  created_at: string | null;
+};
+
+export type NotificationsResult = {
+  unread_count: number;
+  items: NotificationItem[];
+};

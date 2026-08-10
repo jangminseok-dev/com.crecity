@@ -65,6 +65,10 @@ from campaign.adapter.inbound.api.v1.campaign_application_router import (
 from campaign.adapter.inbound.api.v1.campaign_listing_router import campaign_listing_router
 from campaign.adapter.inbound.api.v1.campaign_posting_router import campaign_posting_router
 from campaign.adapter.inbound.api.v1.herald_router import herald_router
+from notification.adapter.inbound.api.v1.bellman_router import bellman_router
+from notification.adapter.inbound.api.v1.notification_listing_router import (
+    notification_listing_router,
+)
 from review.adapter.inbound.api.v1.appraiser_router import appraiser_router
 from review.adapter.inbound.api.v1.review_listing_router import review_listing_router
 from review.adapter.inbound.api.v1.review_submission_router import review_submission_router
@@ -122,6 +126,8 @@ app.include_router(courier_router)
 app.include_router(conversation_opening_router)
 app.include_router(conversation_listing_router)
 app.include_router(messaging_router)
+app.include_router(bellman_router)
+app.include_router(notification_listing_router)
 
 
 @app.get("/health")

@@ -24,8 +24,8 @@ class _StubOrderRepository:
     def __init__(self):
         self.created = []  # (order, entries)
 
-    async def create(self, order, entries):
-        self.created.append((order, entries))
+    async def create(self, order, entries, events):
+        self.created.append((order, entries, events))
         from dataclasses import replace
 
         return replace(order, id=1)
@@ -33,7 +33,7 @@ class _StubOrderRepository:
     async def find_by_id(self, order_id):
         raise NotImplementedError
 
-    async def save_transition(self, order, entries):
+    async def save_transition(self, order, entries, events):
         raise NotImplementedError
 
     async def list_by_participant(self, user_id):
@@ -76,18 +76,19 @@ async def test_주문하면_스냅샷과_72h_마감으로_수락_대기가_된�
     assert result.creator_user_id == CREATOR
     assert result.deadline_at is not None
 
-    saved_order, saved_entries = orders.created[0]
+    saved_order, saved_entries, saved_events = orders.created[0]
     assert saved_order.deadline_at is not None
 
 
 async def test_주문_생성과_함께_에스크로_예치가_기록된다():
     orders = _StubOrderRepository()
     await _interactor(orders=orders).place(_command())
-    _, entries = orders.created[0]
+    _, entries, events = orders.created[0]
     assert len(entries) == 1
     assert entries[0].entry_type is LedgerEntryType.ESCROW_DEPOSIT
     assert entries[0].user_id == BRAND
     assert entries[0].amount_krw == 330000  # 수수료 포함 결제 총액
+    assert events[0].event_type == "order.placed"  # Outbox 이벤트 동반
 
 
 async def test_크리에이터_계정이면_NotBrandAccountError():

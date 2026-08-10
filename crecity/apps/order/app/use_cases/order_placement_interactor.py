@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from hub.app.ports.output.package_summary_port import PackageSummaryPort
 from order.app.dtos.order_placement_dto import OrderPlacementCommand
 from order.app.dtos.order_result_dto import OrderResult
+from order.app.events import order_event
 from order.app.exceptions import NotBrandAccountError, PackageNotOrderableError
 from order.app.ports.input.order_placement_use_case import OrderPlacementUseCase
 from order.app.ports.output.order_repository import OrderRepository
@@ -54,5 +55,7 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
             user_id=command.brand_user_id,
             amount_krw=draft.brand_total_krw(),
         )
-        order = await self._orders.create(draft, [deposit])
+        # order_id는 저장 시점에 리포지토리가 payload에 채운다
+        placed_event = order_event("order.placed", draft)
+        order = await self._orders.create(draft, [deposit], [placed_event])
         return OrderResult.from_order(order)
