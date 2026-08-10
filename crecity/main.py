@@ -45,6 +45,13 @@ from payment.adapter.inbound.api.v1.payment_confirmation_router import (
 )
 from payment.adapter.inbound.api.v1.paymaster_router import paymaster_router
 from hub.dependencies.order_placement_provider import register_order_placement_port
+from creator.adapter.outbound.hub.creator_ref_gateway import CreatorRefGateway
+from hub.dependencies.creator_ref_provider import register_creator_ref_port
+from hub.dependencies.order_participants_provider import register_order_participants_port
+from order.adapter.outbound.hub.order_participants_gateway import OrderParticipantsGateway
+from review.adapter.inbound.api.v1.appraiser_router import appraiser_router
+from review.adapter.inbound.api.v1.review_listing_router import review_listing_router
+from review.adapter.inbound.api.v1.review_submission_router import review_submission_router
 
 # 스타 토폴로지 조립 지점 — 스포크 구현체를 허브 계약에 등록한다
 # (스포크끼리는 허브 포트로만 협력한다).
@@ -52,6 +59,8 @@ register_access_token_verifier(build_access_token_verifier())  # auth → 현재
 register_package_summary_port(CreatorPackageSummaryGateway())  # creator → 패키지 요약
 register_profile_review_port(CreatorProfileReviewGateway())  # creator → 프로필 심사
 register_order_placement_port(PaidOrderPlacementGateway())  # order → 결제 완료 주문 생성
+register_order_participants_port(OrderParticipantsGateway())  # order → 주문 당사자(리뷰 자격)
+register_creator_ref_port(CreatorRefGateway())  # creator → 크리에이터 참조(리뷰 조회)
 
 
 @asynccontextmanager
@@ -85,6 +94,9 @@ app.include_router(profile_review_router)
 app.include_router(paymaster_router)
 app.include_router(checkout_preparation_router)
 app.include_router(payment_confirmation_router)
+app.include_router(appraiser_router)
+app.include_router(review_submission_router)
+app.include_router(review_listing_router)
 
 
 @app.get("/health")

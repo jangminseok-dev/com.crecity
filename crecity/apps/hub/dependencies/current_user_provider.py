@@ -39,6 +39,22 @@ def get_current_user(
         raise HTTPException(status_code=401, detail=str(error))
 
 
+def get_optional_user(
+    authorization: str | None = Header(None, description="Bearer <액세스 토큰> (선택)"),
+    verifier: AccessTokenVerifier = Depends(get_access_token_verifier),
+) -> VerifiedUser | None:
+    """선택적 인증 — 토큰이 없거나 무효면 None(공개 응답의 로그인 분기용, 예: 리뷰 블러)."""
+    if authorization is None:
+        return None
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        return None
+    try:
+        return verifier.verify(token)
+    except InvalidAccessTokenError:
+        return None
+
+
 def require_permission(code: str):
     """RBAC 인가 의존성 팩토리 — 해당 권한이 없으면 403.
 

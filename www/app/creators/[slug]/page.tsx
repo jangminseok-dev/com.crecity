@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import CreatorReviews from "@/components/creator-reviews";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,6 +99,12 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
             ))}
           </div>
         )}
+      </section>
+
+      {/* 리뷰 — 집계 공개, 원문은 로그인 시(블러 정책) */}
+      <section className="mt-10">
+        <h2 className="mb-4 text-lg font-semibold">리뷰</h2>
+        <CreatorReviews slug={profile.slug} />
       </section>
     </div>
   );

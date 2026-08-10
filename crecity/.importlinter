@@ -19,6 +19,7 @@ root_packages =
     order
     admin
     payment
+    review
 include_external_packages = True
 
 # -----------------------------------------------------------------------------
@@ -38,6 +39,7 @@ containers =
     order
     admin
     payment
+    review
 
 # -----------------------------------------------------------------------------
 # 계약 2) 스타 토폴로지 — 스포크는 서로를 import 하지 않는다
@@ -52,6 +54,7 @@ modules =
     order
     admin
     payment
+    review
 
 # -----------------------------------------------------------------------------
 # 계약 2.5) 프레임워크 격리 — app·domain 계층은 웹/DB 프레임워크를 모른다
@@ -74,6 +77,8 @@ source_modules =
     admin.domain
     payment.app
     payment.domain
+    review.app
+    review.domain
 forbidden_modules =
     fastapi
     sqlalchemy
@@ -91,6 +96,7 @@ source_modules =
     order.domain
     admin.domain
     payment.domain
+    review.domain
 forbidden_modules =
     pydantic
 
@@ -109,3 +115,4 @@ forbidden_modules =
     order
     admin
     payment
+    review

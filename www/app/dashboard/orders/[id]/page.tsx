@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import OrderReviewSection from "@/components/order-review-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -178,6 +179,7 @@ export default function OrderDetailPage() {
           {isBrand ? "크리에이터에게 대금이 적립되었습니다." : "잔액 탭에서 적립금을 확인하세요."}
         </p>
       )}
+      {order.status === "COMPLETED" && isBrand && <OrderReviewSection orderId={order.id} />}
       {order.status === "REFUNDED" && (
         <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
           환불된 주문입니다 — {isBrand ? "크레딧 탭에서 환불 금액을 확인하세요." : "브랜드에게 전액 환불되었습니다."}
