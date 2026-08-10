@@ -48,3 +48,10 @@ class CreatorProfileRepository(ABC):
 
     @abstractmethod
     async def count_by_status(self, status: ProfileStatus, category: str | None) -> int: ...
+
+    @abstractmethod
+    async def update_status(
+        self, profile_id: int, status: ProfileStatus
+    ) -> CreatorProfile | None:
+        """심사 상태 전이(허브 심사 계약용) — 대상 없으면 None."""
+        ...

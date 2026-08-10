@@ -1,4 +1,4 @@
-from sqlalchemy import exists, func, insert, select
+from sqlalchemy import exists, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from creator.adapter.outbound.mappers.creator_profile_mapper import CreatorProfileMapper
@@ -84,6 +84,19 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         )
         result = await self._session.execute(stmt)
         return [CreatorProfileMapper.to_entity(orm) for orm in result.scalars()]
+
+    async def update_status(
+        self, profile_id: int, status: ProfileStatus
+    ) -> CreatorProfile | None:
+        result = await self._session.execute(
+            update(CreatorProfileOrm)
+            .where(CreatorProfileOrm.id == profile_id)
+            .values(status=status.value)
+            .returning(CreatorProfileOrm)
+        )
+        orm = result.scalar_one_or_none()
+        await self._session.commit()
+        return CreatorProfileMapper.to_entity(orm) if orm is not None else None
 
     async def count_by_status(self, status: ProfileStatus, category: str | None) -> int:
         stmt = (

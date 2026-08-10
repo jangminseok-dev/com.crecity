@@ -4,6 +4,7 @@ export type SessionUser = {
   id: number;
   email: string;
   account_type: "CREATOR" | "BRAND";
+  permissions: string[]; // RBAC 권한 코드 (예: "profile.review") — UI 노출 판단용, 정본은 백엔드
 };
 
 export function decodeSessionUser(accessToken: string): SessionUser | null {
@@ -16,8 +17,14 @@ export function decodeSessionUser(accessToken: string): SessionUser | null {
       sub: string;
       email: string;
       account_type: SessionUser["account_type"];
+      permissions?: string[];
     };
-    return { id: Number(claims.sub), email: claims.email, account_type: claims.account_type };
+    return {
+      id: Number(claims.sub),
+      email: claims.email,
+      account_type: claims.account_type,
+      permissions: claims.permissions ?? [],
+    };
   } catch {
     return null;
   }

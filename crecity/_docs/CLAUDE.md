@@ -64,6 +64,7 @@ hub도 동일하다.
 | auth | 스포크 | 회원 인증 · 크리에이터/브랜드 계정 경계 | [[crecity/apps/auth/_docs/CLAUDE\|auth CLAUDE]] |
 | creator | 스포크 | 크리에이터 프로필 · 판매 패키지 | [[crecity/apps/creator/_docs/CLAUDE\|creator CLAUDE]] |
 | order | 스포크 | 주문 상태머신 · 에스크로/잔액 원장 | [[crecity/apps/order/_docs/CLAUDE\|order CLAUDE]] |
+| admin | 스포크 | 프로필 심사 · 운영(RBAC 보호, 허브 포트 소비형) | [[crecity/apps/admin/_docs/CLAUDE\|admin CLAUDE]] |
 
 새 앱은 `crecity/apps/<app>/_docs/CLAUDE.md` + 심볼릭 링크 `<app>/CLAUDE.md → _docs/CLAUDE.md`를
 추가하고 위 표에 한 줄 등록한다. 후속 앱의 경계·소유 데이터·착수 순서는

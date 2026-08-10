@@ -17,6 +17,7 @@ root_packages =
     auth
     creator
     order
+    admin
 include_external_packages = True
 
 # -----------------------------------------------------------------------------
@@ -34,6 +35,7 @@ containers =
     auth
     creator
     order
+    admin
 
 # -----------------------------------------------------------------------------
 # 계약 2) 스타 토폴로지 — 스포크는 서로를 import 하지 않는다
@@ -46,6 +48,7 @@ modules =
     auth
     creator
     order
+    admin
 
 # -----------------------------------------------------------------------------
 # 계약 2.5) 프레임워크 격리 — app·domain 계층은 웹/DB 프레임워크를 모른다
@@ -64,6 +67,8 @@ source_modules =
     creator.domain
     order.app
     order.domain
+    admin.app
+    admin.domain
 forbidden_modules =
     fastapi
     sqlalchemy
@@ -79,6 +84,7 @@ source_modules =
     auth.domain
     creator.domain
     order.domain
+    admin.domain
 forbidden_modules =
     pydantic
 
@@ -95,3 +101,4 @@ forbidden_modules =
     auth
     creator
     order
+    admin

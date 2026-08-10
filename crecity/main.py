@@ -6,6 +6,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "apps"))
 
 from fastapi import FastAPI
 
+from admin.adapter.inbound.api.v1.profile_review_router import profile_review_router
+from admin.adapter.inbound.api.v1.steward_router import steward_router
 from auth.adapter.inbound.api.v1.gatekeeper_router import gatekeeper_router
 from auth.adapter.inbound.api.v1.social_login_router import social_login_router
 from auth.adapter.inbound.api.v1.token_refresh_router import token_refresh_router
@@ -24,9 +26,11 @@ from creator.adapter.inbound.api.v1.profile_registration_router import (
 from creator.adapter.inbound.api.v1.profile_router import profile_router
 from auth.dependencies.access_token_verifier_provider import build_access_token_verifier
 from creator.adapter.outbound.hub.package_summary_gateway import CreatorPackageSummaryGateway
+from creator.adapter.outbound.hub.profile_review_gateway import CreatorProfileReviewGateway
 from hub.adapter.inbound.api.v1.dispatcher_router import dispatcher_router
 from hub.dependencies.current_user_provider import register_access_token_verifier
 from hub.dependencies.package_summary_provider import register_package_summary_port
+from hub.dependencies.profile_review_provider import register_profile_review_port
 from order.adapter.inbound.api.v1.balance_lookup_router import balance_lookup_router
 from order.adapter.inbound.api.v1.bookkeeper_router import bookkeeper_router
 from order.adapter.inbound.api.v1.order_lookup_router import order_lookup_router
@@ -37,6 +41,7 @@ from order.adapter.inbound.api.v1.order_progress_router import order_progress_ro
 # (스포크끼리는 허브 포트로만 협력한다).
 register_access_token_verifier(build_access_token_verifier())  # auth → 현재 사용자
 register_package_summary_port(CreatorPackageSummaryGateway())  # creator → 패키지 요약
+register_profile_review_port(CreatorProfileReviewGateway())  # creator → 프로필 심사
 
 
 @asynccontextmanager
@@ -65,6 +70,8 @@ app.include_router(order_placement_router)
 app.include_router(order_progress_router)
 app.include_router(order_lookup_router)
 app.include_router(balance_lookup_router)
+app.include_router(steward_router)
+app.include_router(profile_review_router)
 
 
 @app.get("/health")
