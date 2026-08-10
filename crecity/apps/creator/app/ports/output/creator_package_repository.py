@@ -1,0 +1,39 @@
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+
+from creator.domain.entities.creator_package_entity import CreatorPackage, PackagePlatform
+
+
+class CreatorPackageRepository(ABC):
+    """패키지 영속성 포트 (도메인어 명명 예외)."""
+
+    @abstractmethod
+    async def create(
+        self,
+        profile_id: int,
+        platform: PackagePlatform,
+        title: str,
+        description: str,
+        price_krw: int,
+    ) -> CreatorPackage: ...
+
+    @abstractmethod
+    async def update(
+        self,
+        package_id: int,
+        platform: PackagePlatform,
+        title: str,
+        description: str,
+        price_krw: int,
+    ) -> CreatorPackage | None:
+        """수정 후 결과 반환 — 대상 없으면 None."""
+        ...
+
+    @abstractmethod
+    async def delete(self, package_id: int) -> bool:
+        """삭제 성공 여부 — 대상 없으면 False."""
+        ...
+
+    @abstractmethod
+    async def list_by_profile_id(self, profile_id: int) -> list[CreatorPackage]: ...

@@ -4,3 +4,7 @@ class DuplicateSlugError(Exception):
 
 class ProfileNotFoundError(Exception):
     """슬러그에 해당하는 프로필 없음 — 라우터에서 404로 변환."""
+
+
+class PackageNotFoundError(Exception):
+    """id에 해당하는 패키지 없음 — 라우터에서 404로 변환."""
