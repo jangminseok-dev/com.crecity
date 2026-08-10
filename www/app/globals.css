@@ -1,0 +1,16 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
+/* source("../") — 스캔·감시 범위를 www/로 못박는다. 지우지 말 것.
+   Tailwind 4는 소스 자동 감지 기준이 `.git`이 있는 디렉토리다. 이 저장소는 www/ 위에
+   .git이 있어 지정이 없으면 루트 전체(.venv/ 등)를 순회·감시해 next dev CPU가 폭주한다. */
+@import "tailwindcss" source("../");
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
+}

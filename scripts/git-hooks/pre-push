@@ -1,0 +1,13 @@
+#!/bin/sh
+# 백엔드 테스트 전체 — 실패 시 푸시 차단.
+# 커밋마다 돌리면 피로하므로 push 시점에만 전체 pytest를 돈다.
+
+ROOT="$(git rev-parse --show-toplevel)" || exit 1
+
+cd "$ROOT" || exit 1
+PYTHONPATH=crecity:crecity/apps "$ROOT/.venv/bin/python" -m pytest crecity/apps -q
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "푸시 중단: pytest 실패. 위 출력을 확인하세요."
+    exit 1
+fi

@@ -1,0 +1,14 @@
+#!/bin/sh
+# 아키텍처 계약 검증 — 위반 시 커밋 차단.
+# CI 없는 프로젝트의 로컬 안전망이다(루트 CLAUDE.md). 빠른 검사만 여기에 둔다(1~2초).
+# pytest 전체는 pre-push에서 돈다.
+
+ROOT="$(git rev-parse --show-toplevel)" || exit 1
+
+cd "$ROOT/crecity" || exit 1
+PYTHONPATH=apps "$ROOT/.venv/bin/lint-imports" --config .importlinter
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "커밋 중단: import-linter 아키텍처 계약 위반. 위 출력을 확인하세요."
+    exit 1
+fi

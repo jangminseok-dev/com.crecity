@@ -1,0 +1,27 @@
+# crecity 로컬 인프라 — DB·Redis만 컨테이너, 백엔드는 로컬 venv에서 uvicorn으로 띄운다.
+# 모두 127.0.0.1 루프백 바인딩(0.0.0.0 금지 — LAN 노출 차단).
+# 포트 5433/6380: redoceanmap 백엔드 PC 포워딩(5432/6379)과의 충돌 회피.
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "127.0.0.1:5433:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-crecity}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-crecity}
+      - POSTGRES_DB=${POSTGRES_DB:-crecity}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-crecity} -d ${POSTGRES_DB:-crecity}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6380:6379"
+
+volumes:
+  postgres_data:
