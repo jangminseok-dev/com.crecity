@@ -49,6 +49,12 @@ from creator.adapter.outbound.hub.creator_ref_gateway import CreatorRefGateway
 from hub.dependencies.creator_ref_provider import register_creator_ref_port
 from hub.dependencies.order_participants_provider import register_order_participants_port
 from order.adapter.outbound.hub.order_participants_gateway import OrderParticipantsGateway
+from campaign.adapter.inbound.api.v1.campaign_application_router import (
+    campaign_application_router,
+)
+from campaign.adapter.inbound.api.v1.campaign_listing_router import campaign_listing_router
+from campaign.adapter.inbound.api.v1.campaign_posting_router import campaign_posting_router
+from campaign.adapter.inbound.api.v1.herald_router import herald_router
 from review.adapter.inbound.api.v1.appraiser_router import appraiser_router
 from review.adapter.inbound.api.v1.review_listing_router import review_listing_router
 from review.adapter.inbound.api.v1.review_submission_router import review_submission_router
@@ -97,6 +103,10 @@ app.include_router(payment_confirmation_router)
 app.include_router(appraiser_router)
 app.include_router(review_submission_router)
 app.include_router(review_listing_router)
+app.include_router(herald_router)
+app.include_router(campaign_posting_router)
+app.include_router(campaign_listing_router)
+app.include_router(campaign_application_router)
 
 
 @app.get("/health")

@@ -15,3 +15,10 @@ class CreatorRefGateway(CreatorRefPort):
         if profile is None or profile.user_id is None:
             return None
         return CreatorRef(creator_user_id=profile.user_id, slug=profile.slug, name=profile.name)
+
+    async def get_creator_by_user_id(self, user_id: int) -> CreatorRef | None:
+        async with session_scope() as session:
+            profile = await CreatorProfilePgRepository(session).find_by_user_id(user_id)
+        if profile is None or profile.user_id is None:
+            return None
+        return CreatorRef(creator_user_id=profile.user_id, slug=profile.slug, name=profile.name)

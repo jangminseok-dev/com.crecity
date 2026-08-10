@@ -16,6 +16,7 @@ const CREATOR_TABS = [
 
 const BRAND_TABS = [
   { href: "/dashboard/orders", label: "주문 관리" },
+  { href: "/dashboard/campaigns", label: "내 공고" },
   { href: "/dashboard/balance", label: "크레딧" },
 ];
 

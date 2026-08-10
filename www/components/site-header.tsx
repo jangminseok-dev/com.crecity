@@ -27,6 +27,12 @@ export default function SiteHeader() {
           )}
           {status === "authenticated" && user && (
             <>
+              <Button
+                variant="ghost"
+                size="sm"
+                nativeButton={false}
+                render={<Link href="/campaigns">캠페인</Link>}
+              />
               {user.permissions.includes("profile.review") && (
                 <Button
                   variant="ghost"

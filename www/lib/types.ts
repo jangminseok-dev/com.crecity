@@ -44,6 +44,28 @@ export type Order = {
   created_at: string | null;
 };
 
+export type Campaign = {
+  id: number;
+  brand_user_id: number;
+  title: string;
+  description: string;
+  platform: "INSTAGRAM" | "YOUTUBE" | "TIKTOK" | "NAVER_BLOG" | "UGC";
+  budget_krw: number;
+  status: "OPEN" | "CLOSED";
+  created_at: string | null;
+};
+
+export type CampaignApplication = {
+  id: number;
+  campaign_id: number;
+  creator_user_id: number;
+  creator_name: string;
+  creator_slug: string;
+  message: string;
+  proposed_price_krw: number;
+  created_at: string | null;
+};
+
 export type Balance = {
   user_id: number;
   balance_krw: number;

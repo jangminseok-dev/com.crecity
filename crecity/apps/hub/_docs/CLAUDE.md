@@ -13,6 +13,6 @@
 | 프로필 심사 | `ProfileReviewPort` 포트 + `ProfileReviewSummary` DTO(`dependencies/profile_review_provider.py`) | creator(`CreatorProfileReviewGateway`) — main.py가 `register_profile_review_port`로 조립 | admin 심사 슬라이스(대기 목록·승인/반려 전이) |
 | 결제 완료 주문 생성 | `OrderPlacementPort` 포트 + `PlacedOrder` DTO(`dependencies/order_placement_provider.py`) | order(`PaidOrderPlacementGateway`) — main.py가 `register_order_placement_port`로 조립. 금액 불일치 시 None(생성 거부) | payment 승인 후 주문 생성(§3 — 실패 시 PG 취소 보정) |
 | 주문 당사자 조회 | `OrderParticipantsPort` 포트 + `OrderParticipants` DTO(`dependencies/order_participants_provider.py`) | order(`OrderParticipantsGateway`) | review 리뷰 자격 검증(완료 주문·브랜드 본인) |
-| 크리에이터 참조 조회 | `CreatorRefPort` 포트 + `CreatorRef` DTO(`dependencies/creator_ref_provider.py`) | creator(`CreatorRefGateway`) | review 공개 조회(슬러그 → 계정) — §5 "크리에이터 요약 조회" 실현 |
+| 크리에이터 참조 조회 | `CreatorRefPort` 포트 + `CreatorRef` DTO(`dependencies/creator_ref_provider.py`) | creator(`CreatorRefGateway`) | review 공개 조회(슬러그 → 계정) · campaign 지원자 표시(계정 → 참조) — §5 "크리에이터 요약 조회" 실현 |
 
 - 조립 규칙: 허브는 스포크를 모르므로 구현체 등록은 항상 main.py(조립 루트) 몫이다.

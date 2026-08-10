@@ -12,3 +12,8 @@ class CreatorRefPort(ABC):
     async def get_creator_by_slug(self, slug: str) -> CreatorRef | None:
         """슬러그로 크리에이터 참조를 돌려준다 — 없거나 소유 계정 없으면 None."""
         ...
+
+    @abstractmethod
+    async def get_creator_by_user_id(self, user_id: int) -> CreatorRef | None:
+        """계정으로 크리에이터 참조를 돌려준다 — 프로필 없으면 None."""
+        ...
