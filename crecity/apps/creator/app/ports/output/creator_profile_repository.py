@@ -25,3 +25,17 @@ class CreatorProfileRepository(ABC):
 
     @abstractmethod
     async def exists_by_slug(self, slug: str) -> bool: ...
+
+    @abstractmethod
+    async def list_by_status(
+        self,
+        status: ProfileStatus,
+        category: str | None,
+        limit: int,
+        offset: int,
+    ) -> list[CreatorProfile]:
+        """상태로 필터한 프로필을 최신 등록순으로 조회한다."""
+        ...
+
+    @abstractmethod
+    async def count_by_status(self, status: ProfileStatus, category: str | None) -> int: ...

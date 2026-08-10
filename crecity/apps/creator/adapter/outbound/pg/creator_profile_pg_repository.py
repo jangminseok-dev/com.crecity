@@ -1,4 +1,4 @@
-from sqlalchemy import exists, insert, select
+from sqlalchemy import exists, func, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from creator.adapter.outbound.mappers.creator_profile_mapper import CreatorProfileMapper
@@ -50,3 +50,32 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
             select(exists().where(CreatorProfileOrm.slug == slug))
         )
         return bool(result.scalar())
+
+    async def list_by_status(
+        self,
+        status: ProfileStatus,
+        category: str | None,
+        limit: int,
+        offset: int,
+    ) -> list[CreatorProfile]:
+        stmt = select(CreatorProfileOrm).where(CreatorProfileOrm.status == status.value)
+        if category is not None:
+            stmt = stmt.where(CreatorProfileOrm.primary_category == category)
+        stmt = (
+            stmt.order_by(CreatorProfileOrm.created_at.desc(), CreatorProfileOrm.id.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self._session.execute(stmt)
+        return [CreatorProfileMapper.to_entity(orm) for orm in result.scalars()]
+
+    async def count_by_status(self, status: ProfileStatus, category: str | None) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(CreatorProfileOrm)
+            .where(CreatorProfileOrm.status == status.value)
+        )
+        if category is not None:
+            stmt = stmt.where(CreatorProfileOrm.primary_category == category)
+        result = await self._session.execute(stmt)
+        return int(result.scalar_one())

@@ -12,6 +12,7 @@ from core.database import ping as database_ping
 from creator.adapter.inbound.api.v1.package_management_router import (
     package_management_router,
 )
+from creator.adapter.inbound.api.v1.profile_listing_router import profile_listing_router
 from creator.adapter.inbound.api.v1.profile_lookup_router import profile_lookup_router
 from creator.adapter.inbound.api.v1.profile_registration_router import (
     profile_registration_router,
@@ -33,6 +34,7 @@ app.include_router(dispatcher_router)
 app.include_router(gatekeeper_router)
 app.include_router(profile_router)
 app.include_router(profile_registration_router)
+app.include_router(profile_listing_router)
 app.include_router(profile_lookup_router)
 app.include_router(package_management_router)
 
