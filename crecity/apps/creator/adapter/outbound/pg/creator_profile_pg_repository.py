@@ -21,6 +21,7 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         location: str | None,
         primary_category: str,
         status: ProfileStatus,
+        user_id: int,
     ) -> CreatorProfile:
         result = await self._session.execute(
             insert(CreatorProfileOrm)
@@ -32,11 +33,26 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
                 location=location,
                 primary_category=primary_category,
                 status=status.value,
+                user_id=user_id,
             )
             .returning(CreatorProfileOrm)
         )
         await self._session.commit()
         return CreatorProfileMapper.to_entity(result.scalar_one())
+
+    async def find_by_id(self, profile_id: int) -> CreatorProfile | None:
+        result = await self._session.execute(
+            select(CreatorProfileOrm).where(CreatorProfileOrm.id == profile_id)
+        )
+        orm = result.scalar_one_or_none()
+        return CreatorProfileMapper.to_entity(orm) if orm is not None else None
+
+    async def find_by_user_id(self, user_id: int) -> CreatorProfile | None:
+        result = await self._session.execute(
+            select(CreatorProfileOrm).where(CreatorProfileOrm.user_id == user_id)
+        )
+        orm = result.scalar_one_or_none()
+        return CreatorProfileMapper.to_entity(orm) if orm is not None else None
 
     async def find_by_slug(self, slug: str) -> CreatorProfile | None:
         result = await self._session.execute(

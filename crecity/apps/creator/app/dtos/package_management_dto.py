@@ -10,6 +10,7 @@ class PackageRegistrationCommand:
     title: str
     description: str
     price_krw: int
+    requester_user_id: int  # 로그인 사용자 — 프로필 소유자만 등록 가능
 
 
 @dataclass(frozen=True)
@@ -20,12 +21,14 @@ class PackageUpdateCommand:
     title: str
     description: str
     price_krw: int
+    requester_user_id: int
 
 
 @dataclass(frozen=True)
 class PackageRemovalCommand:
 
     package_id: int
+    requester_user_id: int
 
 
 @dataclass(frozen=True)

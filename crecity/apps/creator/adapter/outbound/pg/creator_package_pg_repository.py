@@ -34,6 +34,13 @@ class CreatorPackagePgRepository(CreatorPackageRepository):
         await self._session.commit()
         return CreatorPackageMapper.to_entity(result.scalar_one())
 
+    async def find_by_id(self, package_id: int) -> CreatorPackage | None:
+        result = await self._session.execute(
+            select(CreatorPackageOrm).where(CreatorPackageOrm.id == package_id)
+        )
+        orm = result.scalar_one_or_none()
+        return CreatorPackageMapper.to_entity(orm) if orm is not None else None
+
     async def update(
         self,
         package_id: int,

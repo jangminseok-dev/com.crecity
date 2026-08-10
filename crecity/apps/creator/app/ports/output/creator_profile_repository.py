@@ -18,10 +18,19 @@ class CreatorProfileRepository(ABC):
         location: str | None,
         primary_category: str,
         status: ProfileStatus,
+        user_id: int,
     ) -> CreatorProfile: ...
 
     @abstractmethod
+    async def find_by_id(self, profile_id: int) -> CreatorProfile | None: ...
+
+    @abstractmethod
     async def find_by_slug(self, slug: str) -> CreatorProfile | None: ...
+
+    @abstractmethod
+    async def find_by_user_id(self, user_id: int) -> CreatorProfile | None:
+        """소유 계정으로 조회 — 1인 1프로필 검증에 쓴다."""
+        ...
 
     @abstractmethod
     async def exists_by_slug(self, slug: str) -> bool: ...

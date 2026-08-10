@@ -10,9 +10,15 @@ from creator.app.dtos.package_management_dto import (
     PackageRemovalCommand,
     PackageUpdateCommand,
 )
-from creator.app.exceptions import PackageNotFoundError, ProfileNotFoundError
+from creator.app.exceptions import (
+    NotProfileOwnerError,
+    PackageNotFoundError,
+    ProfileNotFoundError,
+)
 from creator.app.ports.input.package_management_use_case import PackageManagementUseCase
 from creator.dependencies.package_management_provider import get_package_management_use_case
+from hub.app.dtos.verified_user_dto import VerifiedUser
+from hub.dependencies.current_user_provider import get_current_user
 
 package_management_router = APIRouter(prefix="/creator", tags=["creator"])
 
@@ -35,6 +41,7 @@ def _to_schema(result) -> PackageResponseSchema:
 async def register_package(
     slug: str,
     body: PackageWriteRequestSchema,
+    user: VerifiedUser = Depends(get_current_user),
     use_case: PackageManagementUseCase = Depends(get_package_management_use_case),
 ) -> PackageResponseSchema:
     try:
@@ -45,10 +52,13 @@ async def register_package(
                 title=body.title,
                 description=body.description,
                 price_krw=body.price_krw,
+                requester_user_id=user.id,
             )
         )
     except ProfileNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error))
+    except NotProfileOwnerError as error:
+        raise HTTPException(status_code=403, detail=str(error))
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error))
     return _to_schema(result)
@@ -74,6 +84,7 @@ async def list_packages(
 async def update_package(
     package_id: int,
     body: PackageWriteRequestSchema,
+    user: VerifiedUser = Depends(get_current_user),
     use_case: PackageManagementUseCase = Depends(get_package_management_use_case),
 ) -> PackageResponseSchema:
     try:
@@ -84,10 +95,13 @@ async def update_package(
                 title=body.title,
                 description=body.description,
                 price_krw=body.price_krw,
+                requester_user_id=user.id,
             )
         )
     except PackageNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error))
+    except NotProfileOwnerError as error:
+        raise HTTPException(status_code=403, detail=str(error))
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error))
     return _to_schema(result)
@@ -96,9 +110,14 @@ async def update_package(
 @package_management_router.delete("/packages/{package_id}", status_code=204)
 async def remove_package(
     package_id: int,
+    user: VerifiedUser = Depends(get_current_user),
     use_case: PackageManagementUseCase = Depends(get_package_management_use_case),
 ) -> None:
     try:
-        await use_case.remove(PackageRemovalCommand(package_id=package_id))
+        await use_case.remove(
+            PackageRemovalCommand(package_id=package_id, requester_user_id=user.id)
+        )
     except PackageNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error))
+    except NotProfileOwnerError as error:
+        raise HTTPException(status_code=403, detail=str(error))

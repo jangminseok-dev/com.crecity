@@ -19,10 +19,7 @@ class ProfileStatus(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class CreatorProfile:
-    """크리에이터 프로필 도메인 엔티티 — ORM/프레임워크에 의존하지 않는다.
-
-    user_id(계정 연결)는 auth 소셜 로그인 단계에서 컬럼과 함께 추가한다(BOUNDARIES §7-2 순서).
-    """
+    """크리에이터 프로필 도메인 엔티티 — ORM/프레임워크에 의존하지 않는다."""
 
     id: int
     slug: str
@@ -32,8 +29,14 @@ class CreatorProfile:
     location: str | None
     primary_category: str  # 니치 카테고리 — 다중 카테고리는 M:N 필요 시점에 정규화
     status: ProfileStatus
+    # 소유 계정(auth users 논리 참조) — None은 소셜 로그인 도입 전 레거시 행뿐
+    user_id: int | None = None
     created_at: datetime | None = None
 
     def is_listable(self) -> bool:
         """마켓플레이스 목록 노출 가능 여부 — 승인된 프로필만."""
         return self.status is ProfileStatus.APPROVED
+
+    def is_owned_by(self, user_id: int) -> bool:
+        """쓰기 권한 판정 — 소유자 본인만 수정·삭제할 수 있다."""
+        return self.user_id is not None and self.user_id == user_id

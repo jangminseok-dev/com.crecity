@@ -6,7 +6,11 @@ from creator.app.dtos.package_management_dto import (
     PackageRemovalCommand,
     PackageUpdateCommand,
 )
-from creator.app.exceptions import PackageNotFoundError, ProfileNotFoundError
+from creator.app.exceptions import (
+    NotProfileOwnerError,
+    PackageNotFoundError,
+    ProfileNotFoundError,
+)
 from creator.app.use_cases.package_management_interactor import PackageManagementInteractor
 from creator.domain.entities.creator_package_entity import CreatorPackage, PackagePlatform
 from creator.domain.entities.creator_profile_entity import CreatorProfile, ProfileStatus
@@ -19,6 +23,9 @@ class _StubProfileRepository:
     async def create(self, **kwargs):
         raise NotImplementedError
 
+    async def find_by_id(self, profile_id):
+        return self.profile if self.profile and self.profile.id == profile_id else None
+
     async def find_by_slug(self, slug):
         return self.profile if self.profile and self.profile.slug == slug else None
 
@@ -30,6 +37,9 @@ class _StubPackageRepository:
     def __init__(self, packages: list[CreatorPackage] | None = None):
         self.packages = {p.id: p for p in (packages or [])}
         self._next_id = max(self.packages, default=0) + 1
+
+    async def find_by_id(self, package_id):
+        return self.packages.get(package_id)
 
     async def create(self, profile_id, platform, title, description, price_krw):
         package = CreatorPackage(
@@ -67,6 +77,7 @@ class _StubPackageRepository:
         return sorted(found, key=lambda p: p.price_krw)
 
 
+# 소유자 user_id=7 — 소유권 테스트는 requester 99로 남의 접근을 흉내 낸다
 _PROFILE = CreatorProfile(
     id=1,
     slug="kim-beauty",
@@ -76,6 +87,7 @@ _PROFILE = CreatorProfile(
     location="서울",
     primary_category="뷰티",
     status=ProfileStatus.APPROVED,
+    user_id=7,
 )
 
 
@@ -90,10 +102,11 @@ def _package(id=1, price_krw=300000, platform=PackagePlatform.INSTAGRAM):
     )
 
 
-def _register_command(platform="INSTAGRAM", price_krw=300000, slug="kim-beauty"):
+def _register_command(platform="INSTAGRAM", price_krw=300000, slug="kim-beauty", requester=7):
     return PackageRegistrationCommand(
         slug=slug, platform=platform, title="릴스 1개",
         description="수정 2회 포함", price_krw=price_krw,
+        requester_user_id=requester,
     )
 
 
@@ -130,7 +143,7 @@ async def test_수정하면_변경값이_반영된다():
     result = await interactor.update(
         PackageUpdateCommand(
             package_id=1, platform="UGC", title="UGC 사진 4장",
-            description="원본 제공", price_krw=200000,
+            description="원본 제공", price_krw=200000, requester_user_id=7,
         )
     )
     assert result.platform == "UGC"
@@ -141,20 +154,44 @@ async def test_없는_패키지_수정이면_PackageNotFoundError():
     with pytest.raises(PackageNotFoundError):
         await _interactor().update(
             PackageUpdateCommand(
-                package_id=99, platform="UGC", title="t", description="d", price_krw=1000,
+                package_id=99, platform="UGC", title="t", description="d",
+                price_krw=1000, requester_user_id=7,
             )
         )
 
 
 async def test_삭제하면_목록에서_사라진다():
     interactor = _interactor(packages=[_package()])
-    await interactor.remove(PackageRemovalCommand(package_id=1))
+    await interactor.remove(PackageRemovalCommand(package_id=1, requester_user_id=7))
     assert await interactor.list_for_profile(PackageListQuery(slug="kim-beauty")) == []
 
 
 async def test_없는_패키지_삭제면_PackageNotFoundError():
     with pytest.raises(PackageNotFoundError):
-        await _interactor().remove(PackageRemovalCommand(package_id=99))
+        await _interactor().remove(PackageRemovalCommand(package_id=99, requester_user_id=7))
+
+
+async def test_남의_프로필에_등록하면_NotProfileOwnerError():
+    with pytest.raises(NotProfileOwnerError):
+        await _interactor().register(_register_command(requester=99))
+
+
+async def test_남의_패키지_수정이면_NotProfileOwnerError():
+    interactor = _interactor(packages=[_package()])
+    with pytest.raises(NotProfileOwnerError):
+        await interactor.update(
+            PackageUpdateCommand(
+                package_id=1, platform="UGC", title="t", description="d",
+                price_krw=1000, requester_user_id=99,
+            )
+        )
+
+
+async def test_남의_패키지_삭제면_NotProfileOwnerError_삭제_없음():
+    interactor = _interactor(packages=[_package()])
+    with pytest.raises(NotProfileOwnerError):
+        await interactor.remove(PackageRemovalCommand(package_id=1, requester_user_id=99))
+    assert len(await interactor.list_for_profile(PackageListQuery(slug="kim-beauty"))) == 1
 
 
 async def test_목록은_가격_오름차순이다():

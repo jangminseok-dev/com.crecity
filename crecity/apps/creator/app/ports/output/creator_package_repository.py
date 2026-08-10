@@ -19,6 +19,11 @@ class CreatorPackageRepository(ABC):
     ) -> CreatorPackage: ...
 
     @abstractmethod
+    async def find_by_id(self, package_id: int) -> CreatorPackage | None:
+        """소유권 검증용 조회 — 수정·삭제 전에 소속 프로필을 확인한다."""
+        ...
+
+    @abstractmethod
     async def update(
         self,
         package_id: int,

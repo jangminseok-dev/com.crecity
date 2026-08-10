@@ -21,7 +21,13 @@ from creator.adapter.inbound.api.v1.profile_registration_router import (
     profile_registration_router,
 )
 from creator.adapter.inbound.api.v1.profile_router import profile_router
+from auth.dependencies.access_token_verifier_provider import build_access_token_verifier
 from hub.adapter.inbound.api.v1.dispatcher_router import dispatcher_router
+from hub.dependencies.current_user_provider import register_access_token_verifier
+
+# 스타 토폴로지 조립 지점 — auth의 JWT 검증 구현을 허브 계약에 등록한다
+# (creator 등 스포크는 허브 포트로만 '현재 사용자'를 본다).
+register_access_token_verifier(build_access_token_verifier())
 
 
 @asynccontextmanager
