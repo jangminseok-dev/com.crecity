@@ -23,10 +23,17 @@ export default function SiteHeader() {
         <nav className="flex items-center gap-2">
           {status === "loading" && <Skeleton className="h-8 w-20" />}
           {status === "guest" && (
-            <Button size="sm" render={<Link href="/login">시작하기</Link>} />
+            <Button size="sm" nativeButton={false} render={<Link href="/login">시작하기</Link>} />
           )}
           {status === "authenticated" && user && (
             <>
+              {user.account_type === "CREATOR" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  nativeButton={false} render={<Link href="/dashboard/profile">대시보드</Link>}
+                />
+              )}
               <span className="text-sm text-muted-foreground">{user.email}</span>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 로그아웃

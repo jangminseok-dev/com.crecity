@@ -43,7 +43,7 @@ export default function LoginPage() {
     return (
       <div className="mx-auto max-w-md px-4 py-20 text-center">
         <p className="text-lg font-semibold">이미 로그인되어 있습니다.</p>
-        <Button className="mt-4" render={<Link href="/">홈으로 가기</Link>} />
+        <Button className="mt-4" nativeButton={false} render={<Link href="/">홈으로 가기</Link>} />
       </div>
     );
   }

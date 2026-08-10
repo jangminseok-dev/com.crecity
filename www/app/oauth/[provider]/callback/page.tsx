@@ -72,7 +72,7 @@ function CallbackContent() {
       <div className="mx-auto max-w-md px-4 py-20 text-center">
         <p className="text-lg font-semibold">로그인에 실패했습니다</p>
         <p className="mt-2 text-sm text-muted-foreground">{state.message}</p>
-        <Button className="mt-6" render={<Link href="/login">다시 시도하기</Link>} />
+        <Button className="mt-6" nativeButton={false} render={<Link href="/login">다시 시도하기</Link>} />
       </div>
     );
   }

@@ -15,6 +15,7 @@ from core.redis import dispose_redis, init_redis
 from creator.adapter.inbound.api.v1.package_management_router import (
     package_management_router,
 )
+from creator.adapter.inbound.api.v1.my_profile_lookup_router import my_profile_lookup_router
 from creator.adapter.inbound.api.v1.profile_listing_router import profile_listing_router
 from creator.adapter.inbound.api.v1.profile_lookup_router import profile_lookup_router
 from creator.adapter.inbound.api.v1.profile_registration_router import (
@@ -56,6 +57,7 @@ app.include_router(token_refresh_router)
 app.include_router(profile_router)
 app.include_router(profile_registration_router)
 app.include_router(profile_listing_router)
+app.include_router(my_profile_lookup_router)
 app.include_router(profile_lookup_router)
 app.include_router(package_management_router)
 app.include_router(bookkeeper_router)

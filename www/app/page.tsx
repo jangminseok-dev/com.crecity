@@ -74,7 +74,7 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
               variant="outline"
               size="sm"
               disabled={currentPage <= 1}
-              render={<Link href={pageHref(currentPage - 1)}>이전</Link>}
+              nativeButton={false} render={<Link href={pageHref(currentPage - 1)}>이전</Link>}
             />
             <span className="text-sm text-muted-foreground">
               {currentPage} / {lastPage}
@@ -83,7 +83,7 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
               variant="outline"
               size="sm"
               disabled={currentPage >= lastPage}
-              render={<Link href={pageHref(currentPage + 1)}>다음</Link>}
+              nativeButton={false} render={<Link href={pageHref(currentPage + 1)}>다음</Link>}
             />
           </div>
         )}

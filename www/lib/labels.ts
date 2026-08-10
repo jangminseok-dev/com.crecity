@@ -8,6 +8,12 @@ export const PLATFORM_LABELS: Record<CreatorPackage["platform"], string> = {
   UGC: "UGC",
 };
 
+export const PROFILE_STATUS_LABELS: Record<string, string> = {
+  PENDING: "심사 대기",
+  APPROVED: "승인됨",
+  REJECTED: "반려됨",
+};
+
 const krwFormatter = new Intl.NumberFormat("ko-KR");
 
 export function formatKrw(amount: number): string {
