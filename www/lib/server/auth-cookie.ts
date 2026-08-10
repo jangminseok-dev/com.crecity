@@ -3,8 +3,7 @@ import "server-only";
 
 import type { NextResponse } from "next/server";
 
-// next.config.ts rewrite와 같은 기준 — Route Handler는 서버에서 백엔드를 직접 부른다.
-export const BACKEND_API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+export { BACKEND_API_BASE } from "@/lib/server/backend-api";
 
 export const REFRESH_COOKIE = "crecity_refresh";
 
