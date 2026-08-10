@@ -1,0 +1,36 @@
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, Integer, Text, UniqueConstraint, func
+from sqlalchemy.orm import Mapped, mapped_column
+
+from core.database import Base
+
+
+class ConversationOrm(Base):
+    """대화방 — 브랜드↔크리에이터 쌍당 1개. user id들은 auth 논리 참조(DB FK 없음)."""
+
+    __tablename__ = "conversations"
+    __table_args__ = (
+        UniqueConstraint("brand_user_id", "creator_user_id", name="uq_conversation_pair"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    brand_user_id: Mapped[int] = mapped_column(Integer, index=True)
+    creator_user_id: Mapped[int] = mapped_column(Integer, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class MessageOrm(Base):
+    """메시지 — conversations에 종속(같은 앱 내부 FK), append-only(분쟁 근거)."""
+
+    __tablename__ = "messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id"), index=True)
+    sender_user_id: Mapped[int] = mapped_column(Integer)
+    body: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )

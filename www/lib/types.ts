@@ -66,6 +66,24 @@ export type CampaignApplication = {
   created_at: string | null;
 };
 
+export type ChatConversation = {
+  id: number;
+  counterpart_name: string;
+  counterpart_slug: string | null;
+  last_message: string | null;
+  last_message_at: string | null;
+  created_at: string | null;
+};
+
+export type ChatMessage = {
+  id: number;
+  conversation_id: number;
+  sender_user_id: number;
+  body: string;
+  is_mine: boolean;
+  created_at: string | null;
+};
+
 export type Balance = {
   user_id: number;
   balance_krw: number;

@@ -49,6 +49,16 @@ from creator.adapter.outbound.hub.creator_ref_gateway import CreatorRefGateway
 from hub.dependencies.creator_ref_provider import register_creator_ref_port
 from hub.dependencies.order_participants_provider import register_order_participants_port
 from order.adapter.outbound.hub.order_participants_gateway import OrderParticipantsGateway
+from auth.adapter.outbound.hub.user_directory_gateway import UserDirectoryGateway
+from chat.adapter.inbound.api.v1.conversation_listing_router import (
+    conversation_listing_router,
+)
+from chat.adapter.inbound.api.v1.conversation_opening_router import (
+    conversation_opening_router,
+)
+from chat.adapter.inbound.api.v1.courier_router import courier_router
+from chat.adapter.inbound.api.v1.messaging_router import messaging_router
+from hub.dependencies.user_directory_provider import register_user_directory_port
 from campaign.adapter.inbound.api.v1.campaign_application_router import (
     campaign_application_router,
 )
@@ -66,7 +76,8 @@ register_package_summary_port(CreatorPackageSummaryGateway())  # creator → 패
 register_profile_review_port(CreatorProfileReviewGateway())  # creator → 프로필 심사
 register_order_placement_port(PaidOrderPlacementGateway())  # order → 결제 완료 주문 생성
 register_order_participants_port(OrderParticipantsGateway())  # order → 주문 당사자(리뷰 자격)
-register_creator_ref_port(CreatorRefGateway())  # creator → 크리에이터 참조(리뷰 조회)
+register_creator_ref_port(CreatorRefGateway())  # creator → 크리에이터 참조(리뷰·캠페인·채팅)
+register_user_directory_port(UserDirectoryGateway())  # auth → 회원 디렉토리(채팅 상대 표시)
 
 
 @asynccontextmanager
@@ -107,6 +118,10 @@ app.include_router(herald_router)
 app.include_router(campaign_posting_router)
 app.include_router(campaign_listing_router)
 app.include_router(campaign_application_router)
+app.include_router(courier_router)
+app.include_router(conversation_opening_router)
+app.include_router(conversation_listing_router)
+app.include_router(messaging_router)
 
 
 @app.get("/health")

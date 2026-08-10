@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import ContactCreatorButton from "@/components/contact-creator-button";
 import CreatorReviews from "@/components/creator-reviews";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -56,6 +57,7 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
             <p className="mt-1 text-sm text-muted-foreground">📍 {profile.location}</p>
           )}
         </div>
+        <ContactCreatorButton slug={profile.slug} />
       </section>
 
       <Separator className="my-8" />

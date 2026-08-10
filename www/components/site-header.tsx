@@ -33,6 +33,12 @@ export default function SiteHeader() {
                 nativeButton={false}
                 render={<Link href="/campaigns">캠페인</Link>}
               />
+              <Button
+                variant="ghost"
+                size="sm"
+                nativeButton={false}
+                render={<Link href="/chat">메시지</Link>}
+              />
               {user.permissions.includes("profile.review") && (
                 <Button
                   variant="ghost"
