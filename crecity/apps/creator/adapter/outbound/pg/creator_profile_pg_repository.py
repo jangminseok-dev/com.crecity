@@ -73,10 +73,17 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         category: str | None,
         limit: int,
         offset: int,
+        q: str | None = None,
     ) -> list[CreatorProfile]:
         stmt = select(CreatorProfileOrm).where(CreatorProfileOrm.status == status.value)
         if category is not None:
             stmt = stmt.where(CreatorProfileOrm.primary_category == category)
+        if q:
+            pattern = f"%{q}%"
+            stmt = stmt.where(
+                CreatorProfileOrm.name.ilike(pattern)
+                | CreatorProfileOrm.tagline.ilike(pattern)
+            )
         stmt = (
             stmt.order_by(CreatorProfileOrm.created_at.desc(), CreatorProfileOrm.id.desc())
             .limit(limit)
@@ -84,6 +91,15 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         )
         result = await self._session.execute(stmt)
         return [CreatorProfileMapper.to_entity(orm) for orm in result.scalars()]
+
+    async def list_categories(self, status: ProfileStatus) -> list[str]:
+        result = await self._session.execute(
+            select(CreatorProfileOrm.primary_category)
+            .where(CreatorProfileOrm.status == status.value)
+            .distinct()
+            .order_by(CreatorProfileOrm.primary_category)
+        )
+        return list(result.scalars())
 
     async def update_status(
         self, profile_id: int, status: ProfileStatus
@@ -98,7 +114,34 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         await self._session.commit()
         return CreatorProfileMapper.to_entity(orm) if orm is not None else None
 
-    async def count_by_status(self, status: ProfileStatus, category: str | None) -> int:
+    async def update_profile(
+        self,
+        user_id: int,
+        name: str,
+        tagline: str,
+        bio: str,
+        location: str | None,
+        primary_category: str,
+    ) -> CreatorProfile | None:
+        result = await self._session.execute(
+            update(CreatorProfileOrm)
+            .where(CreatorProfileOrm.user_id == user_id)
+            .values(
+                name=name,
+                tagline=tagline,
+                bio=bio,
+                location=location,
+                primary_category=primary_category,
+            )
+            .returning(CreatorProfileOrm)
+        )
+        orm = result.scalar_one_or_none()
+        await self._session.commit()
+        return CreatorProfileMapper.to_entity(orm) if orm is not None else None
+
+    async def count_by_status(
+        self, status: ProfileStatus, category: str | None, q: str | None = None
+    ) -> int:
         stmt = (
             select(func.count())
             .select_from(CreatorProfileOrm)
@@ -106,5 +149,11 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         )
         if category is not None:
             stmt = stmt.where(CreatorProfileOrm.primary_category == category)
+        if q:
+            pattern = f"%{q}%"
+            stmt = stmt.where(
+                CreatorProfileOrm.name.ilike(pattern)
+                | CreatorProfileOrm.tagline.ilike(pattern)
+            )
         result = await self._session.execute(stmt)
         return int(result.scalar_one())

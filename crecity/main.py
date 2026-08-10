@@ -24,6 +24,7 @@ from creator.adapter.inbound.api.v1.profile_registration_router import (
     profile_registration_router,
 )
 from creator.adapter.inbound.api.v1.profile_router import profile_router
+from creator.adapter.inbound.api.v1.profile_update_router import profile_update_router
 from auth.dependencies.access_token_verifier_provider import build_access_token_verifier
 from creator.adapter.outbound.hub.package_summary_gateway import CreatorPackageSummaryGateway
 from creator.adapter.outbound.hub.profile_review_gateway import CreatorProfileReviewGateway
@@ -72,6 +73,7 @@ app.include_router(profile_router)
 app.include_router(profile_registration_router)
 app.include_router(profile_listing_router)
 app.include_router(my_profile_lookup_router)
+app.include_router(profile_update_router)
 app.include_router(profile_lookup_router)
 app.include_router(package_management_router)
 app.include_router(bookkeeper_router)

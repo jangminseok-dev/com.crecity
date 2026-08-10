@@ -18,15 +18,18 @@ class _StubRepository:
     async def exists_by_slug(self, slug):
         raise NotImplementedError
 
-    async def list_by_status(self, status, category, limit, offset):
+    async def list_by_status(self, status, category, limit, offset, q=None):
         self.list_calls.append(
-            {"status": status, "category": category, "limit": limit, "offset": offset}
+            {"status": status, "category": category, "limit": limit, "offset": offset, "q": q}
         )
         return self.profiles
 
-    async def count_by_status(self, status, category):
-        self.count_calls.append({"status": status, "category": category})
+    async def count_by_status(self, status, category, q=None):
+        self.count_calls.append({"status": status, "category": category, "q": q})
         return len(self.profiles)
+
+    async def list_categories(self, status):
+        return sorted({p.primary_category for p in self.profiles})
 
 
 def _profile(id=1, slug="kim-beauty", category="뷰티"):
@@ -46,12 +49,12 @@ async def test_승인된_프로필만_조회하도록_위임한다():
     repository = _StubRepository(profiles=[_profile()])
     interactor = ProfileListingInteractor(repository)
     result = await interactor.list_profiles(
-        ProfileListingQuery(category=None, limit=20, offset=0)
+        ProfileListingQuery(category=None, q=None, limit=20, offset=0)
     )
     assert repository.list_calls == [
-        {"status": ProfileStatus.APPROVED, "category": None, "limit": 20, "offset": 0}
+        {"status": ProfileStatus.APPROVED, "category": None, "limit": 20, "offset": 0, "q": None}
     ]
-    assert repository.count_calls == [{"status": ProfileStatus.APPROVED, "category": None}]
+    assert repository.count_calls == [{"status": ProfileStatus.APPROVED, "category": None, "q": None}]
     assert len(result.items) == 1
     assert result.items[0].slug == "kim-beauty"
     assert result.total == 1
@@ -60,7 +63,7 @@ async def test_승인된_프로필만_조회하도록_위임한다():
 async def test_카테고리_필터를_그대로_전달한다():
     repository = _StubRepository(profiles=[_profile(category="뷰티")])
     interactor = ProfileListingInteractor(repository)
-    await interactor.list_profiles(ProfileListingQuery(category="뷰티", limit=10, offset=5))
+    await interactor.list_profiles(ProfileListingQuery(category="뷰티", q=None, limit=10, offset=5))
     assert repository.list_calls[0]["category"] == "뷰티"
     assert repository.list_calls[0]["limit"] == 10
     assert repository.list_calls[0]["offset"] == 5
@@ -70,7 +73,7 @@ async def test_카테고리_필터를_그대로_전달한다():
 async def test_결과가_없으면_빈_목록과_total_0을_반환한다():
     interactor = ProfileListingInteractor(_StubRepository(profiles=[]))
     result = await interactor.list_profiles(
-        ProfileListingQuery(category=None, limit=20, offset=0)
+        ProfileListingQuery(category=None, q=None, limit=20, offset=0)
     )
     assert result.items == []
     assert result.total == 0
@@ -79,10 +82,24 @@ async def test_결과가_없으면_빈_목록과_total_0을_반환한다():
 async def test_목록_항목은_bio_없이_카드_필드만_담는다():
     interactor = ProfileListingInteractor(_StubRepository(profiles=[_profile()]))
     result = await interactor.list_profiles(
-        ProfileListingQuery(category=None, limit=20, offset=0)
+        ProfileListingQuery(category=None, q=None, limit=20, offset=0)
     )
     item = result.items[0]
     assert item.name == "김뷰티"
     assert item.tagline == "20대 스킨케어·K뷰티 리뷰"
     assert item.primary_category == "뷰티"
     assert not hasattr(item, "bio")
+
+
+async def test_키워드는_그대로_리포지토리에_전달된다():
+    repository = _StubRepository(profiles=[_profile()])
+    interactor = ProfileListingInteractor(repository)
+    await interactor.list_profiles(ProfileListingQuery(category=None, q="뷰티", limit=20, offset=0))
+    assert repository.list_calls[0]["q"] == "뷰티"
+    assert repository.count_calls[0]["q"] == "뷰티"
+
+
+async def test_카테고리_목록은_승인_프로필_기준_중복_제거():
+    repository = _StubRepository(profiles=[_profile(id=1), _profile(id=2, slug="b", category="뷰티")])
+    interactor = ProfileListingInteractor(repository)
+    assert await interactor.list_categories() == ["뷰티"]

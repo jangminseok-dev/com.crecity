@@ -42,16 +42,37 @@ class CreatorProfileRepository(ABC):
         category: str | None,
         limit: int,
         offset: int,
+        q: str | None = None,
     ) -> list[CreatorProfile]:
-        """상태로 필터한 프로필을 최신 등록순으로 조회한다."""
+        """상태로 필터한 프로필을 최신 등록순으로 조회한다(q는 이름·한 줄 소개 부분 일치)."""
         ...
 
     @abstractmethod
-    async def count_by_status(self, status: ProfileStatus, category: str | None) -> int: ...
+    async def count_by_status(
+        self, status: ProfileStatus, category: str | None, q: str | None = None
+    ) -> int: ...
+
+    @abstractmethod
+    async def list_categories(self, status: ProfileStatus) -> list[str]:
+        """상태로 필터한 카테고리 목록(중복 제거, 가나다순)."""
+        ...
 
     @abstractmethod
     async def update_status(
         self, profile_id: int, status: ProfileStatus
     ) -> CreatorProfile | None:
         """심사 상태 전이(허브 심사 계약용) — 대상 없으면 None."""
+        ...
+
+    @abstractmethod
+    async def update_profile(
+        self,
+        user_id: int,
+        name: str,
+        tagline: str,
+        bio: str,
+        location: str | None,
+        primary_category: str,
+    ) -> CreatorProfile | None:
+        """소유 계정 기준 내용 수정(슬러그·상태 불변) — 프로필 없으면 None."""
         ...

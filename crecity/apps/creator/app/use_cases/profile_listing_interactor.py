@@ -21,9 +21,10 @@ class ProfileListingInteractor(ProfileListingUseCase):
             category=query.category,
             limit=query.limit,
             offset=query.offset,
+            q=query.q,
         )
         total = await self._repository.count_by_status(
-            status=ProfileStatus.APPROVED, category=query.category
+            status=ProfileStatus.APPROVED, category=query.category, q=query.q
         )
         return ProfileListingResult(
             items=[
@@ -40,3 +41,6 @@ class ProfileListingInteractor(ProfileListingUseCase):
             ],
             total=total,
         )
+
+    async def list_categories(self) -> list[str]:
+        return await self._repository.list_categories(status=ProfileStatus.APPROVED)

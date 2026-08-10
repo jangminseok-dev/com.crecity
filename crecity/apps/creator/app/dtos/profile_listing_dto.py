@@ -6,6 +6,7 @@ from datetime import datetime
 class ProfileListingQuery:
 
     category: str | None
+    q: str | None  # 키워드 — 이름·한 줄 소개 부분 일치
     limit: int
     offset: int
 
