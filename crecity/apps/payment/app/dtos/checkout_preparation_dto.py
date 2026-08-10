@@ -11,6 +11,15 @@ class CheckoutCommand:
 
 
 @dataclass(frozen=True)
+class OfferCheckoutCommand:
+
+    offer_id: int
+    requirements: str
+    brand_user_id: int
+    account_type: str  # BRAND만 결제 가능
+
+
+@dataclass(frozen=True)
 class CheckoutResult:
     """프론트 결제창(SDK) 호출 파라미터 — 금액은 서버 확정값이다."""
 

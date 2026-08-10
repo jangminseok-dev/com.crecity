@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
+import OfferPanel from "@/components/offer-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +15,7 @@ import type { ChatConversation, ChatMessage } from "@/lib/types";
 
 export default function ChatRoomPage() {
   const { id } = useParams<{ id: string }>();
-  const status = useAuthStore((s) => s.status);
+  const { status, user } = useAuthStore();
   const queryClient = useQueryClient();
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +74,10 @@ export default function ChatRoomPage() {
           </Link>
         )}
       </div>
+
+      {status === "authenticated" && (
+        <OfferPanel conversationId={id} isCreator={user?.account_type === "CREATOR"} />
+      )}
 
       <div className="flex-1 space-y-2 overflow-y-auto py-4">
         {isPending ? (

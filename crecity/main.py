@@ -35,6 +35,7 @@ from creator.adapter.outbound.hub.package_summary_gateway import CreatorPackageS
 from creator.adapter.outbound.hub.profile_review_gateway import CreatorProfileReviewGateway
 from hub.adapter.inbound.api.v1.dispatcher_router import dispatcher_router
 from hub.dependencies.current_user_provider import register_access_token_verifier
+from hub.dependencies.custom_offer_provider import register_custom_offer_port
 from hub.dependencies.package_summary_provider import register_package_summary_port
 from hub.dependencies.profile_review_provider import register_profile_review_port
 from order.adapter.inbound.api.v1.balance_lookup_router import balance_lookup_router
@@ -62,6 +63,8 @@ from chat.adapter.inbound.api.v1.conversation_opening_router import (
     conversation_opening_router,
 )
 from chat.adapter.inbound.api.v1.courier_router import courier_router
+from chat.adapter.inbound.api.v1.offer_management_router import offer_management_router
+from chat.adapter.outbound.hub.custom_offer_gateway import CustomOfferGateway
 from chat.adapter.inbound.api.v1.messaging_router import messaging_router
 from hub.dependencies.user_directory_provider import register_user_directory_port
 from campaign.adapter.inbound.api.v1.campaign_application_router import (
@@ -81,7 +84,8 @@ from review.adapter.inbound.api.v1.review_submission_router import review_submis
 # 스타 토폴로지 조립 지점 — 스포크 구현체를 허브 계약에 등록한다
 # (스포크끼리는 허브 포트로만 협력한다).
 register_access_token_verifier(build_access_token_verifier())  # auth → 현재 사용자
-register_package_summary_port(CreatorPackageSummaryGateway())  # creator → 패키지 요약
+register_package_summary_port(CreatorPackageSummaryGateway())
+register_custom_offer_port(CustomOfferGateway())  # creator → 패키지 요약
 register_profile_review_port(CreatorProfileReviewGateway())  # creator → 프로필 심사
 register_order_placement_port(PaidOrderPlacementGateway())  # order → 결제 완료 주문 생성
 register_order_participants_port(OrderParticipantsGateway())  # order → 주문 당사자(리뷰 자격)
@@ -136,6 +140,7 @@ app.include_router(courier_router)
 app.include_router(conversation_opening_router)
 app.include_router(conversation_listing_router)
 app.include_router(messaging_router)
+app.include_router(offer_management_router)
 app.include_router(bellman_router)
 app.include_router(notification_listing_router)
 

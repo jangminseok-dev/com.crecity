@@ -27,11 +27,12 @@ class PaymentIntent:
 
     id: int
     pg_order_id: str
-    package_id: int
+    package_id: int | None  # 커스텀 오퍼 결제는 None
     brand_user_id: int
     requirements: str  # 승인 후 주문 생성에 쓸 페이로드 보관
     amount_krw: int  # 결제 총액 스냅샷 — confirm 시 반드시 대조
     status: PaymentIntentStatus
+    offer_id: int | None = None  # 커스텀 오퍼(chat) 논리 참조 — 패키지 결제는 None
     payment_key: str | None = None  # PG 결제 키(승인 후)
     order_id: int | None = None  # 생성된 주문(승인 후)
     failure_reason: str | None = None

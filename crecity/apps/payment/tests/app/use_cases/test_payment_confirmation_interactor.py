@@ -139,3 +139,48 @@ async def test_없는_결제면_PaymentIntentNotFoundError():
     )
     with pytest.raises(PaymentIntentNotFoundError):
         await interactor.confirm(_command())
+
+
+# ── 커스텀 오퍼 결제 승인 ─────────────────────────────────────────
+
+
+class _StubCustomOfferPortForConfirm:
+    def __init__(self):
+        self.paid = []  # (offer_id, order_id)
+
+    async def get_payable_offer(self, offer_id):
+        raise NotImplementedError
+
+    async def mark_paid(self, offer_id, order_id):
+        self.paid.append((offer_id, order_id))
+
+
+class _StubOrderPlacementPortWithCustom(_StubOrderPlacementPort):
+    def __init__(self, placed):
+        super().__init__(placed)
+        self.custom_calls = []
+
+    async def place_paid_custom_order(
+        self, offer_id, requirements, brand_user_id, expected_brand_total_krw
+    ):
+        self.custom_calls.append((offer_id, expected_brand_total_krw))
+        return self.placed
+
+
+async def test_오퍼_결제는_커스텀_주문으로_생성되고_오퍼가_PAID_처리된다():
+    intent = PaymentIntent(
+        id=1, pg_order_id="crecity-abc", package_id=None, brand_user_id=BRAND,
+        requirements="협의 내용대로", amount_krw=495000,
+        status=PaymentIntentStatus.READY, offer_id=5,
+    )
+    intents = _StubIntentRepository(intent)
+    orders = _StubOrderPlacementPortWithCustom(PlacedOrder(id=9, brand_total_krw=495000))
+    offers = _StubCustomOfferPortForConfirm()
+    result = await PaymentConfirmationInteractor(
+        intents, _StubGateway(), orders, offers=offers
+    ).confirm(_command(amount_krw=495000))
+
+    assert result.order_id == 9
+    assert orders.custom_calls == [(5, 495000)]
+    assert orders.calls == []  # 패키지 경로는 타지 않는다
+    assert offers.paid == [(5, 9)]

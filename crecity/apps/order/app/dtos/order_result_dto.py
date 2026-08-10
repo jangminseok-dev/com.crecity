@@ -11,7 +11,7 @@ class OrderResult:
     """주문 응답 DTO — placement·progress·lookup 슬라이스가 공유한다(도메인어 명명 예외)."""
 
     id: int
-    package_id: int
+    package_id: int | None
     package_title: str
     brand_user_id: int
     creator_user_id: int

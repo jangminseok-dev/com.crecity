@@ -15,6 +15,7 @@
 | 주문 당사자 조회 | `OrderParticipantsPort` 포트 + `OrderParticipants` DTO(`dependencies/order_participants_provider.py`) | order(`OrderParticipantsGateway`) | review 리뷰 자격 검증(완료 주문·브랜드 본인) |
 | 크리에이터 참조 조회 | `CreatorRefPort` 포트 + `CreatorRef` DTO(`dependencies/creator_ref_provider.py`) | creator(`CreatorRefGateway`) | review 공개 조회(슬러그 → 계정) · campaign 지원자 표시 · chat 상대 표시 — §5 "크리에이터 요약 조회" 실현 |
 | 회원 디렉토리 조회 | `UserDirectoryPort` 포트 + `UserRef` DTO(`dependencies/user_directory_provider.py`) | auth(`UserDirectoryGateway`) | chat 상대(브랜드) 이름 표시 — §5 "회원 디렉토리 조회" 실현 |
+| 커스텀 오퍼 조회·확정 | `CustomOfferPort` 포트 + `CustomOfferSummary` DTO(`dependencies/custom_offer_provider.py`) | chat(`CustomOfferGateway`) — main.py가 `register_custom_offer_port`로 조립 | payment 오퍼 결제 준비·PAID 처리 · order 커스텀 주문 생성(가격·당사자 해석) |
 | Outbox 이벤트 중계 | `OutboxEvent` DTO(`app/dtos/outbox_event_dto.py`, `"<도메인>.<사건>"` 규약) + `outbox_events` 테이블 + `enqueue_events`/`fetch_unpublished`/`mark_published`(`adapter/outbound/pg/outbox_pg_store.py` — 전부 무커밋, 호출자 트랜잭션 참여) | (허브 자체 소유 — 조립 불필요) | 발행: order 리포지토리·creator 심사 게이트웨이 / 소비: notification 워커(BOUNDARIES §1) |
 
 - 조립 규칙: 허브는 스포크를 모르므로 구현체 등록은 항상 main.py(조립 루트) 몫이다.

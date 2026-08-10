@@ -15,16 +15,18 @@ class PaymentIntentPgRepository(PaymentIntentRepository):
     async def create(
         self,
         pg_order_id: str,
-        package_id: int,
+        package_id: int | None,
         brand_user_id: int,
         requirements: str,
         amount_krw: int,
+        offer_id: int | None = None,
     ) -> PaymentIntent:
         result = await self._session.execute(
             insert(PaymentIntentOrm)
             .values(
                 pg_order_id=pg_order_id,
                 package_id=package_id,
+                offer_id=offer_id,
                 brand_user_id=brand_user_id,
                 requirements=requirements,
                 amount_krw=amount_krw,

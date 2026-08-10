@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { PLATFORM_LABELS, formatKrw } from "@/lib/labels";
-import type { CreatorPackage } from "@/lib/types";
+import type { CreatorPackage, CustomOffer } from "@/lib/types";
 
 const orderSchema = z.object({
   requirements: z.string().min(10, "요구사항을 10자 이상 구체적으로 적어 주세요."),
@@ -34,6 +34,10 @@ function OrderNewContent() {
   const { status, user } = useAuthStore();
   const slug = searchParams.get("slug");
   const packageId = Number(searchParams.get("package"));
+  // 커스텀 오퍼 결제 모드 — 채팅에서 "결제하기"로 진입
+  const offerId = Number(searchParams.get("offer"));
+  const conversationId = searchParams.get("conversation");
+  const isOfferMode = Boolean(offerId && conversationId);
   // 단일 객체 상태 — 제출 진행·오류 (입력값은 FormData 패턴)
   const [form, setForm] = useState<{ submitting: boolean; error: string | null }>({
     submitting: false,
@@ -43,11 +47,18 @@ function OrderNewContent() {
   const { data: packages, isPending } = useQuery({
     queryKey: ["packages", slug],
     queryFn: () => apiFetch<CreatorPackage[]>(`/creator/profiles/${slug}/packages`),
-    enabled: Boolean(slug),
+    enabled: Boolean(slug) && !isOfferMode,
   });
   const pkg = packages?.find((p) => p.id === packageId);
 
-  if (!slug || !packageId) {
+  const { data: offers, isPending: offersPending } = useQuery({
+    queryKey: ["offers", conversationId],
+    queryFn: () => apiFetch<CustomOffer[]>(`/chat/conversations/${conversationId}/offers`),
+    enabled: isOfferMode && status === "authenticated",
+  });
+  const offer = offers?.find((o) => o.id === offerId);
+
+  if (!isOfferMode && (!slug || !packageId)) {
     return <p className="py-20 text-center text-muted-foreground">잘못된 접근입니다.</p>;
   }
   if (status === "guest") {
@@ -65,8 +76,17 @@ function OrderNewContent() {
       </p>
     );
   }
-  if (status === "loading" || isPending) return <Skeleton className="mt-10 h-64 w-full" />;
-  if (!pkg) {
+  if (status === "loading" || (isOfferMode ? offersPending : isPending)) {
+    return <Skeleton className="mt-10 h-64 w-full" />;
+  }
+  if (isOfferMode) {
+    if (!offer) {
+      return <p className="py-20 text-center text-muted-foreground">오퍼를 찾을 수 없습니다.</p>;
+    }
+    if (offer.status !== "PENDING") {
+      return <p className="py-20 text-center text-muted-foreground">이미 결제된 오퍼입니다.</p>;
+    }
+  } else if (!pkg) {
     return <p className="py-20 text-center text-muted-foreground">패키지를 찾을 수 없습니다.</p>;
   }
 
@@ -80,10 +100,15 @@ function OrderNewContent() {
     setForm({ submitting: true, error: null });
     try {
       // 1) 결제 준비 — 서버가 금액을 확정하고 결제창 파라미터를 내려준다
-      const checkout = await apiFetch<CheckoutResponse>("/payment/checkouts", {
-        method: "POST",
-        body: JSON.stringify({ package_id: pkg.id, requirements: parsed.data.requirements }),
-      });
+      const checkout = isOfferMode
+        ? await apiFetch<CheckoutResponse>("/payment/checkouts/offer", {
+            method: "POST",
+            body: JSON.stringify({ offer_id: offerId, requirements: parsed.data.requirements }),
+          })
+        : await apiFetch<CheckoutResponse>("/payment/checkouts", {
+            method: "POST",
+            body: JSON.stringify({ package_id: pkg!.id, requirements: parsed.data.requirements }),
+          });
       if (!checkout.client_key) {
         setForm({ submitting: false, error: "결제 설정이 아직 완료되지 않았습니다(토스 키 미설정)." });
         return;
@@ -117,14 +142,26 @@ function OrderNewContent() {
       <h1 className="text-2xl font-bold">주문서 작성</h1>
       <Card className="mt-6">
         <CardContent className="flex items-center justify-between gap-4 p-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{PLATFORM_LABELS[pkg.platform]}</Badge>
-              <p className="font-medium">{pkg.title}</p>
-            </div>
-            <p className="mt-1 text-sm text-muted-foreground">{pkg.description}</p>
-          </div>
-          <p className="shrink-0 text-lg font-bold">{formatKrw(pkg.price_krw)}</p>
+          {isOfferMode ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">커스텀 오퍼</Badge>
+                <p className="font-medium">{offer!.title}</p>
+              </div>
+              <p className="shrink-0 text-lg font-bold">{formatKrw(offer!.price_krw)}</p>
+            </>
+          ) : (
+            <>
+              <div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">{PLATFORM_LABELS[pkg!.platform]}</Badge>
+                  <p className="font-medium">{pkg!.title}</p>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">{pkg!.description}</p>
+              </div>
+              <p className="shrink-0 text-lg font-bold">{formatKrw(pkg!.price_krw)}</p>
+            </>
+          )}
         </CardContent>
       </Card>
 

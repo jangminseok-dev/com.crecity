@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from payment.app.dtos.checkout_preparation_dto import CheckoutCommand, CheckoutResult
+from payment.app.dtos.checkout_preparation_dto import (
+    CheckoutCommand,
+    CheckoutResult,
+    OfferCheckoutCommand,
+)
 
 
 class CheckoutPreparationUseCase(ABC):
@@ -18,5 +22,15 @@ class CheckoutPreparationUseCase(ABC):
         Raises:
             NotBrandAccountError: 브랜드 계정이 아님.
             PackageNotOrderableError: 패키지가 없거나 주문 불가.
+        """
+        ...
+
+    @abstractmethod
+    async def prepare_offer(self, command: OfferCheckoutCommand) -> CheckoutResult:
+        """커스텀 오퍼 결제 준비 — 오퍼 수신 브랜드만 가능.
+
+        Raises:
+            NotBrandAccountError: 브랜드 계정이 아니거나 오퍼 수신 브랜드가 아님.
+            PackageNotOrderableError: 오퍼가 없거나 이미 결제됨.
         """
         ...

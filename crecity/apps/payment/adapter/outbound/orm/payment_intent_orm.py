@@ -17,7 +17,8 @@ class PaymentIntentOrm(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     # 토스 orderId로 쓰는 우리 쪽 고유 문자열
     pg_order_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
-    package_id: Mapped[int] = mapped_column(Integer)
+    package_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 커스텀 오퍼 결제는 NULL
+    offer_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 커스텀 오퍼(chat) 논리 참조
     brand_user_id: Mapped[int] = mapped_column(Integer, index=True)
     requirements: Mapped[str] = mapped_column(Text)
     amount_krw: Mapped[int] = mapped_column(BigInteger)

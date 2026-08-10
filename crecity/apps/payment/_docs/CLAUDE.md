@@ -10,7 +10,8 @@ PG는 **토스페이먼츠**(§7-3 확정) — `PaymentGateway` 포트 뒤에 �
 |---|---|---|
 | paymaster (myself) | `GET /payment/myself` | 자기소개 |
 | checkout_preparation | `POST /payment/checkouts` | 결제 준비 — **브랜드만(403)**. 서버가 결제 총액(가격+수수료) 확정·intent 기록, 결제창 파라미터(pg_order_id·amount·client_key) 응답 |
-| payment_confirmation | `POST /payment/confirm` | 토스 승인 → 허브 `OrderPlacementPort`로 주문 생성. 금액 대조 필수(불일치 400), 승인 후 주문 생성 실패 시 **PG 취소 보정**(§3) 후 502 |
+| (checkout_preparation) | `POST /payment/checkouts/offer` | 커스텀 오퍼 결제 준비 — **오퍼 수신 브랜드만(403)**, 결제 불가 오퍼 404. 허브 `CustomOfferPort`로 가격·당사자 해석 |
+| payment_confirmation | `POST /payment/confirm` | 토스 승인 → 허브 `OrderPlacementPort`로 주문 생성(intent.offer_id 있으면 커스텀 주문 + 오퍼 PAID 처리). 금액 대조 필수(불일치 400), 승인 후 주문 생성 실패 시 **PG 취소 보정**(§3) 후 502 |
 
 ## 결제 흐름 (§3)
 

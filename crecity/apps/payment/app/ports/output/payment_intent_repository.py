@@ -12,10 +12,11 @@ class PaymentIntentRepository(ABC):
     async def create(
         self,
         pg_order_id: str,
-        package_id: int,
+        package_id: int | None,
         brand_user_id: int,
         requirements: str,
         amount_krw: int,
+        offer_id: int | None = None,
     ) -> PaymentIntent: ...
 
     @abstractmethod

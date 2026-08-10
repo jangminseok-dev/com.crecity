@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from order.app.dtos.order_placement_dto import OrderPlacementCommand
+from order.app.dtos.order_placement_dto import (
+    CustomOrderPlacementCommand,
+    OrderPlacementCommand,
+)
 from order.app.dtos.order_result_dto import OrderResult
 
 
@@ -20,5 +23,15 @@ class OrderPlacementUseCase(ABC):
         Raises:
             NotBrandAccountError: 브랜드 계정이 아님.
             PackageNotOrderableError: 패키지가 없거나 주문 불가.
+        """
+        ...
+
+    @abstractmethod
+    async def place_custom(self, command: CustomOrderPlacementCommand) -> OrderResult:
+        """커스텀 오퍼 주문 생성 — 가격·당사자는 허브 CustomOfferPort로 해석한다.
+
+        Raises:
+            NotBrandAccountError: 브랜드 계정이 아니거나 오퍼 수신 브랜드가 아님.
+            PackageNotOrderableError: 오퍼가 없거나 이미 결제됨.
         """
         ...

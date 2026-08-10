@@ -41,7 +41,7 @@ class Order:
     """
 
     id: int
-    package_id: int  # creator 패키지 논리 참조(스포크 경계 — DB FK 없음)
+    package_id: int | None  # creator 패키지 논리 참조(DB FK 없음) — 커스텀 오퍼 주문은 None
     package_title: str  # 표시용 스냅샷(패키지 수정·삭제와 무관하게 주문 이력 보존)
     brand_user_id: int
     creator_user_id: int

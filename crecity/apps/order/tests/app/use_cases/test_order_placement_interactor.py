@@ -104,3 +104,68 @@ async def test_없는_패키지면_PackageNotOrderableError():
 async def test_주문_불가_패키지면_PackageNotOrderableError():
     with pytest.raises(PackageNotOrderableError):
         await _interactor(summary=None).place(_command())
+
+
+# ── 커스텀 오퍼 주문 ─────────────────────────────────────────────
+
+
+class _StubCustomOfferPort:
+    def __init__(self, offer):
+        self.offer = offer
+
+    async def get_payable_offer(self, offer_id):
+        return self.offer if self.offer and self.offer.offer_id == offer_id else None
+
+    async def mark_paid(self, offer_id, order_id):
+        raise NotImplementedError
+
+
+def _offer(offer_id=5, brand_user_id=BRAND, price=450000):
+    from hub.app.dtos.custom_offer_dto import CustomOfferSummary
+
+    return CustomOfferSummary(
+        offer_id=offer_id, title="맞춤 릴스 2건", price_krw=price,
+        brand_user_id=brand_user_id, creator_user_id=CREATOR,
+    )
+
+
+def _custom_interactor(offer, orders=None):
+    return OrderPlacementInteractor(
+        orders=orders if orders is not None else _StubOrderRepository(),
+        packages=_StubPackageSummaryPort(None),
+        brand_fee_percent=10,
+        creator_fee_percent=10,
+        accept_deadline=timedelta(hours=72),
+        offers=_StubCustomOfferPort(offer),
+    )
+
+
+def _custom_command(offer_id=5, brand_user_id=BRAND, account_type="BRAND"):
+    from order.app.dtos.order_placement_dto import CustomOrderPlacementCommand
+
+    return CustomOrderPlacementCommand(
+        offer_id=offer_id, requirements="협의한 내용대로 진행해 주세요.",
+        brand_user_id=brand_user_id, account_type=account_type,
+    )
+
+
+async def test_커스텀_오퍼_주문은_오퍼_스냅샷으로_생성된다():
+    orders = _StubOrderRepository()
+    result = await _custom_interactor(_offer(), orders).place_custom(_custom_command())
+    order, entries, events = orders.created[0]
+    assert order.package_id is None  # 패키지 없는 주문
+    assert order.package_title == "맞춤 릴스 2건"
+    assert order.amount_krw == 450000
+    assert order.creator_user_id == CREATOR
+    assert entries[0].amount_krw == 495000  # 가격 + 브랜드 수수료 10%
+    assert result.status == OrderStatus.PENDING_ACCEPT.value
+
+
+async def test_결제_불가_오퍼는_주문할_수_없다():
+    with pytest.raises(PackageNotOrderableError):
+        await _custom_interactor(None).place_custom(_custom_command())
+
+
+async def test_오퍼_수신_브랜드가_아니면_주문할_수_없다():
+    with pytest.raises(NotBrandAccountError):
+        await _custom_interactor(_offer()).place_custom(_custom_command(brand_user_id=999))

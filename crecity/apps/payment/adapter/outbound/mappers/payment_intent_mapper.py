@@ -11,6 +11,7 @@ class PaymentIntentMapper:
             id=orm.id,
             pg_order_id=orm.pg_order_id,
             package_id=orm.package_id,
+            offer_id=orm.offer_id,
             brand_user_id=orm.brand_user_id,
             requirements=orm.requirements,
             amount_krw=orm.amount_krw,

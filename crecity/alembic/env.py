@@ -39,6 +39,7 @@ import payment.adapter.outbound.orm.payment_intent_orm  # noqa: E402, F401
 import review.adapter.outbound.orm.review_orm  # noqa: E402, F401
 import campaign.adapter.outbound.orm.campaign_orm  # noqa: E402, F401
 import chat.adapter.outbound.orm.conversation_orm  # noqa: E402, F401
+import chat.adapter.outbound.orm.custom_offer_orm  # noqa: E402, F401
 import hub.adapter.outbound.orm.outbox_event_orm  # noqa: E402, F401
 import notification.adapter.outbound.orm.notification_orm  # noqa: E402, F401
 

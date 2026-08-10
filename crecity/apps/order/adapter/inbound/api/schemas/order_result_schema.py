@@ -11,7 +11,7 @@ class OrderResponseSchema(BaseModel):
     """주문 공용 응답 — placement·progress·lookup 라우터가 공유한다(도메인어 명명 예외)."""
 
     id: int
-    package_id: int
+    package_id: int | None
     package_title: str
     brand_user_id: int
     creator_user_id: int

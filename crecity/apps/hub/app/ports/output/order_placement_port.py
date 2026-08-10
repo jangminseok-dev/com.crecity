@@ -23,3 +23,14 @@ class OrderPlacementPort(ABC):
     ) -> PlacedOrder | None:
         """주문 생성 — 패키지 불가·금액 불일치·생성 실패면 None."""
         ...
+
+    @abstractmethod
+    async def place_paid_custom_order(
+        self,
+        offer_id: int,
+        requirements: str,
+        brand_user_id: int,
+        expected_brand_total_krw: int,
+    ) -> PlacedOrder | None:
+        """커스텀 오퍼 주문 생성 — 오퍼 불가·금액 불일치·생성 실패면 None."""
+        ...

@@ -16,7 +16,7 @@ class OrderOrm(Base):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    package_id: Mapped[int] = mapped_column(Integer)
+    package_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 커스텀 오퍼 주문은 NULL
     package_title: Mapped[str] = mapped_column(String(100))
     brand_user_id: Mapped[int] = mapped_column(Integer, index=True)
     creator_user_id: Mapped[int] = mapped_column(Integer, index=True)

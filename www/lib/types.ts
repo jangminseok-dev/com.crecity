@@ -118,3 +118,13 @@ export type PortfolioItem = {
   image_url: string;
   created_at: string | null;
 };
+
+export type CustomOffer = {
+  id: number;
+  conversation_id: number;
+  title: string;
+  price_krw: number;
+  status: "PENDING" | "PAID";
+  order_id: number | null;
+  created_at: string | null;
+};
