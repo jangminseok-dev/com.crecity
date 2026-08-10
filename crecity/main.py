@@ -22,12 +22,20 @@ from creator.adapter.inbound.api.v1.profile_registration_router import (
 )
 from creator.adapter.inbound.api.v1.profile_router import profile_router
 from auth.dependencies.access_token_verifier_provider import build_access_token_verifier
+from creator.adapter.outbound.hub.package_summary_gateway import CreatorPackageSummaryGateway
 from hub.adapter.inbound.api.v1.dispatcher_router import dispatcher_router
 from hub.dependencies.current_user_provider import register_access_token_verifier
+from hub.dependencies.package_summary_provider import register_package_summary_port
+from order.adapter.inbound.api.v1.balance_lookup_router import balance_lookup_router
+from order.adapter.inbound.api.v1.bookkeeper_router import bookkeeper_router
+from order.adapter.inbound.api.v1.order_lookup_router import order_lookup_router
+from order.adapter.inbound.api.v1.order_placement_router import order_placement_router
+from order.adapter.inbound.api.v1.order_progress_router import order_progress_router
 
-# 스타 토폴로지 조립 지점 — auth의 JWT 검증 구현을 허브 계약에 등록한다
-# (creator 등 스포크는 허브 포트로만 '현재 사용자'를 본다).
-register_access_token_verifier(build_access_token_verifier())
+# 스타 토폴로지 조립 지점 — 스포크 구현체를 허브 계약에 등록한다
+# (스포크끼리는 허브 포트로만 협력한다).
+register_access_token_verifier(build_access_token_verifier())  # auth → 현재 사용자
+register_package_summary_port(CreatorPackageSummaryGateway())  # creator → 패키지 요약
 
 
 @asynccontextmanager
@@ -50,6 +58,11 @@ app.include_router(profile_registration_router)
 app.include_router(profile_listing_router)
 app.include_router(profile_lookup_router)
 app.include_router(package_management_router)
+app.include_router(bookkeeper_router)
+app.include_router(order_placement_router)
+app.include_router(order_progress_router)
+app.include_router(order_lookup_router)
+app.include_router(balance_lookup_router)
 
 
 @app.get("/health")

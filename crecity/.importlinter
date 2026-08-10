@@ -16,6 +16,7 @@ root_packages =
     hub
     auth
     creator
+    order
 include_external_packages = True
 
 # -----------------------------------------------------------------------------
@@ -32,6 +33,7 @@ containers =
     hub
     auth
     creator
+    order
 
 # -----------------------------------------------------------------------------
 # 계약 2) 스타 토폴로지 — 스포크는 서로를 import 하지 않는다
@@ -43,6 +45,7 @@ type = independence
 modules =
     auth
     creator
+    order
 
 # -----------------------------------------------------------------------------
 # 계약 2.5) 프레임워크 격리 — app·domain 계층은 웹/DB 프레임워크를 모른다
@@ -59,6 +62,8 @@ source_modules =
     auth.domain
     creator.app
     creator.domain
+    order.app
+    order.domain
 forbidden_modules =
     fastapi
     sqlalchemy
@@ -73,6 +78,7 @@ source_modules =
     hub.domain
     auth.domain
     creator.domain
+    order.domain
 forbidden_modules =
     pydantic
 
@@ -88,3 +94,4 @@ source_modules =
 forbidden_modules =
     auth
     creator
+    order

@@ -25,3 +25,11 @@ GOOGLE_CLIENT_SECRET = _secrets.get("GOOGLE_CLIENT_SECRET")
 # 토큰 수명 — 액세스 30분 / 리프레시 14일(회전식 1회용).
 AUTH_ACCESS_TOKEN_TTL_SECONDS = int(_secrets.get("AUTH_ACCESS_TOKEN_TTL_SECONDS", "1800"))
 AUTH_REFRESH_TOKEN_TTL_SECONDS = int(_secrets.get("AUTH_REFRESH_TOKEN_TTL_SECONDS", "1209600"))
+
+# 주문 수수료율(%) — 하드코딩 금지, 주문 생성 시점에 스냅샷된다(BOUNDARIES §7-4).
+# 초기값 브랜드 10 / 크리에이터 10 — 런칭 전 경쟁사 실사 후 재조정 전제.
+ORDER_BRAND_FEE_PERCENT = int(_secrets.get("ORDER_BRAND_FEE_PERCENT", "10"))
+ORDER_CREATOR_FEE_PERCENT = int(_secrets.get("ORDER_CREATOR_FEE_PERCENT", "10"))
+
+# 응답 마감(시간) — 수락 대기·검토 공통 72h(collabstr §3.8), 만료는 주기 스캔이 전이.
+ORDER_RESPONSE_DEADLINE_HOURS = int(_secrets.get("ORDER_RESPONSE_DEADLINE_HOURS", "72"))

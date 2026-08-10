@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
@@ -42,6 +43,17 @@ async def dispose_engine() -> None:
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    if _session_factory is None:
+        init_engine()
+    if _session_factory is None:
+        raise RuntimeError("DB 엔진이 초기화되지 않았습니다.")
+    async with _session_factory() as session:
+        yield session
+
+
+@asynccontextmanager
+async def session_scope() -> AsyncGenerator[AsyncSession, None]:
+    """FastAPI DI 밖(허브 게이트웨이·스크립트)에서 쓰는 세션 컨텍스트."""
     if _session_factory is None:
         init_engine()
     if _session_factory is None:
