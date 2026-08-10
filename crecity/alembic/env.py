@@ -29,6 +29,7 @@ from core.database import Base  # noqa: E402
 # 새 ORM 파일을 만들면 여기에 import 한 줄을 추가해야 오토젠 대상이 된다.
 import creator.adapter.outbound.orm.creator_profile_orm  # noqa: E402, F401
 import creator.adapter.outbound.orm.creator_package_orm  # noqa: E402, F401
+import creator.adapter.outbound.orm.portfolio_item_orm  # noqa: E402, F401
 import auth.adapter.outbound.orm.user_orm  # noqa: E402, F401
 import auth.adapter.outbound.orm.social_identity_orm  # noqa: E402, F401
 import auth.adapter.outbound.orm.role_orm  # noqa: E402, F401

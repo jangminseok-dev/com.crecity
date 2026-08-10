@@ -38,3 +38,6 @@ ORDER_CREATOR_FEE_PERCENT = int(_secrets.get("ORDER_CREATOR_FEE_PERCENT", "10"))
 
 # 응답 마감(시간) — 수락 대기·검토 공통 72h(collabstr §3.8), 만료는 주기 스캔이 전이.
 ORDER_RESPONSE_DEADLINE_HOURS = int(_secrets.get("ORDER_RESPONSE_DEADLINE_HOURS", "72"))
+
+# 업로드 파일 저장 루트 — 로컬 디스크 시작(오브젝트 스토리지 전환 시 어댑터 교체).
+UPLOAD_DIR = _secrets.get("UPLOAD_DIR", "uploads")

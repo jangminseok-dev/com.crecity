@@ -20,3 +20,11 @@ class DuplicateProfileError(Exception):
 
 class NotProfileOwnerError(Exception):
     """소유자가 아닌 사용자의 쓰기 시도 — 라우터에서 403으로 변환."""
+
+
+class PortfolioItemNotFoundError(Exception):
+    """id에 해당하는 포트폴리오 항목 없음 — 라우터에서 404로 변환."""
+
+
+class PortfolioLimitExceededError(Exception):
+    """프로필당 포트폴리오 상한 초과 — 라우터에서 409로 변환."""

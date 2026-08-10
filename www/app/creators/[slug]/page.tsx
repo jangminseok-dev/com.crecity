@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { PLATFORM_LABELS, formatKrw } from "@/lib/labels";
 import { backendGet } from "@/lib/server/backend-api";
-import type { CreatorPackage, CreatorProfile } from "@/lib/types";
+import type { CreatorPackage, CreatorProfile, PortfolioItem } from "@/lib/types";
 
 type PageParams = Promise<{ slug: string }>;
 
@@ -33,9 +33,10 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
 
 export default async function CreatorProfilePage({ params }: { params: PageParams }) {
   const { slug } = await params;
-  const [profile, packages] = await Promise.all([
+  const [profile, packages, portfolio] = await Promise.all([
     fetchProfile(slug),
     backendGet<CreatorPackage[]>(`/creator/profiles/${encodeURIComponent(slug)}/packages`),
+    backendGet<PortfolioItem[]>(`/creator/profiles/${encodeURIComponent(slug)}/portfolio`),
   ]);
   if (!profile) notFound();
 
@@ -67,6 +68,25 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
         <h2 className="mb-3 text-lg font-semibold">소개</h2>
         <p className="whitespace-pre-line leading-relaxed text-foreground/90">{profile.bio}</p>
       </section>
+
+      {/* 포트폴리오 갤러리 */}
+      {portfolio && portfolio.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-4 text-lg font-semibold">포트폴리오</h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            {portfolio.map((item) => (
+              <div key={item.id} className="aspect-square overflow-hidden rounded-lg border">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/api/backend${item.image_url}`}
+                  alt={`${profile.name} 포트폴리오`}
+                  className="size-full object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 패키지 가격표 */}
       <section className="mt-10">

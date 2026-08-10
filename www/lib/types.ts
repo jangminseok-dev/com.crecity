@@ -112,3 +112,9 @@ export type NotificationsResult = {
   unread_count: number;
   items: NotificationItem[];
 };
+
+export type PortfolioItem = {
+  id: number;
+  image_url: string;
+  created_at: string | null;
+};

@@ -1,5 +1,6 @@
 # ---- 웹 프레임워크 / 서버 ----
 fastapi==0.141.1
+python-multipart==0.0.32  # 파일 업로드(multipart/form-data) 파싱
 uvicorn==0.52.1
 
 # ---- DB / 마이그레이션 ----

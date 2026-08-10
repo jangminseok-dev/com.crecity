@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
 
+import PortfolioManager from "@/components/portfolio-manager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -235,9 +236,14 @@ export default function DashboardProfilePage() {
 
   if (isPending) return <Skeleton className="h-64 w-full" />;
   if (!profile) return <ProfileRegistrationForm />;
-  return editing ? (
-    <ProfileEditForm profile={profile} onDone={() => setEditing(false)} />
-  ) : (
-    <ProfileView profile={profile} onEdit={() => setEditing(true)} />
+  return (
+    <>
+      {editing ? (
+        <ProfileEditForm profile={profile} onDone={() => setEditing(false)} />
+      ) : (
+        <ProfileView profile={profile} onEdit={() => setEditing(true)} />
+      )}
+      <PortfolioManager slug={profile.slug} />
+    </>
   );
 }

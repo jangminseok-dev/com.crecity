@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "apps"))
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from admin.adapter.inbound.api.v1.profile_review_router import profile_review_router
 from admin.adapter.inbound.api.v1.steward_router import steward_router
@@ -13,6 +14,7 @@ from auth.adapter.inbound.api.v1.social_login_router import social_login_router
 from auth.adapter.inbound.api.v1.token_refresh_router import token_refresh_router
 from core.database import dispose_engine, init_engine
 from core.database import ping as database_ping
+from core.config import UPLOAD_DIR
 from core.redis import dispose_redis, init_redis
 from creator.adapter.inbound.api.v1.package_management_router import (
     package_management_router,
@@ -22,6 +24,9 @@ from creator.adapter.inbound.api.v1.profile_listing_router import profile_listin
 from creator.adapter.inbound.api.v1.profile_lookup_router import profile_lookup_router
 from creator.adapter.inbound.api.v1.profile_registration_router import (
     profile_registration_router,
+)
+from creator.adapter.inbound.api.v1.portfolio_management_router import (
+    portfolio_management_router,
 )
 from creator.adapter.inbound.api.v1.profile_router import profile_router
 from creator.adapter.inbound.api.v1.profile_update_router import profile_update_router
@@ -95,6 +100,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="crecity API", lifespan=lifespan)
 
+# 업로드 파일 정적 서빙 — 프론트는 /api/backend/uploads/... 로 접근한다.
+os.makedirs(os.path.join(UPLOAD_DIR, "portfolio"), exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
 app.include_router(dispatcher_router)
 app.include_router(gatekeeper_router)
 app.include_router(social_login_router)
@@ -104,6 +113,7 @@ app.include_router(profile_registration_router)
 app.include_router(profile_listing_router)
 app.include_router(my_profile_lookup_router)
 app.include_router(profile_update_router)
+app.include_router(portfolio_management_router)
 app.include_router(profile_lookup_router)
 app.include_router(package_management_router)
 app.include_router(bookkeeper_router)

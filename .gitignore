@@ -88,3 +88,6 @@ pnpm-debug.log*
 *.tmp
 *.bak
 *.orig
+
+# 업로드 파일(로컬 저장소) — 코드가 아니라 데이터
+crecity/uploads/

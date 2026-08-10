@@ -41,7 +41,10 @@ async function request(path: string, init: RequestInit): Promise<Response> {
   return fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
-      ...(init.body ? { "Content-Type": "application/json" } : {}),
+      // FormData는 브라우저가 boundary 포함 Content-Type을 직접 붙인다
+      ...(init.body && !(init.body instanceof FormData)
+        ? { "Content-Type": "application/json" }
+        : {}),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...init.headers,
     },
