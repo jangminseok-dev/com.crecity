@@ -78,6 +78,7 @@ export type CampaignApplication = {
   creator_slug: string;
   message: string;
   proposed_price_krw: number;
+  order_id: number | null;
   created_at: string | null;
 };
 

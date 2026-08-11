@@ -201,3 +201,74 @@ async def test_결제_불가_오퍼는_주문할_수_없다():
 async def test_오퍼_수신_브랜드가_아니면_주문할_수_없다():
     with pytest.raises(NotBrandAccountError):
         await _custom_interactor(_offer()).place_custom(_custom_command(brand_user_id=999))
+
+
+# ── 캠페인 지원 수락 주문 (갭 #7) ────────────────────────────────
+
+
+class _StubCampaignApplicationPort:
+    def __init__(self, summary):
+        self.summary = summary
+
+    async def get_payable_application(self, application_id):
+        if self.summary and self.summary.application_id == application_id:
+            return self.summary
+        return None
+
+    async def mark_paid(self, application_id, order_id):
+        raise NotImplementedError
+
+
+def _application_summary(application_id=3, brand_user_id=BRAND, price=500000):
+    from hub.app.dtos.campaign_application_dto import CampaignApplicationSummary
+
+    return CampaignApplicationSummary(
+        application_id=application_id, campaign_id=1, title="신제품 릴스 캠페인",
+        price_krw=price, brand_user_id=brand_user_id, creator_user_id=CREATOR,
+    )
+
+
+def _application_interactor(summary, orders=None):
+    return OrderPlacementInteractor(
+        orders=orders if orders is not None else _StubOrderRepository(),
+        packages=_StubPackageSummaryPort(None),
+        brand_fee_percent=10,
+        creator_fee_percent=10,
+        accept_deadline=timedelta(hours=72),
+        applications=_StubCampaignApplicationPort(summary),
+    )
+
+
+def _application_command(application_id=3, brand_user_id=BRAND, account_type="BRAND"):
+    from order.app.dtos.order_placement_dto import ApplicationOrderPlacementCommand
+
+    return ApplicationOrderPlacementCommand(
+        application_id=application_id, requirements="공고 내용대로 진행해 주세요.",
+        brand_user_id=brand_user_id, account_type=account_type,
+    )
+
+
+async def test_지원_수락_주문은_견적_스냅샷으로_생성된다():
+    orders = _StubOrderRepository()
+    result = await _application_interactor(_application_summary(), orders).place_application(
+        _application_command()
+    )
+    order, entries, _events = orders.created[0]
+    assert order.package_id is None  # 패키지 없는 주문
+    assert order.package_title == "신제품 릴스 캠페인"  # 공고 제목 스냅샷
+    assert order.amount_krw == 500000
+    assert order.creator_user_id == CREATOR
+    assert entries[0].amount_krw == 550000  # 견적 + 브랜드 수수료 10%
+    assert result.status == OrderStatus.PENDING_ACCEPT.value
+
+
+async def test_수락_불가_지원은_주문할_수_없다():
+    with pytest.raises(PackageNotOrderableError):
+        await _application_interactor(None).place_application(_application_command())
+
+
+async def test_공고_소유_브랜드가_아니면_주문할_수_없다():
+    with pytest.raises(NotBrandAccountError):
+        await _application_interactor(_application_summary()).place_application(
+            _application_command(brand_user_id=999)
+        )

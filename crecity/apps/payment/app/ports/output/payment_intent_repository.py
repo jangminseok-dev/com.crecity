@@ -17,6 +17,7 @@ class PaymentIntentRepository(ABC):
         requirements: str,
         amount_krw: int,
         offer_id: int | None = None,
+        application_id: int | None = None,
         credit_applied_krw: int = 0,
     ) -> PaymentIntent: ...
 

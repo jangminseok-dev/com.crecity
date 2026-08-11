@@ -34,7 +34,7 @@ function ApplyForm({ campaignId }: { campaignId: number }) {
   if (form.done) {
     return (
       <p className="rounded-md bg-muted p-4 text-sm text-muted-foreground">
-        지원이 접수되었습니다 — 브랜드가 검토 후 프로필의 패키지로 주문을 넣을 수 있습니다.
+        지원이 접수되었습니다 — 브랜드가 지원을 수락하면 제안 견적으로 주문이 시작됩니다.
       </p>
     );
   }
@@ -124,6 +124,26 @@ function ApplicationList({ campaignId }: { campaignId: number }) {
             <p className="whitespace-pre-line text-sm text-muted-foreground">
               {application.message}
             </p>
+            <div className="mt-1">
+              {application.order_id ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  nativeButton={false}
+                  render={<Link href={`/dashboard/orders/${application.order_id}`}>✓ 수락됨 — 주문 보기</Link>}
+                />
+              ) : (
+                <Button
+                  size="sm"
+                  nativeButton={false}
+                  render={
+                    <Link href={`/orders/new?application=${application.id}&campaign=${campaignId}`}>
+                      수락하고 결제
+                    </Link>
+                  }
+                />
+              )}
+            </div>
           </CardContent>
         </Card>
       ))}

@@ -22,6 +22,17 @@ class OfferCheckoutCommand:
 
 
 @dataclass(frozen=True)
+class ApplicationCheckoutCommand:
+    """캠페인 지원 수락 결제 준비 — 견적·당사자는 허브 CampaignApplicationPort로 해석."""
+
+    application_id: int
+    requirements: str
+    brand_user_id: int
+    account_type: str  # BRAND만 결제 가능
+    use_credit: bool = False
+
+
+@dataclass(frozen=True)
 class CheckoutResult:
     """프론트 결제창(SDK) 호출 파라미터 — 금액은 서버 확정값이다.
 

@@ -34,6 +34,7 @@ def _to_schema(result) -> ApplicationResponseSchema:
         creator_slug=result.creator_slug,
         message=result.message,
         proposed_price_krw=result.proposed_price_krw,
+        order_id=result.order_id,
         created_at=result.created_at,
     )
 

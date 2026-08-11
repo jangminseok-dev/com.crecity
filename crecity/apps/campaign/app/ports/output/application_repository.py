@@ -20,3 +20,11 @@ class ApplicationRepository(ABC):
     async def list_by_campaign(self, campaign_id: int) -> list[CampaignApplication]:
         """공고의 지원서 — 오래된 순(먼저 지원한 순)."""
         ...
+
+    @abstractmethod
+    async def find_by_id(self, application_id: int) -> CampaignApplication | None: ...
+
+    @abstractmethod
+    async def mark_paid(self, application_id: int, order_id: int) -> None:
+        """수락(결제) 완료 표시 — 생성된 주문 id를 기록해 재결제를 차단한다."""
+        ...

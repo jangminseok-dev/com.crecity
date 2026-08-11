@@ -63,4 +63,9 @@ class CampaignApplication:
     creator_user_id: int
     message: str  # 제안 내용
     proposed_price_krw: int
+    order_id: int | None = None  # 수락(결제) 시 생성된 주문 — 논리 참조, 재결제 차단 표식
     created_at: datetime | None = None
+
+    def is_payable(self) -> bool:
+        """아직 주문으로 이어지지 않은 지원만 수락(결제) 가능하다."""
+        return self.order_id is None

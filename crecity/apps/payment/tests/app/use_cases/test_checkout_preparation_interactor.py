@@ -24,12 +24,13 @@ class _StubIntentRepository:
 
     async def create(
         self, pg_order_id, package_id, brand_user_id, requirements, amount_krw,
-        offer_id=None, credit_applied_krw=0,
+        offer_id=None, application_id=None, credit_applied_krw=0,
     ):
         intent = PaymentIntent(
             id=1, pg_order_id=pg_order_id, package_id=package_id, brand_user_id=brand_user_id,
             requirements=requirements, amount_krw=amount_krw, status=PaymentIntentStatus.READY,
-            offer_id=offer_id, credit_applied_krw=credit_applied_krw,
+            offer_id=offer_id, application_id=application_id,
+            credit_applied_krw=credit_applied_krw,
         )
         self.created.append(intent)
         return intent
@@ -171,3 +172,71 @@ async def test_오퍼_수신_브랜드가_아니면_준비가_거부된다():
     interactor, _ = _offer_interactor(_offer_summary(brand_user_id=999))
     with pytest.raises(NotBrandAccountError):
         await interactor.prepare_offer(_offer_command())
+
+
+# ── 캠페인 지원 수락 결제 준비 (갭 #7) ────────────────────────────
+
+
+class _StubCampaignApplicationPort:
+    def __init__(self, summary):
+        self.summary = summary
+
+    async def get_payable_application(self, application_id):
+        if self.summary and self.summary.application_id == application_id:
+            return self.summary
+        return None
+
+    async def mark_paid(self, application_id, order_id):
+        raise NotImplementedError
+
+
+def _application_summary(application_id=3, brand_user_id=BRAND, price=500000):
+    from hub.app.dtos.campaign_application_dto import CampaignApplicationSummary
+
+    return CampaignApplicationSummary(
+        application_id=application_id, campaign_id=1, title="신제품 릴스 캠페인",
+        price_krw=price, brand_user_id=brand_user_id, creator_user_id=200,
+    )
+
+
+def _application_interactor(summary, intents=None):
+    repo = intents if intents is not None else _StubIntentRepository()
+    return CheckoutPreparationInteractor(
+        intents=repo,
+        packages=_StubPackageSummaryPort(None),
+        credits=_StubCreditBalancePort(),
+        brand_fee_percent=10,
+        client_key="test_ck",
+        applications=_StubCampaignApplicationPort(summary),
+    ), repo
+
+
+def _application_command(application_id=3, brand_user_id=BRAND, account_type="BRAND"):
+    from payment.app.dtos.checkout_preparation_dto import ApplicationCheckoutCommand
+
+    return ApplicationCheckoutCommand(
+        application_id=application_id, requirements="공고 내용대로 진행해 주세요.",
+        brand_user_id=brand_user_id, account_type=account_type,
+    )
+
+
+async def test_지원_수락_결제는_견적에_수수료를_더해_확정한다():
+    interactor, repo = _application_interactor(_application_summary())
+    result = await interactor.prepare_application(_application_command())
+    assert result.amount_krw == 550000  # 500,000 + 10%
+    assert result.order_name == "신제품 릴스 캠페인"
+    created = repo.created[0]
+    assert created.package_id is None
+    assert created.application_id == 3
+
+
+async def test_수락_불가_지원은_준비가_거부된다():
+    interactor, _ = _application_interactor(None)
+    with pytest.raises(PackageNotOrderableError):
+        await interactor.prepare_application(_application_command())
+
+
+async def test_공고_소유_브랜드가_아니면_준비가_거부된다():
+    interactor, _ = _application_interactor(_application_summary(brand_user_id=999))
+    with pytest.raises(NotBrandAccountError):
+        await interactor.prepare_application(_application_command())

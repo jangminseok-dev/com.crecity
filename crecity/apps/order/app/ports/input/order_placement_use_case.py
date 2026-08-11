@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from order.app.dtos.order_placement_dto import (
+    ApplicationOrderPlacementCommand,
     CustomOrderPlacementCommand,
     OrderPlacementCommand,
 )
@@ -33,5 +34,15 @@ class OrderPlacementUseCase(ABC):
         Raises:
             NotBrandAccountError: 브랜드 계정이 아니거나 오퍼 수신 브랜드가 아님.
             PackageNotOrderableError: 오퍼가 없거나 이미 결제됨.
+        """
+        ...
+
+    @abstractmethod
+    async def place_application(self, command: ApplicationOrderPlacementCommand) -> OrderResult:
+        """캠페인 지원 수락 주문 생성 — 견적·당사자는 허브 CampaignApplicationPort로 해석한다.
+
+        Raises:
+            NotBrandAccountError: 브랜드 계정이 아니거나 공고 소유 브랜드가 아님.
+            PackageNotOrderableError: 지원이 없거나 이미 수락(결제)됨.
         """
         ...

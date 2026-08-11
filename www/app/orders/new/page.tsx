@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { PLATFORM_LABELS, formatKrw } from "@/lib/labels";
-import type { Balance, CreatorPackage, CustomOffer } from "@/lib/types";
+import type { Balance, CampaignApplication, CreatorPackage, CustomOffer } from "@/lib/types";
 
 const orderSchema = z.object({
   requirements: z.string().min(10, "요구사항을 10자 이상 구체적으로 적어 주세요."),
@@ -42,6 +42,10 @@ function OrderNewContent() {
   const offerId = Number(searchParams.get("offer"));
   const conversationId = searchParams.get("conversation");
   const isOfferMode = Boolean(offerId && conversationId);
+  // 캠페인 지원 수락 모드 — 지원자 목록에서 "수락하고 결제"로 진입
+  const applicationId = Number(searchParams.get("application"));
+  const applicationCampaignId = searchParams.get("campaign");
+  const isApplicationMode = Boolean(applicationId && applicationCampaignId);
   // 단일 객체 상태 — 제출 진행·오류 (입력값은 FormData 패턴)
   const [form, setForm] = useState<{ submitting: boolean; error: string | null }>({
     submitting: false,
@@ -51,9 +55,19 @@ function OrderNewContent() {
   const { data: packages, isPending } = useQuery({
     queryKey: ["packages", slug],
     queryFn: () => apiFetch<CreatorPackage[]>(`/creator/profiles/${slug}/packages`),
-    enabled: Boolean(slug) && !isOfferMode,
+    enabled: Boolean(slug) && !isOfferMode && !isApplicationMode,
   });
   const pkg = packages?.find((p) => p.id === packageId);
+
+  const { data: applications, isPending: applicationsPending } = useQuery({
+    queryKey: ["campaignApplications", applicationCampaignId],
+    queryFn: () =>
+      apiFetch<CampaignApplication[]>(
+        `/campaign/campaigns/${applicationCampaignId}/applications`,
+      ),
+    enabled: isApplicationMode && status === "authenticated",
+  });
+  const application = applications?.find((a) => a.id === applicationId);
 
   const { data: offers, isPending: offersPending } = useQuery({
     queryKey: ["offers", conversationId],
@@ -70,7 +84,7 @@ function OrderNewContent() {
   });
   const creditKrw = balance?.balance_krw ?? 0;
 
-  if (!isOfferMode && (!slug || !packageId)) {
+  if (!isOfferMode && !isApplicationMode && (!slug || !packageId)) {
     return <p className="py-20 text-center text-muted-foreground">잘못된 접근입니다.</p>;
   }
   if (status === "guest") {
@@ -88,10 +102,20 @@ function OrderNewContent() {
       </p>
     );
   }
-  if (status === "loading" || (isOfferMode ? offersPending : isPending)) {
+  if (
+    status === "loading" ||
+    (isApplicationMode ? applicationsPending : isOfferMode ? offersPending : isPending)
+  ) {
     return <Skeleton className="mt-10 h-64 w-full" />;
   }
-  if (isOfferMode) {
+  if (isApplicationMode) {
+    if (!application) {
+      return <p className="py-20 text-center text-muted-foreground">지원을 찾을 수 없습니다.</p>;
+    }
+    if (application.order_id) {
+      return <p className="py-20 text-center text-muted-foreground">이미 수락된 지원입니다.</p>;
+    }
+  } else if (isOfferMode) {
     if (!offer) {
       return <p className="py-20 text-center text-muted-foreground">오퍼를 찾을 수 없습니다.</p>;
     }
@@ -114,23 +138,32 @@ function OrderNewContent() {
     setForm({ submitting: true, error: null });
     try {
       // 1) 결제 준비 — 서버가 금액·크레딧 적용액을 확정하고 결제창 파라미터를 내려준다
-      const checkout = isOfferMode
-        ? await apiFetch<CheckoutResponse>("/payment/checkouts/offer", {
+      const checkout = isApplicationMode
+        ? await apiFetch<CheckoutResponse>("/payment/checkouts/application", {
             method: "POST",
             body: JSON.stringify({
-              offer_id: offerId,
+              application_id: applicationId,
               requirements: parsed.data.requirements,
               use_credit: useCredit,
             }),
           })
-        : await apiFetch<CheckoutResponse>("/payment/checkouts", {
-            method: "POST",
-            body: JSON.stringify({
-              package_id: pkg!.id,
-              requirements: parsed.data.requirements,
-              use_credit: useCredit,
-            }),
-          });
+        : isOfferMode
+          ? await apiFetch<CheckoutResponse>("/payment/checkouts/offer", {
+              method: "POST",
+              body: JSON.stringify({
+                offer_id: offerId,
+                requirements: parsed.data.requirements,
+                use_credit: useCredit,
+              }),
+            })
+          : await apiFetch<CheckoutResponse>("/payment/checkouts", {
+              method: "POST",
+              body: JSON.stringify({
+                package_id: pkg!.id,
+                requirements: parsed.data.requirements,
+                use_credit: useCredit,
+              }),
+            });
       // 2) 전액 크레딧(PG 결제액 0)이면 결제창 없이 바로 승인 — 주문 생성으로 직행
       if (checkout.pg_amount_krw === 0) {
         const { order_id } = await apiFetch<{ order_id: number }>("/payment/confirm", {
@@ -177,7 +210,20 @@ function OrderNewContent() {
       <h1 className="text-[26px] font-bold tracking-[-0.02em]">주문·결제</h1>
 
       <section className="mt-7 rounded-2xl border p-5">
-        {isOfferMode ? (
+        {isApplicationMode ? (
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <Badge variant="outline">캠페인 지원 수락</Badge>
+              <p className="mt-2 text-[15px] font-semibold">{application!.creator_name}</p>
+              <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
+                {application!.message}
+              </p>
+            </div>
+            <p className="shrink-0 text-lg font-bold">
+              {formatKrw(application!.proposed_price_krw)}
+            </p>
+          </div>
+        ) : isOfferMode ? (
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <Badge variant="outline">커스텀 오퍼</Badge>

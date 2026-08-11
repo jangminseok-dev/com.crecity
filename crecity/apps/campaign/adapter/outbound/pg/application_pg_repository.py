@@ -1,4 +1,4 @@
-from sqlalchemy import exists, insert, select
+from sqlalchemy import exists, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from campaign.adapter.outbound.mappers.campaign_mapper import CampaignMapper
@@ -46,3 +46,15 @@ class ApplicationPgRepository(ApplicationRepository):
             .order_by(CampaignApplicationOrm.created_at, CampaignApplicationOrm.id)
         )
         return [CampaignMapper.application_to_entity(orm) for orm in result.scalars()]
+
+    async def find_by_id(self, application_id: int) -> CampaignApplication | None:
+        orm = await self._session.get(CampaignApplicationOrm, application_id)
+        return CampaignMapper.application_to_entity(orm) if orm is not None else None
+
+    async def mark_paid(self, application_id: int, order_id: int) -> None:
+        await self._session.execute(
+            update(CampaignApplicationOrm)
+            .where(CampaignApplicationOrm.id == application_id)
+            .values(order_id=order_id)
+        )
+        await self._session.commit()

@@ -31,5 +31,6 @@ class CampaignMapper:
             creator_user_id=orm.creator_user_id,
             message=orm.message,
             proposed_price_krw=orm.proposed_price_krw,
+            order_id=orm.order_id,
             created_at=orm.created_at,
         )

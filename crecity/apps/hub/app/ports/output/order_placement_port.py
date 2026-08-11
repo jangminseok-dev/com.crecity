@@ -40,3 +40,15 @@ class OrderPlacementPort(ABC):
     ) -> PlacedOrder | None:
         """커스텀 오퍼 주문 생성 — 오퍼 불가·금액 불일치·크레딧 부족·생성 실패면 None."""
         ...
+
+    @abstractmethod
+    async def place_paid_application_order(
+        self,
+        application_id: int,
+        requirements: str,
+        brand_user_id: int,
+        expected_brand_total_krw: int,
+        credit_used_krw: int = 0,
+    ) -> PlacedOrder | None:
+        """캠페인 지원 수락 주문 생성 — 지원 불가·금액 불일치·크레딧 부족·생성 실패면 None."""
+        ...

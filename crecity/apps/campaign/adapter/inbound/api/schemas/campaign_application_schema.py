@@ -18,4 +18,5 @@ class ApplicationResponseSchema(BaseModel):
     creator_slug: str
     message: str
     proposed_price_krw: int
+    order_id: int | None  # 수락(결제)된 지원이면 생성된 주문 id
     created_at: datetime | None

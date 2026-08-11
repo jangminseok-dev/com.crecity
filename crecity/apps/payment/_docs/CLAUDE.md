@@ -11,7 +11,8 @@ PG는 **토스페이먼츠**(§7-3 확정) — `PaymentGateway` 포트 뒤에 �
 | paymaster (myself) | `GET /payment/myself` | 자기소개 |
 | checkout_preparation | `POST /payment/checkouts` | 결제 준비 — **브랜드만(403)**. 서버가 결제 총액(가격+수수료) 확정·intent 기록, 결제창 파라미터(pg_order_id·amount·client_key) 응답. `use_credit`이면 허브 `CreditBalancePort`로 크레딧 적용액 = min(잔액, 총액) 확정 — PG 청구액(`pg_amount_krw`) = 총액 − 크레딧 |
 | (checkout_preparation) | `POST /payment/checkouts/offer` | 커스텀 오퍼 결제 준비 — **오퍼 수신 브랜드만(403)**, 결제 불가 오퍼 404. 허브 `CustomOfferPort`로 가격·당사자 해석 |
-| payment_confirmation | `POST /payment/confirm` | 토스 승인 → 허브 `OrderPlacementPort`로 주문 생성(intent.offer_id 있으면 커스텀 주문 + 오퍼 PAID 처리). 금액 대조는 PG 청구액 기준(불일치 400), 승인 후 주문 생성 실패 시 **PG 취소 보정**(§3) 후 502. **전액 크레딧(PG 청구액 0)은 결제창·PG 호출 없이 승인**(payment_key 빈 문자열) — 크레딧 차감이 주문 생성과 원자적이라 실패 시 보정 불필요 |
+| (checkout_preparation) | `POST /payment/checkouts/application` | 캠페인 지원 수락 결제 준비 — **공고 소유 브랜드만(403)**, 수락 불가 지원 404. 허브 `CampaignApplicationPort`로 견적·당사자 해석, 총액 = 견적 + 브랜드 수수료 (갭 #7) |
+| payment_confirmation | `POST /payment/confirm` | 토스 승인 → 허브 `OrderPlacementPort`로 주문 생성(intent.offer_id → 커스텀 주문+오퍼 PAID · intent.application_id → 지원 수락 주문+지원 order_id 기록). 금액 대조는 PG 청구액 기준(불일치 400), 승인 후 주문 생성 실패 시 **PG 취소 보정**(§3) 후 502. **전액 크레딧(PG 청구액 0)은 결제창·PG 호출 없이 승인**(payment_key 빈 문자열) — 크레딧 차감이 주문 생성과 원자적이라 실패 시 보정 불필요 |
 
 ## 결제 흐름 (§3)
 

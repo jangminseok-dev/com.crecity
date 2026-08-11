@@ -34,6 +34,7 @@ class PaymentIntent:
     status: PaymentIntentStatus
     credit_applied_krw: int = 0  # 체크아웃에서 확정한 크레딧 사용분 — PG 결제액 = 총액 − 이 값
     offer_id: int | None = None  # 커스텀 오퍼(chat) 논리 참조 — 패키지 결제는 None
+    application_id: int | None = None  # 캠페인 지원(campaign) 논리 참조 — 지원 수락 결제만
     payment_key: str | None = None  # PG 결제 키(승인 후)
     order_id: int | None = None  # 생성된 주문(승인 후)
     failure_reason: str | None = None

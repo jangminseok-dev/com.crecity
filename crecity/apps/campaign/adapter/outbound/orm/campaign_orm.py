@@ -38,6 +38,8 @@ class CampaignApplicationOrm(Base):
     creator_user_id: Mapped[int] = mapped_column(Integer, index=True)
     message: Mapped[str] = mapped_column(Text)
     proposed_price_krw: Mapped[int] = mapped_column(BigInteger)
+    # 수락(결제) 시 생성된 주문 — order 스포크 논리 참조(DB FK 없음), NULL이면 수락 가능
+    order_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

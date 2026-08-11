@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 
+from hub.app.ports.output.campaign_application_port import CampaignApplicationPort
 from hub.app.ports.output.custom_offer_port import CustomOfferPort
 from hub.app.ports.output.order_placement_port import OrderPlacementPort
 from payment.app.dtos.payment_confirmation_dto import ConfirmCommand, ConfirmResult
@@ -27,11 +28,13 @@ class PaymentConfirmationInteractor(PaymentConfirmationUseCase):
         gateway: PaymentGateway,
         orders: OrderPlacementPort,
         offers: CustomOfferPort | None = None,  # 커스텀 오퍼 결제에만 필요
+        applications: CampaignApplicationPort | None = None,  # 지원 수락 결제에만 필요
     ) -> None:
         self._intents = intents
         self._gateway = gateway
         self._orders = orders
         self._offers = offers
+        self._applications = applications
 
     async def confirm(self, command: ConfirmCommand) -> ConfirmResult:
         intent = await self._intents.find_by_pg_order_id(command.pg_order_id)
@@ -56,7 +59,15 @@ class PaymentConfirmationInteractor(PaymentConfirmationUseCase):
                 raise
 
         # 2) 주문 생성+예치+크레딧 차감 (order 내부 원자적 — §3). 실패 시 PG 취소로 보정한다.
-        if intent.offer_id is not None:
+        if intent.application_id is not None:
+            placed = await self._orders.place_paid_application_order(
+                application_id=intent.application_id,
+                requirements=intent.requirements,
+                brand_user_id=intent.brand_user_id,
+                expected_brand_total_krw=intent.amount_krw,
+                credit_used_krw=intent.credit_applied_krw,
+            )
+        elif intent.offer_id is not None:
             placed = await self._orders.place_paid_custom_order(
                 offer_id=intent.offer_id,
                 requirements=intent.requirements,
@@ -88,7 +99,9 @@ class PaymentConfirmationInteractor(PaymentConfirmationUseCase):
             raise PaymentConfirmError("주문 생성에 실패해 결제를 취소했습니다 — 다시 시도해 주세요.")
 
         await self._intents.mark_confirmed(intent.id, command.payment_key, placed.id)
-        # 오퍼 결제 완료 표시 — 재결제 차단(표시용, 주문·원장과 별개라 결과적 정합성으로 충분)
+        # 오퍼·지원 결제 완료 표시 — 재결제 차단(표시용, 주문·원장과 별개라 결과적 정합성으로 충분)
         if intent.offer_id is not None and self._offers is not None:
             await self._offers.mark_paid(intent.offer_id, placed.id)
+        if intent.application_id is not None and self._applications is not None:
+            await self._applications.mark_paid(intent.application_id, placed.id)
         return ConfirmResult(order_id=placed.id)

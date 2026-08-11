@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
+from hub.app.ports.output.campaign_application_port import CampaignApplicationPort
 from hub.app.ports.output.custom_offer_port import CustomOfferPort
 from hub.app.ports.output.package_summary_port import PackageSummaryPort
 from order.app.dtos.order_placement_dto import (
+    ApplicationOrderPlacementCommand,
     CustomOrderPlacementCommand,
     OrderPlacementCommand,
 )
@@ -31,6 +33,7 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
         creator_fee_percent: int,
         accept_deadline: timedelta,
         offers: CustomOfferPort | None = None,  # 커스텀 오퍼 주문에만 필요
+        applications: CampaignApplicationPort | None = None,  # 지원 수락 주문에만 필요
     ) -> None:
         self._orders = orders
         self._packages = packages
@@ -38,6 +41,7 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
         self._creator_fee_percent = creator_fee_percent
         self._accept_deadline = accept_deadline
         self._offers = offers
+        self._applications = applications
 
     async def place(self, command: OrderPlacementCommand) -> OrderResult:
         if command.account_type != "BRAND":
@@ -71,6 +75,26 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
             title=offer.title,
             price_krw=offer.price_krw,
             creator_user_id=offer.creator_user_id,
+            brand_user_id=command.brand_user_id,
+            requirements=command.requirements,
+            credit_used_krw=command.credit_used_krw,
+        )
+
+    async def place_application(self, command: ApplicationOrderPlacementCommand) -> OrderResult:
+        if command.account_type != "BRAND":
+            raise NotBrandAccountError("브랜드 계정만 주문할 수 있습니다.")
+        if self._applications is None:
+            raise RuntimeError("CampaignApplicationPort 미주입 — 지원 수락 주문을 만들 수 없습니다.")
+        application = await self._applications.get_payable_application(command.application_id)
+        if application is None:
+            raise PackageNotOrderableError(f"수락할 수 없는 지원입니다: {command.application_id}")
+        if application.brand_user_id != command.brand_user_id:
+            raise NotBrandAccountError("공고를 올린 브랜드만 수락할 수 있습니다.")
+        return await self._place(
+            package_id=None,  # 지원 수락 주문 — 패키지 없음(제목은 공고 제목 스냅샷)
+            title=application.title,
+            price_krw=application.price_krw,
+            creator_user_id=application.creator_user_id,
             brand_user_id=command.brand_user_id,
             requirements=command.requirements,
             credit_used_krw=command.credit_used_krw,

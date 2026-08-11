@@ -61,6 +61,7 @@ from payment.adapter.inbound.api.v1.payment_confirmation_router import (
     payment_confirmation_router,
 )
 from payment.adapter.inbound.api.v1.paymaster_router import paymaster_router
+from hub.dependencies.campaign_application_provider import register_campaign_application_port
 from hub.dependencies.credit_balance_provider import register_credit_balance_port
 from hub.dependencies.order_placement_provider import register_order_placement_port
 from creator.adapter.outbound.hub.creator_ref_gateway import CreatorRefGateway
@@ -85,6 +86,9 @@ from campaign.adapter.inbound.api.v1.campaign_application_router import (
 )
 from campaign.adapter.inbound.api.v1.campaign_listing_router import campaign_listing_router
 from campaign.adapter.inbound.api.v1.campaign_posting_router import campaign_posting_router
+from campaign.adapter.outbound.hub.campaign_application_gateway import (
+    CampaignApplicationGateway,
+)
 from campaign.adapter.inbound.api.v1.herald_router import herald_router
 from notification.adapter.inbound.api.v1.bellman_router import bellman_router
 from notification.adapter.inbound.api.v1.notification_listing_router import (
@@ -112,6 +116,7 @@ register_creator_rating_port(ReviewCreatorRatingGateway())  # review → 평점 
 register_creator_popularity_port(OrderCreatorPopularityGateway())  # order → 인기 순위(홈 섹션)
 register_withdrawal_settlement_port(OrderWithdrawalSettlementGateway())  # order → 인출 운영 처리
 register_credit_balance_port(OrderCreditBalanceGateway())  # order → 크레딧 잔액(체크아웃 적용액 확정)
+register_campaign_application_port(CampaignApplicationGateway())  # campaign → 지원 수락 결제
 
 
 @asynccontextmanager

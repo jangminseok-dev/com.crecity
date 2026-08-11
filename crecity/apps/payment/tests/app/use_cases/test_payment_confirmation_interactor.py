@@ -230,3 +230,49 @@ async def test_오퍼_결제는_커스텀_주문으로_생성되고_오퍼가_PA
     assert orders.custom_calls == [(5, 495000)]
     assert orders.calls == []  # 패키지 경로는 타지 않는다
     assert offers.paid == [(5, 9)]
+
+
+# ── 캠페인 지원 수락 결제 승인 (갭 #7) ────────────────────────────
+
+
+class _StubCampaignApplicationPortForConfirm:
+    def __init__(self):
+        self.paid = []  # (application_id, order_id)
+
+    async def get_payable_application(self, application_id):
+        raise NotImplementedError
+
+    async def mark_paid(self, application_id, order_id):
+        self.paid.append((application_id, order_id))
+
+
+class _StubOrderPlacementPortWithApplication(_StubOrderPlacementPort):
+    def __init__(self, placed):
+        super().__init__(placed)
+        self.application_calls = []
+
+    async def place_paid_application_order(
+        self, application_id, requirements, brand_user_id, expected_brand_total_krw,
+        credit_used_krw=0,
+    ):
+        self.application_calls.append((application_id, expected_brand_total_krw))
+        return self.placed
+
+
+async def test_지원_수락_결제는_지원_주문으로_생성되고_지원이_PAID_처리된다():
+    intent = PaymentIntent(
+        id=1, pg_order_id="crecity-abc", package_id=None, brand_user_id=BRAND,
+        requirements="공고 내용대로", amount_krw=550000,
+        status=PaymentIntentStatus.READY, application_id=3,
+    )
+    intents = _StubIntentRepository(intent)
+    orders = _StubOrderPlacementPortWithApplication(PlacedOrder(id=11, brand_total_krw=550000))
+    applications = _StubCampaignApplicationPortForConfirm()
+    result = await PaymentConfirmationInteractor(
+        intents, _StubGateway(), orders, applications=applications
+    ).confirm(_command(amount_krw=550000))
+
+    assert result.order_id == 11
+    assert orders.application_calls == [(3, 550000)]
+    assert orders.calls == []  # 패키지 경로는 타지 않는다
+    assert applications.paid == [(3, 11)]

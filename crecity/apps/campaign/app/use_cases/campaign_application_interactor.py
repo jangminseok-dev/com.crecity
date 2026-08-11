@@ -40,6 +40,7 @@ class CampaignApplicationInteractor(CampaignApplicationUseCase):
             creator_slug=creator.slug if creator else "",
             message=application.message,
             proposed_price_krw=application.proposed_price_krw,
+            order_id=application.order_id,
             created_at=application.created_at,
         )
 
