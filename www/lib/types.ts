@@ -83,6 +83,9 @@ export type Campaign = {
   platform: "INSTAGRAM" | "YOUTUBE" | "TIKTOK" | "NAVER_BLOG" | "UGC";
   budget_krw: number;
   status: "OPEN" | "CLOSED";
+  deadline_at: string | null; // 지원 마감일 — 경과 시 자동 마감
+  target_category: string | null;
+  target_location: string | null;
   created_at: string | null;
 };
 

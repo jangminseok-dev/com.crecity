@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from campaign.app.dtos.campaign_application_dto import (
     ApplicationResult,
     ApplicationsQuery,
@@ -52,7 +54,8 @@ class CampaignApplicationInteractor(CampaignApplicationUseCase):
         campaign = await self._campaigns.find_by_id(command.campaign_id)
         if campaign is None:
             raise CampaignNotFoundError(f"공고를 찾을 수 없습니다: {command.campaign_id}")
-        campaign.ensure_open_for_application()  # 마감 공고 409(도메인)
+        # 마감 공고·마감일 경과 409(도메인) — 스윕 주기와 무관하게 마감일이 정본
+        campaign.ensure_open_for_application(datetime.now(timezone.utc))
         if await self._creators.get_creator_by_user_id(command.creator_user_id) is None:
             raise CreatorProfileRequiredError("프로필을 먼저 등록해야 지원할 수 있습니다.")
         if await self._applications.exists(command.campaign_id, command.creator_user_id):

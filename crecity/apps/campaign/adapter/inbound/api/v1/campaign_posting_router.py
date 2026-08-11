@@ -27,6 +27,9 @@ def _to_schema(result) -> CampaignResponseSchema:
         platform=result.platform,
         budget_krw=result.budget_krw,
         status=result.status,
+        deadline_at=result.deadline_at,
+        target_category=result.target_category,
+        target_location=result.target_location,
         created_at=result.created_at,
     )
 
@@ -46,6 +49,9 @@ async def post_campaign(
                 budget_krw=body.budget_krw,
                 brand_user_id=user.id,
                 account_type=user.account_type,
+                deadline_at=body.deadline_at,
+                target_category=body.target_category,
+                target_location=body.target_location,
             )
         )
     except NotBrandAccountError as error:

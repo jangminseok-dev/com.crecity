@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +21,9 @@ class CampaignPgRepository(CampaignRepository):
         description: str,
         platform: CampaignPlatform,
         budget_krw: int,
+        deadline_at: datetime | None = None,
+        target_category: str | None = None,
+        target_location: str | None = None,
     ) -> Campaign:
         result = await self._session.execute(
             insert(CampaignOrm)
@@ -29,6 +34,9 @@ class CampaignPgRepository(CampaignRepository):
                 platform=platform.value,
                 budget_krw=budget_krw,
                 status=CampaignStatus.OPEN.value,
+                deadline_at=deadline_at,
+                target_category=target_category,
+                target_location=target_location,
             )
             .returning(CampaignOrm)
         )
@@ -65,5 +73,18 @@ class CampaignPgRepository(CampaignRepository):
             select(CampaignOrm)
             .where(CampaignOrm.brand_user_id == brand_user_id)
             .order_by(CampaignOrm.created_at.desc(), CampaignOrm.id.desc())
+        )
+        return [CampaignMapper.to_entity(orm) for orm in result.scalars()]
+
+    async def find_expired(self, now: datetime, limit: int) -> list[Campaign]:
+        result = await self._session.execute(
+            select(CampaignOrm)
+            .where(
+                CampaignOrm.status == CampaignStatus.OPEN.value,
+                CampaignOrm.deadline_at.is_not(None),
+                CampaignOrm.deadline_at < now,
+            )
+            .order_by(CampaignOrm.deadline_at)
+            .limit(limit)
         )
         return [CampaignMapper.to_entity(orm) for orm in result.scalars()]

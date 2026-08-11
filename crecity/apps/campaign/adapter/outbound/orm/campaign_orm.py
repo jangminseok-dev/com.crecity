@@ -1,6 +1,15 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database import Base
@@ -20,6 +29,11 @@ class CampaignOrm(Base):
     budget_krw: Mapped[int] = mapped_column(BigInteger)
     # CampaignStatus 값 — OPEN 목록 필터에 쓰인다
     status: Mapped[str] = mapped_column(String(20), index=True)
+    # 지원 마감일(선택) — 주기 스캔이 status + deadline_at으로 만료 대상을 찾는다
+    deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # 타겟팅(선택, §3.2) — 지원 자격 제한이 아니라 매칭 안내용 표시 필드
+    target_category: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    target_location: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

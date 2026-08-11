@@ -20,10 +20,15 @@ class _StubCampaignRepository:
         self.created = []
         self.status_updates = []
 
-    async def create(self, brand_user_id, title, description, platform, budget_krw):
+    async def create(
+        self, brand_user_id, title, description, platform, budget_krw,
+        deadline_at=None, target_category=None, target_location=None,
+    ):
         campaign = Campaign(
             id=1, brand_user_id=brand_user_id, title=title, description=description,
             platform=platform, budget_krw=budget_krw, status=CampaignStatus.OPEN,
+            deadline_at=deadline_at, target_category=target_category,
+            target_location=target_location,
         )
         self.created.append(campaign)
         return campaign
@@ -38,6 +43,9 @@ class _StubCampaignRepository:
         raise NotImplementedError
 
     async def list_by_brand(self, brand_user_id):
+        raise NotImplementedError
+
+    async def find_expired(self, now, limit):
         raise NotImplementedError
 
 

@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
-import { PLATFORM_LABELS, formatKrw } from "@/lib/labels";
+import { CREATOR_CATEGORIES, PLATFORM_LABELS, formatKrw } from "@/lib/labels";
 import type { Campaign } from "@/lib/types";
 
 const campaignSchema = z.object({
@@ -21,6 +21,10 @@ const campaignSchema = z.object({
   description: z.string().min(10, "원하는 콘텐츠·조건을 10자 이상 적어 주세요."),
   platform: z.enum(["INSTAGRAM", "YOUTUBE", "TIKTOK", "NAVER_BLOG", "UGC"]),
   budget_krw: z.coerce.number().int().positive("예산은 0보다 커야 합니다."),
+  // 선택 필드 — 빈 문자열은 미입력으로 보고 서버에 보내지 않는다
+  deadline_date: z.string().optional(),
+  target_category: z.string().optional(),
+  target_location: z.string().optional(),
 });
 
 export default function DashboardCampaignsPage() {
@@ -45,8 +49,18 @@ export default function DashboardCampaignsPage() {
       return;
     }
     setForm({ submitting: true, error: null });
+    const { deadline_date, target_category, target_location, ...campaign } = parsed.data;
     try {
-      await apiFetch("/campaign/campaigns", { method: "POST", body: JSON.stringify(parsed.data) });
+      await apiFetch("/campaign/campaigns", {
+        method: "POST",
+        body: JSON.stringify({
+          ...campaign,
+          // 날짜만 고르므로 그날 마감(23:59:59)으로 해석한다
+          deadline_at: deadline_date ? `${deadline_date}T23:59:59` : null,
+          target_category: target_category || null,
+          target_location: target_location || null,
+        }),
+      });
       formElement.reset();
       setForm({ submitting: false, error: null });
       await queryClient.invalidateQueries({ queryKey: ["myCampaigns"] });
@@ -88,6 +102,32 @@ export default function DashboardCampaignsPage() {
               <div className="grid gap-1.5">
                 <Label htmlFor="budget_krw">예산 (원)</Label>
                 <Input id="budget_krw" name="budget_krw" type="number" min={1} placeholder="500000" />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="deadline_date">지원 마감일 (선택)</Label>
+                <Input id="deadline_date" name="deadline_date" type="date" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="target_category">타겟 카테고리 (선택)</Label>
+                <select
+                  id="target_category"
+                  name="target_category"
+                  defaultValue=""
+                  className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                >
+                  <option value="">상관 없음</option>
+                  {CREATOR_CATEGORIES.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="target_location">타겟 지역 (선택)</Label>
+                <Input id="target_location" name="target_location" placeholder="서울" />
               </div>
             </div>
             <div className="grid gap-1.5">

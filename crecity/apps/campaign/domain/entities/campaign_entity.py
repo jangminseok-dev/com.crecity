@@ -39,6 +39,9 @@ class Campaign:
     platform: CampaignPlatform
     budget_krw: int  # 예산 상한(참고 정보 — 지원 견적은 자유)
     status: CampaignStatus
+    deadline_at: datetime | None = None  # 지원 마감일(선택) — 경과 시 주기 스캔이 자동 마감
+    target_category: str | None = None  # 타겟 니치(선택, §3.2)
+    target_location: str | None = None  # 타겟 활동 지역(선택, §3.2)
     created_at: datetime | None = None
 
     def close(self, actor_user_id: int) -> Campaign:
@@ -49,9 +52,20 @@ class Campaign:
             raise InvalidCampaignStateError("이미 마감된 공고입니다.")
         return replace(self, status=CampaignStatus.CLOSED)
 
-    def ensure_open_for_application(self) -> None:
+    def ensure_open_for_application(self, now: datetime) -> None:
+        """지원 가능 여부 — 상태와 마감일 둘 다 본다(스윕 주기와 무관하게 마감일이 정본)."""
         if self.status is not CampaignStatus.OPEN:
             raise InvalidCampaignStateError("마감된 공고에는 지원할 수 없습니다.")
+        if self.deadline_at is not None and now >= self.deadline_at:
+            raise InvalidCampaignStateError("지원 마감일이 지난 공고입니다.")
+
+    def expire(self, now: datetime) -> Campaign | None:
+        """마감일 경과 → 자동 마감(주기 스캔 전용). 대상이 아니면 None."""
+        if self.status is not CampaignStatus.OPEN:
+            return None
+        if self.deadline_at is None or now < self.deadline_at:
+            return None
+        return replace(self, status=CampaignStatus.CLOSED)
 
 
 @dataclass(frozen=True, slots=True)

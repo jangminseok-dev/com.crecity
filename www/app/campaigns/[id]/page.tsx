@@ -199,6 +199,17 @@ export default function CampaignDetailPage() {
         {campaign.status === "CLOSED" && <Badge variant="destructive">마감됨</Badge>}
       </div>
       <p className="mt-2 text-sm font-semibold">예산 {formatKrw(campaign.budget_krw)}</p>
+      {(campaign.deadline_at || campaign.target_category || campaign.target_location) && (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {campaign.deadline_at && (
+            <Badge variant="outline">
+              지원 마감 {new Date(campaign.deadline_at).toLocaleDateString("ko-KR")}
+            </Badge>
+          )}
+          {campaign.target_category && <Badge variant="secondary">{campaign.target_category}</Badge>}
+          {campaign.target_location && <Badge variant="secondary">{campaign.target_location}</Badge>}
+        </div>
+      )}
       <p className="mt-4 whitespace-pre-line text-sm">{campaign.description}</p>
 
       <div className="mt-8 grid gap-4">

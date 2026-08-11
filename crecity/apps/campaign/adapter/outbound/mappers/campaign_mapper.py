@@ -20,6 +20,9 @@ class CampaignMapper:
             platform=CampaignPlatform(orm.platform),
             budget_krw=orm.budget_krw,
             status=CampaignStatus(orm.status),
+            deadline_at=orm.deadline_at,
+            target_category=orm.target_category,
+            target_location=orm.target_location,
             created_at=orm.created_at,
         )
 

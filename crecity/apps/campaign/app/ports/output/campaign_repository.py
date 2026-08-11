@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 from campaign.domain.entities.campaign_entity import Campaign, CampaignPlatform, CampaignStatus
 
@@ -16,6 +17,9 @@ class CampaignRepository(ABC):
         description: str,
         platform: CampaignPlatform,
         budget_krw: int,
+        deadline_at: datetime | None = None,
+        target_category: str | None = None,
+        target_location: str | None = None,
     ) -> Campaign: ...
 
     @abstractmethod
@@ -34,4 +38,9 @@ class CampaignRepository(ABC):
     @abstractmethod
     async def list_by_brand(self, brand_user_id: int) -> list[Campaign]:
         """브랜드가 올린 공고 — 최신순."""
+        ...
+
+    @abstractmethod
+    async def find_expired(self, now: datetime, limit: int) -> list[Campaign]:
+        """마감일이 지난 OPEN 공고 — 주기 스캔 전용."""
         ...

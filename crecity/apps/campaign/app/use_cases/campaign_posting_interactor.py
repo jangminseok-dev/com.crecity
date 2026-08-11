@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from campaign.app.dtos.campaign_posting_dto import (
     CampaignResult,
     CloseCampaignCommand,
@@ -28,6 +30,9 @@ def to_result(campaign: Campaign) -> CampaignResult:
         platform=campaign.platform.value,
         budget_krw=campaign.budget_krw,
         status=campaign.status.value,
+        deadline_at=campaign.deadline_at,
+        target_category=campaign.target_category,
+        target_location=campaign.target_location,
         created_at=campaign.created_at,
     )
 
@@ -42,12 +47,17 @@ class CampaignPostingInteractor(CampaignPostingUseCase):
             raise NotBrandAccountError("브랜드 계정만 공고를 올릴 수 있습니다.")
         if command.budget_krw <= 0:
             raise ValueError("예산은 0보다 커야 합니다.")
+        if command.deadline_at is not None and command.deadline_at <= datetime.now(timezone.utc):
+            raise ValueError("지원 마감일은 현재 시각 이후여야 합니다.")
         campaign = await self._campaigns.create(
             brand_user_id=command.brand_user_id,
             title=command.title,
             description=command.description,
             platform=_parse_platform(command.platform),
             budget_krw=command.budget_krw,
+            deadline_at=command.deadline_at,
+            target_category=command.target_category,
+            target_location=command.target_location,
         )
         return to_result(campaign)
 
