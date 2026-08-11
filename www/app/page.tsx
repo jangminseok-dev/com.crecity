@@ -2,10 +2,13 @@ import {
   Camera,
   Dumbbell,
   Home as HomeIcon,
+  MessagesSquare,
   Monitor,
+  PackageCheck,
   Plane,
   Search,
   Shirt,
+  ShieldCheck,
   Sparkles,
   Star,
   Utensils,
@@ -22,6 +25,15 @@ import type { ProfileListingResponse } from "@/lib/types";
 const PAGE_SIZE = 20;
 
 const KEYWORDS = ["숏폼 릴스", "제품 리뷰", "브랜디드 영상", "체험단", "언박싱"];
+
+/* 이용 흐름 4단계 — 에스크로가 핵심 차별점이라 첫 화면에서 설명한다 */
+const HOW_IT_WORKS: { icon: ComponentType<{ className?: string }>; title: string; desc: string }[] =
+  [
+    { icon: Search, title: "크리에이터 찾기", desc: "카테고리·키워드로 검색하고 가격이 공개된 패키지를 비교해요" },
+    { icon: MessagesSquare, title: "채팅으로 협의", desc: "결제 전에 궁금한 점을 직접 물어보고 조건을 맞춰요" },
+    { icon: ShieldCheck, title: "에스크로 결제", desc: "결제 금액은 콘텐츠 승인 전까지 크리시티가 안전하게 보관해요" },
+    { icon: PackageCheck, title: "콘텐츠 수령", desc: "결과물을 확인하고 승인하면 크리에이터에게 정산돼요" },
+  ];
 
 const CATEGORY_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   뷰티: Sparkles,
@@ -203,6 +215,32 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
               />
             </div>
           )}
+        </section>
+
+        {/* 이용 흐름 4단계 */}
+        <section className="mt-20">
+          <h2 className="text-center text-[22px] font-bold tracking-[-0.02em]">
+            쉽고 안전한 캠페인 진행
+          </h2>
+          <p className="mt-1.5 text-center text-sm text-muted-foreground">
+            탐색부터 정산까지, crecity가 중간에서 안전하게 진행해요
+          </p>
+          <div className="mt-10 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+            {HOW_IT_WORKS.map((step, index) => (
+              <div key={step.title} className="flex flex-col items-center text-center">
+                <span className="inline-flex size-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+                  <step.icon className="size-6" />
+                </span>
+                <p className="mt-4 text-[15px] font-semibold">
+                  <span className="mr-1.5 text-muted-foreground/60">{index + 1}</span>
+                  {step.title}
+                </p>
+                <p className="mt-1.5 max-w-[240px] text-[13px] leading-relaxed text-muted-foreground">
+                  {step.desc}
+                </p>
+              </div>
+            ))}
+          </div>
         </section>
       </div>
     </div>

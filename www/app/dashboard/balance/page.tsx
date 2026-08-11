@@ -25,7 +25,9 @@ export default function DashboardBalancePage() {
         <p className="text-sm text-muted-foreground">
           {isCreator ? "적립금 (구매 확정된 주문의 정산액)" : "크레딧 (환불된 주문 금액)"}
         </p>
-        <p className="mt-2 text-3xl font-bold">{formatKrw(balance?.balance_krw ?? 0)}</p>
+        <p className="mt-2 text-[32px] font-bold tracking-[-0.02em]">
+          {formatKrw(balance?.balance_krw ?? 0)}
+        </p>
         <p className="mt-3 text-sm text-muted-foreground">
           {isCreator
             ? "인출 기능은 결제(PG) 연동과 함께 제공될 예정입니다."

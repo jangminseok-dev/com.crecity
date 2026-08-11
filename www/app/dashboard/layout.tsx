@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-bold">{isCreator ? "크리에이터 대시보드" : "브랜드 대시보드"}</h1>
+      <h1 className="text-2xl font-bold tracking-[-0.02em]">{isCreator ? "크리에이터 대시보드" : "브랜드 대시보드"}</h1>
       <nav className="mt-6 flex gap-1 border-b">
         {tabs.map((tab) => (
           <Link

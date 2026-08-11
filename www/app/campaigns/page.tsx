@@ -31,7 +31,7 @@ export default function CampaignsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-bold">캠페인 공고</h1>
+      <h1 className="text-2xl font-bold tracking-[-0.02em]">캠페인 공고</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         브랜드가 올린 공고에 나만의 견적으로 지원해 보세요.
       </p>
@@ -39,7 +39,7 @@ export default function CampaignsPage() {
         {status === "loading" || isPending ? (
           <Skeleton className="h-40 w-full" />
         ) : !campaigns || campaigns.length === 0 ? (
-          <p className="rounded-lg border border-dashed py-16 text-center text-muted-foreground">
+          <p className="rounded-xl border border-dashed py-16 text-center text-muted-foreground">
             지금은 열려 있는 공고가 없습니다.
           </p>
         ) : (

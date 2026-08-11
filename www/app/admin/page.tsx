@@ -65,7 +65,7 @@ export default function AdminPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-bold">프로필 심사</h1>
+      <h1 className="text-2xl font-bold tracking-[-0.02em]">프로필 심사</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         승인하면 즉시 마켓플레이스 목록에 노출됩니다. 반려해도 프로필 링크 직접 공유는
         가능합니다(목록 제외만).
@@ -77,7 +77,7 @@ export default function AdminPage() {
         {isPending ? (
           <Skeleton className="h-40 w-full" />
         ) : !profiles || profiles.length === 0 ? (
-          <p className="rounded-lg border border-dashed py-16 text-center text-muted-foreground">
+          <p className="rounded-xl border border-dashed py-16 text-center text-muted-foreground">
             심사 대기 중인 프로필이 없습니다.
           </p>
         ) : (

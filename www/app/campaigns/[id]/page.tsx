@@ -100,7 +100,7 @@ function ApplicationList({ campaignId }: { campaignId: number }) {
   if (isPending) return <Skeleton className="h-32 w-full" />;
   if (!applications || applications.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed py-10 text-center text-sm text-muted-foreground">
+      <p className="rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground">
         아직 지원자가 없습니다.
       </p>
     );
@@ -174,7 +174,7 @@ export default function CampaignDetailPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <div className="flex items-center gap-2">
-        <h1 className="text-2xl font-bold">{campaign.title}</h1>
+        <h1 className="text-2xl font-bold tracking-[-0.02em]">{campaign.title}</h1>
         <Badge variant="outline">{PLATFORM_LABELS[campaign.platform]}</Badge>
         {campaign.status === "CLOSED" && <Badge variant="destructive">마감됨</Badge>}
       </div>

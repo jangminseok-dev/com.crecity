@@ -112,7 +112,7 @@ export default function DashboardCampaignsPage() {
         {isPending ? (
           <Skeleton className="h-32 w-full" />
         ) : !campaigns || campaigns.length === 0 ? (
-          <p className="rounded-lg border border-dashed py-10 text-center text-sm text-muted-foreground">
+          <p className="rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground">
             아직 올린 공고가 없습니다.
           </p>
         ) : (

@@ -50,7 +50,7 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-14">
-      <h1 className="text-center text-2xl font-bold">시작하기</h1>
+      <h1 className="text-center text-2xl font-bold tracking-[-0.02em]">시작하기</h1>
       <p className="mt-2 text-center text-sm text-muted-foreground">
         같은 이메일이면 어떤 소셜 계정으로 로그인해도 하나의 계정으로 이어집니다.
       </p>

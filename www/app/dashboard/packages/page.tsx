@@ -178,7 +178,7 @@ export default function DashboardPackagesPage() {
   if (profilePending) return <Skeleton className="h-64 w-full" />;
   if (!profile) {
     return (
-      <div className="rounded-lg border border-dashed py-16 text-center">
+      <div className="rounded-xl border border-dashed py-16 text-center">
         <p className="text-muted-foreground">패키지를 등록하려면 먼저 프로필이 필요합니다.</p>
         <Button className="mt-4" nativeButton={false} render={<Link href="/dashboard/profile">프로필 등록하러 가기</Link>} />
       </div>
@@ -194,7 +194,7 @@ export default function DashboardPackagesPage() {
         {packagesPending ? (
           <Skeleton className="h-32 w-full" />
         ) : !packages || packages.length === 0 ? (
-          <p className="rounded-lg border border-dashed py-10 text-center text-sm text-muted-foreground">
+          <p className="rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground">
             아직 등록된 패키지가 없습니다 — 위에서 첫 패키지를 등록해 보세요.
           </p>
         ) : (
