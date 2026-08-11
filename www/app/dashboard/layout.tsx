@@ -44,15 +44,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
       <h1 className="text-2xl font-bold tracking-[-0.02em]">{isCreator ? "크리에이터 대시보드" : "브랜드 대시보드"}</h1>
-      <nav className="mt-6 flex gap-1 border-b">
+      <nav className="mt-6 flex gap-1 overflow-x-auto border-b">
         {tabs.map((tab) => (
           <Link
             key={tab.href}
             href={tab.href}
             className={
               pathname.startsWith(tab.href)
-                ? "border-b-2 border-primary px-4 py-2 text-sm font-semibold"
-                : "px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+                ? "whitespace-nowrap border-b-2 border-primary px-4 py-2 text-sm font-semibold"
+                : "whitespace-nowrap px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
             }
           >
             {tab.label}

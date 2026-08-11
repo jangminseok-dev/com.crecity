@@ -80,7 +80,7 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
     <div>
       {/* 히어로 — 큰 헤드라인 + 필 검색바 + 인기 키워드 칩 */}
       <section className="border-b border-secondary bg-linear-to-b from-[#f9fafb] to-background">
-        <div className="mx-auto flex max-w-6xl flex-col items-center px-6 pb-11 pt-14 text-center">
+        <div className="mx-auto flex max-w-6xl flex-col items-center px-4 pb-11 pt-14 text-center sm:px-6">
           <h1 className="text-3xl font-extrabold leading-[1.3] tracking-[-0.03em] sm:text-4xl">
             브랜드에 딱 맞는
             <br />
@@ -124,10 +124,10 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-6 pb-16">
+      <div className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
         {/* 카테고리 아이콘 행 */}
         {categories && categories.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-x-9 gap-y-5 pt-9">
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-5 pt-9 sm:gap-x-9">
             {categories.map((name) => {
               const Icon = CATEGORY_ICONS[name] ?? Star;
               const active = category === name;

@@ -47,7 +47,7 @@ export default function DashboardOrdersPage() {
 
   return (
     <div>
-      <div className="flex gap-0.5 border-b">
+      <div className="flex gap-0.5 overflow-x-auto border-b">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -55,8 +55,8 @@ export default function DashboardOrdersPage() {
             onClick={() => setTab(t.id)}
             className={
               tab === t.id
-                ? "-mb-px border-b-2 border-foreground px-3.5 py-2.5 text-sm font-semibold"
-                : "px-3.5 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                ? "-mb-px whitespace-nowrap border-b-2 border-foreground px-3.5 py-2.5 text-sm font-semibold"
+                : "whitespace-nowrap px-3.5 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
             }
           >
             {t.label}

@@ -53,7 +53,7 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
   const platforms = [...new Set((packages ?? []).map((pkg) => pkg.platform))];
 
   return (
-    <div className="mx-auto max-w-6xl px-6 pb-20 pt-7">
+    <div className="mx-auto max-w-6xl px-4 pb-20 pt-7 sm:px-6">
       <Link
         href="/"
         className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"

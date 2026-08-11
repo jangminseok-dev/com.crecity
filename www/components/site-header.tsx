@@ -20,7 +20,7 @@ export default function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-6">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:px-6">
         <Link href="/" className="mr-5 text-[22px] font-extrabold tracking-[-0.04em]">
           crecity
         </Link>
@@ -52,10 +52,11 @@ export default function SiteHeader() {
               >
                 로그인
               </Link>
-              <span className="h-3.5 w-px bg-border" aria-hidden />
+              {/* 좁은 화면에서는 로그인·등록 버튼만 남긴다 */}
+              <span className="hidden h-3.5 w-px bg-border sm:block" aria-hidden />
               <Link
                 href="/login"
-                className="mr-1.5 px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="mr-1.5 hidden px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
               >
                 회원가입
               </Link>

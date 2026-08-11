@@ -11,7 +11,7 @@ const GUIDE = ["이용약관", "개인정보 처리방침", "환불 규정", "�
 export default function SiteFooter() {
   return (
     <footer className="mt-20 border-t bg-[#f9fafb]">
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 md:grid-cols-[1.2fr_1fr_1fr_1.4fr]">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.2fr_1fr_1fr_1.4fr]">
         <div>
           <h4 className="mb-3.5 text-[15px] font-bold">고객센터 1600-0000</h4>
           <ul className="flex flex-col gap-2.5 text-[13px] text-muted-foreground">
@@ -46,7 +46,7 @@ export default function SiteFooter() {
           </div>
         </div>
       </div>
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="border-t py-6 pb-12 text-xs leading-relaxed text-muted-foreground/80">
           © 2026 crecity — 브랜드와 크리에이터를 잇는 마켓플레이스
         </div>
