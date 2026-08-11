@@ -19,10 +19,25 @@ import type { ComponentType } from "react";
 
 import CreatorCard from "@/components/creator-card";
 import { Button } from "@/components/ui/button";
+import { PLATFORM_LABELS } from "@/lib/labels";
 import { backendGet } from "@/lib/server/backend-api";
 import type { ProfileListingItem, ProfileListingResponse } from "@/lib/types";
 
 const PAGE_SIZE = 20;
+
+/* 가격대 프리셋 — 값은 "하한-상한"(상한 없으면 생략) 형식으로 URL에 실린다 */
+const PRICE_RANGES: { value: string; label: string }[] = [
+  { value: "0-100000", label: "10만원 이하" },
+  { value: "100000-300000", label: "10~30만원" },
+  { value: "300000-500000", label: "30~50만원" },
+  { value: "500000-", label: "50만원 이상" },
+];
+
+function parsePriceRange(price?: string): { price_min?: string; price_max?: string } {
+  if (!price || !/^\d+-\d*$/.test(price)) return {};
+  const [min, max] = price.split("-");
+  return { price_min: min, ...(max ? { price_max: max } : {}) };
+}
 
 const KEYWORDS = ["숏폼 릴스", "제품 리뷰", "브랜디드 영상", "체험단", "언박싱"];
 
@@ -47,18 +62,28 @@ const CATEGORY_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   영상: Video,
 };
 
-type HomeSearchParams = Promise<{ category?: string; q?: string; page?: string }>;
+type HomeSearchParams = Promise<{
+  category?: string;
+  q?: string;
+  page?: string;
+  platform?: string;
+  price?: string;
+  location?: string;
+}>;
 
 export default async function Home({ searchParams }: { searchParams: HomeSearchParams }) {
-  const { category, q, page } = await searchParams;
+  const { category, q, page, platform, price, location } = await searchParams;
   const currentPage = Math.max(1, Number(page) || 1);
   const query = new URLSearchParams({
     limit: String(PAGE_SIZE),
     offset: String((currentPage - 1) * PAGE_SIZE),
     ...(category ? { category } : {}),
     ...(q ? { q } : {}),
+    ...(platform ? { platform } : {}),
+    ...parsePriceRange(price),
+    ...(location ? { location } : {}),
   });
-  const isFiltered = Boolean(category || q || currentPage > 1);
+  const isFiltered = Boolean(category || q || platform || price || location || currentPage > 1);
   const [listing, categories, popular] = await Promise.all([
     backendGet<ProfileListingResponse>(`/creator/profiles?${query}`),
     backendGet<string[]>("/creator/categories"),
@@ -73,6 +98,10 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
     const merged = new URLSearchParams({
       ...(params.category ? { category: params.category } : {}),
       ...(params.q ? { q: params.q } : {}),
+      // 상세 필터(플랫폼·가격대·위치)는 카테고리·페이지 이동에도 유지한다
+      ...(platform ? { platform } : {}),
+      ...(price ? { price } : {}),
+      ...(location ? { location } : {}),
       ...((params.page ?? 1) > 1 ? { page: String(params.page) } : {}),
     });
     const qs = merged.toString();
@@ -179,6 +208,60 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
           </section>
         )}
 
+        {/* 검색 필터 확장 — 플랫폼·가격대·위치 (§3.1, GET 폼이라 상태 없이 URL로 수렴) */}
+        <form
+          action="/"
+          method="get"
+          className="mt-10 flex flex-wrap items-center gap-2 rounded-2xl border bg-card p-3"
+        >
+          {q && <input type="hidden" name="q" value={q} />}
+          {category && <input type="hidden" name="category" value={category} />}
+          <select
+            name="platform"
+            defaultValue={platform ?? ""}
+            className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm"
+          >
+            <option value="">플랫폼 전체</option>
+            {Object.entries(PLATFORM_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <select
+            name="price"
+            defaultValue={price ?? ""}
+            className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm"
+          >
+            <option value="">가격대 전체</option>
+            {PRICE_RANGES.map((range) => (
+              <option key={range.value} value={range.value}>
+                {range.label}
+              </option>
+            ))}
+          </select>
+          <input
+            name="location"
+            defaultValue={location ?? ""}
+            placeholder="지역 (예: 서울)"
+            className="h-10 w-36 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus:border-primary"
+          />
+          <button
+            type="submit"
+            className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent-foreground"
+          >
+            필터 적용
+          </button>
+          {(platform || price || location) && (
+            <Link
+              href={category || q ? `/?${new URLSearchParams({ ...(category ? { category } : {}), ...(q ? { q } : {}) })}` : "/"}
+              className="px-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              필터 초기화 ✕
+            </Link>
+          )}
+        </form>
+
         {/* 섹션 헤더 */}
         <section>
           <div className="mb-6 mt-14 flex items-end justify-between">
@@ -202,7 +285,7 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
 
           {items.length === 0 ? (
             <p className="rounded-xl border border-dashed py-16 text-center text-muted-foreground">
-              {q || category
+              {isFiltered
                 ? "조건에 맞는 크리에이터가 없습니다."
                 : "아직 등록된 크리에이터가 없습니다."}
             </p>

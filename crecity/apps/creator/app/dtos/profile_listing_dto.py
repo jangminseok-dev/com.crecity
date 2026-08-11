@@ -9,6 +9,11 @@ class ProfileListingQuery:
     q: str | None  # 키워드 — 이름·한 줄 소개 부분 일치
     limit: int
     offset: int
+    # 검색 필터 확장(§3.1, 갭 #9) — 플랫폼·가격대는 패키지 EXISTS, 위치는 부분 일치
+    platform: str | None = None
+    price_min: int | None = None
+    price_max: int | None = None
+    location: str | None = None
 
 
 @dataclass(frozen=True)

@@ -43,13 +43,28 @@ class CreatorProfileRepository(ABC):
         limit: int,
         offset: int,
         q: str | None = None,
+        platform: str | None = None,
+        price_min: int | None = None,
+        price_max: int | None = None,
+        location: str | None = None,
     ) -> list[CreatorProfile]:
-        """상태로 필터한 프로필을 최신 등록순으로 조회한다(q는 이름·한 줄 소개 부분 일치)."""
+        """상태로 필터한 프로필을 최신 등록순으로 조회한다(§3.1 검색 필터).
+
+        q는 이름·한 줄 소개 부분 일치, location은 부분 일치.
+        platform·price_min/max는 "해당 조건의 패키지가 하나라도 있는 프로필"(EXISTS).
+        """
         ...
 
     @abstractmethod
     async def count_by_status(
-        self, status: ProfileStatus, category: str | None, q: str | None = None
+        self,
+        status: ProfileStatus,
+        category: str | None,
+        q: str | None = None,
+        platform: str | None = None,
+        price_min: int | None = None,
+        price_max: int | None = None,
+        location: str | None = None,
     ) -> int: ...
 
     @abstractmethod

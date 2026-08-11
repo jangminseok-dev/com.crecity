@@ -2,9 +2,44 @@ from sqlalchemy import exists, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from creator.adapter.outbound.mappers.creator_profile_mapper import CreatorProfileMapper
+from creator.adapter.outbound.orm.creator_package_orm import CreatorPackageOrm
 from creator.adapter.outbound.orm.creator_profile_orm import CreatorProfileOrm
 from creator.app.ports.output.creator_profile_repository import CreatorProfileRepository
 from creator.domain.entities.creator_profile_entity import CreatorProfile, ProfileStatus
+
+
+def _listing_conditions(
+    category: str | None,
+    q: str | None,
+    platform: str | None,
+    price_min: int | None,
+    price_max: int | None,
+    location: str | None,
+) -> list:
+    """목록·카운트가 공유하는 검색 필터(§3.1) — 목록과 총계가 항상 같은 조건을 본다."""
+    conditions = []
+    if category is not None:
+        conditions.append(CreatorProfileOrm.primary_category == category)
+    if q:
+        pattern = f"%{q}%"
+        conditions.append(
+            CreatorProfileOrm.name.ilike(pattern) | CreatorProfileOrm.tagline.ilike(pattern)
+        )
+    if location:
+        conditions.append(CreatorProfileOrm.location.ilike(f"%{location}%"))
+    if platform or price_min is not None or price_max is not None:
+        # 조건(플랫폼·가격대)을 동시에 만족하는 패키지가 하나라도 있는 프로필
+        packages = select(CreatorPackageOrm.id).where(
+            CreatorPackageOrm.profile_id == CreatorProfileOrm.id
+        )
+        if platform:
+            packages = packages.where(CreatorPackageOrm.platform == platform)
+        if price_min is not None:
+            packages = packages.where(CreatorPackageOrm.price_krw >= price_min)
+        if price_max is not None:
+            packages = packages.where(CreatorPackageOrm.price_krw <= price_max)
+        conditions.append(packages.exists())
+    return conditions
 
 
 class CreatorProfilePgRepository(CreatorProfileRepository):
@@ -74,16 +109,15 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         limit: int,
         offset: int,
         q: str | None = None,
+        platform: str | None = None,
+        price_min: int | None = None,
+        price_max: int | None = None,
+        location: str | None = None,
     ) -> list[CreatorProfile]:
-        stmt = select(CreatorProfileOrm).where(CreatorProfileOrm.status == status.value)
-        if category is not None:
-            stmt = stmt.where(CreatorProfileOrm.primary_category == category)
-        if q:
-            pattern = f"%{q}%"
-            stmt = stmt.where(
-                CreatorProfileOrm.name.ilike(pattern)
-                | CreatorProfileOrm.tagline.ilike(pattern)
-            )
+        stmt = select(CreatorProfileOrm).where(
+            CreatorProfileOrm.status == status.value,
+            *_listing_conditions(category, q, platform, price_min, price_max, location),
+        )
         stmt = (
             stmt.order_by(CreatorProfileOrm.created_at.desc(), CreatorProfileOrm.id.desc())
             .limit(limit)
@@ -152,20 +186,22 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         return CreatorProfileMapper.to_entity(orm) if orm is not None else None
 
     async def count_by_status(
-        self, status: ProfileStatus, category: str | None, q: str | None = None
+        self,
+        status: ProfileStatus,
+        category: str | None,
+        q: str | None = None,
+        platform: str | None = None,
+        price_min: int | None = None,
+        price_max: int | None = None,
+        location: str | None = None,
     ) -> int:
         stmt = (
             select(func.count())
             .select_from(CreatorProfileOrm)
-            .where(CreatorProfileOrm.status == status.value)
-        )
-        if category is not None:
-            stmt = stmt.where(CreatorProfileOrm.primary_category == category)
-        if q:
-            pattern = f"%{q}%"
-            stmt = stmt.where(
-                CreatorProfileOrm.name.ilike(pattern)
-                | CreatorProfileOrm.tagline.ilike(pattern)
+            .where(
+                CreatorProfileOrm.status == status.value,
+                *_listing_conditions(category, q, platform, price_min, price_max, location),
             )
+        )
         result = await self._session.execute(stmt)
         return int(result.scalar_one())

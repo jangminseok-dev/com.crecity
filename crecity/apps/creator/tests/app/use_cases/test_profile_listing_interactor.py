@@ -19,14 +19,25 @@ class _StubRepository:
     async def exists_by_slug(self, slug):
         raise NotImplementedError
 
-    async def list_by_status(self, status, category, limit, offset, q=None):
+    async def list_by_status(
+        self, status, category, limit, offset, q=None,
+        platform=None, price_min=None, price_max=None, location=None,
+    ):
         self.list_calls.append(
-            {"status": status, "category": category, "limit": limit, "offset": offset, "q": q}
+            {"status": status, "category": category, "limit": limit, "offset": offset, "q": q,
+             "platform": platform, "price_min": price_min, "price_max": price_max,
+             "location": location}
         )
         return self.profiles
 
-    async def count_by_status(self, status, category, q=None):
-        self.count_calls.append({"status": status, "category": category, "q": q})
+    async def count_by_status(
+        self, status, category, q=None,
+        platform=None, price_min=None, price_max=None, location=None,
+    ):
+        self.count_calls.append(
+            {"status": status, "category": category, "q": q, "platform": platform,
+             "price_min": price_min, "price_max": price_max, "location": location}
+        )
         return len(self.profiles)
 
     async def list_categories(self, status):
@@ -94,10 +105,14 @@ async def test_승인된_프로필만_조회하도록_위임한다():
     result = await interactor.list_profiles(
         ProfileListingQuery(category=None, q=None, limit=20, offset=0)
     )
+    _NO_FILTERS = {"platform": None, "price_min": None, "price_max": None, "location": None}
     assert repository.list_calls == [
-        {"status": ProfileStatus.APPROVED, "category": None, "limit": 20, "offset": 0, "q": None}
+        {"status": ProfileStatus.APPROVED, "category": None, "limit": 20, "offset": 0, "q": None,
+         **_NO_FILTERS}
     ]
-    assert repository.count_calls == [{"status": ProfileStatus.APPROVED, "category": None, "q": None}]
+    assert repository.count_calls == [
+        {"status": ProfileStatus.APPROVED, "category": None, "q": None, **_NO_FILTERS}
+    ]
     assert len(result.items) == 1
     assert result.items[0].slug == "kim-beauty"
     assert result.total == 1
@@ -111,6 +126,22 @@ async def test_카테고리_필터를_그대로_전달한다():
     assert repository.list_calls[0]["limit"] == 10
     assert repository.list_calls[0]["offset"] == 5
     assert repository.count_calls[0]["category"] == "뷰티"
+
+
+async def test_검색_필터_확장이_목록과_총계에_동일하게_전달된다():
+    repository = _StubRepository(profiles=[_profile()])
+    interactor = _interactor(repository=repository)
+    await interactor.list_profiles(
+        ProfileListingQuery(
+            category=None, q=None, limit=20, offset=0,
+            platform="INSTAGRAM", price_min=100000, price_max=500000, location="서울",
+        )
+    )
+    for call in (repository.list_calls[0], repository.count_calls[0]):
+        assert call["platform"] == "INSTAGRAM"
+        assert call["price_min"] == 100000
+        assert call["price_max"] == 500000
+        assert call["location"] == "서울"
 
 
 async def test_결과가_없으면_빈_목록과_total_0을_반환한다():
