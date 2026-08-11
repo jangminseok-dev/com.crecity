@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Star } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -21,6 +21,9 @@ const TINTS: [string, string][] = [
 
 type PageParams = Promise<{ slug: string }>;
 
+/* 헤더 평점 요약용 — 집계는 비로그인에도 공개(리뷰 블러 정책과 무관) */
+type ReviewSummary = { total: number; average_overall: number | null };
+
 async function fetchProfile(slug: string) {
   return backendGet<CreatorProfile>(`/creator/profiles/${encodeURIComponent(slug)}`);
 }
@@ -40,10 +43,11 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
 
 export default async function CreatorProfilePage({ params }: { params: PageParams }) {
   const { slug } = await params;
-  const [profile, packages, portfolio] = await Promise.all([
+  const [profile, packages, portfolio, reviews] = await Promise.all([
     fetchProfile(slug),
     backendGet<CreatorPackage[]>(`/creator/profiles/${encodeURIComponent(slug)}/packages`),
     backendGet<PortfolioItem[]>(`/creator/profiles/${encodeURIComponent(slug)}/portfolio`),
+    backendGet<ReviewSummary>(`/review/creators/${encodeURIComponent(slug)}`),
   ]);
   if (!profile) notFound();
 
@@ -93,6 +97,15 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
                 {profile.location ? ` · ${profile.location}` : ""}
               </p>
               <p className="mt-1 text-[15px] text-muted-foreground">{profile.tagline}</p>
+              {reviews && reviews.total > 0 && reviews.average_overall !== null && (
+                <p className="mt-2.5 inline-flex items-center gap-1 text-[15px] font-semibold">
+                  <Star className="size-4 fill-foreground text-foreground" />
+                  {reviews.average_overall.toFixed(1)}
+                  <span className="ml-0.5 font-normal text-muted-foreground">
+                    리뷰 {reviews.total}
+                  </span>
+                </p>
+              )}
               <div className="mt-3.5 flex flex-wrap gap-1.5">
                 {[profile.primary_category, ...platforms.map((p) => PLATFORM_LABELS[p])].map(
                   (tag) => (
