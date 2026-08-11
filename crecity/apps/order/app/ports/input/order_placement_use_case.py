@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 
 from order.app.dtos.order_placement_dto import (
     ApplicationOrderPlacementCommand,
+    CartOrderPlacementCommand,
     CustomOrderPlacementCommand,
     OrderPlacementCommand,
 )
@@ -44,5 +45,16 @@ class OrderPlacementUseCase(ABC):
         Raises:
             NotBrandAccountError: 브랜드 계정이 아니거나 공고 소유 브랜드가 아님.
             PackageNotOrderableError: 지원이 없거나 이미 수락(결제)됨.
+        """
+        ...
+
+    @abstractmethod
+    async def place_cart(self, command: CartOrderPlacementCommand) -> list[OrderResult]:
+        """장바구니 일괄 주문(§3.8) — 패키지별 주문 N건을 단일 트랜잭션으로 생성한다.
+
+        Raises:
+            NotBrandAccountError: 브랜드 계정이 아님.
+            PackageNotOrderableError: 장바구니가 비었거나 주문 불가 패키지 포함.
+            InsufficientCreditError: 크레딧 잔액 부족(전체 롤백).
         """
         ...

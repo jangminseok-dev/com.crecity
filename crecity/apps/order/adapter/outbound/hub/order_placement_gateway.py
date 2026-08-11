@@ -17,6 +17,7 @@ from hub.dependencies.package_summary_provider import get_package_summary_port
 from order.adapter.outbound.pg.order_pg_repository import OrderPgRepository
 from order.app.dtos.order_placement_dto import (
     ApplicationOrderPlacementCommand,
+    CartOrderPlacementCommand,
     CustomOrderPlacementCommand,
     OrderPlacementCommand,
 )
@@ -120,6 +121,50 @@ class PaidOrderPlacementGateway(OrderPlacementPort):
         except (NotBrandAccountError, PackageNotOrderableError, InsufficientCreditError):
             return None
         return PlacedOrder(id=result.id, brand_total_krw=result.brand_total_krw)
+
+    async def place_paid_cart_orders(
+        self,
+        package_ids: list[int],
+        requirements: str,
+        brand_user_id: int,
+        expected_brand_total_krw: int,
+        credit_used_krw: int = 0,
+    ) -> list[PlacedOrder] | None:
+        packages = get_package_summary_port()
+        # 결제 시점 총액과 현재 계산이 다르면(가격 변동) 전체를 만들지 않는다
+        current_total = 0
+        for package_id in package_ids:
+            summary = await packages.get_package_summary(package_id)
+            if summary is None:
+                return None
+            current_total += summary.price_krw + summary.price_krw * ORDER_BRAND_FEE_PERCENT // 100
+        if current_total != expected_brand_total_krw:
+            logger.warning(
+                "결제-장바구니 금액 불일치: packages=%s 결제=%s 현재=%s",
+                package_ids, expected_brand_total_krw, current_total,
+            )
+            return None
+        try:
+            async with session_scope() as session:
+                interactor = OrderPlacementInteractor(
+                    orders=OrderPgRepository(session=session),
+                    packages=packages,
+                    brand_fee_percent=ORDER_BRAND_FEE_PERCENT,
+                    creator_fee_percent=ORDER_CREATOR_FEE_PERCENT,
+                    accept_deadline=timedelta(hours=ORDER_RESPONSE_DEADLINE_HOURS),
+                )
+                results = await interactor.place_cart(
+                    CartOrderPlacementCommand(
+                        package_ids=tuple(package_ids),
+                        requirements=requirements,
+                        brand_user_id=brand_user_id,
+                        account_type="BRAND",  # 결제 시점에 BRAND 검증 완료(payment 몫)
+                        credit_used_krw=credit_used_krw,
+                    )
+                )
+        except (NotBrandAccountError, PackageNotOrderableError, InsufficientCreditError):
+            return None
+        return [PlacedOrder(id=r.id, brand_total_krw=r.brand_total_krw) for r in results]
 
     async def place_paid_custom_order(
         self,

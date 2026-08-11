@@ -15,6 +15,13 @@ class OfferCheckoutRequestSchema(BaseModel):
     use_credit: bool = Field(False, description="보유 크레딧 사용 여부 — 적용액은 서버가 확정")
 
 
+class CartCheckoutRequestSchema(BaseModel):
+
+    package_ids: list[int] = Field(..., min_length=1, max_length=20, description="장바구니 패키지 목록")
+    requirements: str = Field(..., description="일괄 결제 공통 브리프 — 각 주문에 동일 적용")
+    use_credit: bool = Field(False, description="보유 크레딧 사용 여부 — 적용액은 서버가 확정")
+
+
 class ApplicationCheckoutRequestSchema(BaseModel):
 
     application_id: int

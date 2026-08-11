@@ -52,3 +52,18 @@ class OrderPlacementPort(ABC):
     ) -> PlacedOrder | None:
         """캠페인 지원 수락 주문 생성 — 지원 불가·금액 불일치·크레딧 부족·생성 실패면 None."""
         ...
+
+    @abstractmethod
+    async def place_paid_cart_orders(
+        self,
+        package_ids: list[int],
+        requirements: str,
+        brand_user_id: int,
+        expected_brand_total_krw: int,
+        credit_used_krw: int = 0,
+    ) -> list[PlacedOrder] | None:
+        """장바구니 일괄 주문 생성(§3.8) — 주문 N건 단일 트랜잭션.
+
+        패키지 불가·총액 불일치·크레딧 부족·생성 실패면 전체 거부(None) — 부분 생성 없음.
+        """
+        ...

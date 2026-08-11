@@ -6,8 +6,11 @@ class PaymentIntentMapper:
     """PaymentIntentOrm(영속성) ↔ PaymentIntent(도메인) 변환을 담당한다."""
 
     @staticmethod
-    def to_entity(orm: PaymentIntentOrm) -> PaymentIntent:
+    def to_entity(
+        orm: PaymentIntentOrm, cart_package_ids: tuple[int, ...] = ()
+    ) -> PaymentIntent:
         return PaymentIntent(
+            cart_package_ids=cart_package_ids,
             id=orm.id,
             pg_order_id=orm.pg_order_id,
             package_id=orm.package_id,

@@ -7,6 +7,7 @@ from hub.app.ports.output.custom_offer_port import CustomOfferPort
 from hub.app.ports.output.package_summary_port import PackageSummaryPort
 from order.app.dtos.order_placement_dto import (
     ApplicationOrderPlacementCommand,
+    CartOrderPlacementCommand,
     CustomOrderPlacementCommand,
     OrderPlacementCommand,
 )
@@ -100,7 +101,49 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
             credit_used_krw=command.credit_used_krw,
         )
 
-    async def _place(
+    async def place_cart(self, command: CartOrderPlacementCommand) -> list[OrderResult]:
+        if command.account_type != "BRAND":
+            raise NotBrandAccountError("브랜드 계정만 주문할 수 있습니다.")
+        if not command.package_ids:
+            raise PackageNotOrderableError("장바구니가 비어 있습니다.")
+
+        now = datetime.now(timezone.utc)
+        drafts = []
+        for package_id in command.package_ids:
+            summary = await self._packages.get_package_summary(package_id)
+            if summary is None:
+                raise PackageNotOrderableError(f"주문할 수 없는 패키지입니다: {package_id}")
+            draft = self._draft(
+                package_id=summary.package_id,
+                title=summary.title,
+                price_krw=summary.price_krw,
+                creator_user_id=summary.creator_user_id,
+                brand_user_id=command.brand_user_id,
+                requirements=command.requirements,
+                now=now,
+            )
+            deposit = LedgerEntryDraft(
+                entry_type=LedgerEntryType.ESCROW_DEPOSIT,
+                user_id=command.brand_user_id,
+                amount_krw=draft.brand_total_krw(),
+            )
+            drafts.append((draft, [deposit], [order_event("order.placed", draft)]))
+
+        credit_spend = (
+            LedgerEntryDraft(
+                entry_type=LedgerEntryType.CREDIT_SPENT,
+                user_id=command.brand_user_id,
+                amount_krw=command.credit_used_krw,
+            )
+            if command.credit_used_krw > 0
+            else None
+        )
+        orders = await self._orders.create_many(drafts, credit_spend)
+        if orders is None:
+            raise InsufficientCreditError("크레딧 잔액이 부족합니다 — 결제를 처음부터 다시 시도해 주세요.")
+        return [OrderResult.from_order(order) for order in orders]
+
+    def _draft(
         self,
         package_id: int | None,
         title: str,
@@ -108,10 +151,9 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
         creator_user_id: int,
         brand_user_id: int,
         requirements: str,
-        credit_used_krw: int = 0,
-    ) -> OrderResult:
-        now = datetime.now(timezone.utc)
-        draft = Order(
+        now: datetime,
+    ) -> Order:
+        return Order(
             id=0,  # 저장 시 발급
             package_id=package_id,
             package_title=title,
@@ -123,6 +165,26 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
             requirements=requirements,
             status=OrderStatus.PENDING_ACCEPT,
             deadline_at=now + self._accept_deadline,
+        )
+
+    async def _place(
+        self,
+        package_id: int | None,
+        title: str,
+        price_krw: int,
+        creator_user_id: int,
+        brand_user_id: int,
+        requirements: str,
+        credit_used_krw: int = 0,
+    ) -> OrderResult:
+        draft = self._draft(
+            package_id=package_id,
+            title=title,
+            price_krw=price_krw,
+            creator_user_id=creator_user_id,
+            brand_user_id=brand_user_id,
+            requirements=requirements,
+            now=datetime.now(timezone.utc),
         )
         deposit = LedgerEntryDraft(
             entry_type=LedgerEntryType.ESCROW_DEPOSIT,

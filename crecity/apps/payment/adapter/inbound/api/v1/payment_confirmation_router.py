@@ -45,4 +45,4 @@ async def confirm_payment(
         raise HTTPException(status_code=400, detail=str(error))
     except PaymentConfirmError as error:
         raise HTTPException(status_code=502, detail=str(error))
-    return ConfirmResponseSchema(order_id=result.order_id)
+    return ConfirmResponseSchema(order_id=result.order_id, order_ids=list(result.order_ids))

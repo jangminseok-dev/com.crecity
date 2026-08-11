@@ -1,16 +1,25 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import NotificationBell from "@/components/notification-bell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/lib/auth-store";
+import { useCartStore } from "@/lib/cart-store";
 
 export default function SiteHeader() {
   const { status, user, clearSession } = useAuthStore();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const cartCount = useCartStore((s) => s.items.length);
+  // 단일 객체 상태 — 계정 메뉴 열림 + 카트 하이드레이션 완료(SSR 불일치 방지)
+  const [ui, setUi] = useState<{ menuOpen: boolean; cartReady: boolean }>({
+    menuOpen: false,
+    cartReady: false,
+  });
+  const menuOpen = ui.menuOpen;
+  const setMenuOpen = (open: boolean) => setUi((prev) => ({ ...prev, menuOpen: open }));
+  useEffect(() => setUi((prev) => ({ ...prev, cartReady: true })), []);
 
   const handleLogout = async () => {
     setMenuOpen(false);
@@ -43,6 +52,18 @@ export default function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1">
+          {ui.cartReady && cartCount > 0 && (
+            <Link
+              href="/cart"
+              aria-label="장바구니"
+              className="relative inline-flex size-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              <ShoppingCart className="size-5" />
+              <span className="absolute -right-0.5 -top-0.5 inline-flex size-[18px] items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+                {cartCount}
+              </span>
+            </Link>
+          )}
           {status === "loading" && <Skeleton className="h-9 w-24" />}
 
           {status === "guest" && (

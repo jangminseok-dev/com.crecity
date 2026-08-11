@@ -33,6 +33,17 @@ class ApplicationCheckoutCommand:
 
 
 @dataclass(frozen=True)
+class CartCheckoutCommand:
+    """장바구니 일괄 결제 준비(§3.8) — 항목별 가격은 서버가 전부 재확정한다."""
+
+    package_ids: tuple[int, ...]
+    requirements: str  # 일괄 결제 공통 브리프
+    brand_user_id: int
+    account_type: str  # BRAND만 결제 가능
+    use_credit: bool = False
+
+
+@dataclass(frozen=True)
 class CheckoutResult:
     """프론트 결제창(SDK) 호출 파라미터 — 금액은 서버 확정값이다.
 

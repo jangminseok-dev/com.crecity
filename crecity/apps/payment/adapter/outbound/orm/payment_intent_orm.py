@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, Integer, String, Text, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database import Base
@@ -34,3 +34,16 @@ class PaymentIntentOrm(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class PaymentIntentItemOrm(Base):
+    """장바구니 결제 항목(§3.8) — 다중값 컬럼 대신 조인 테이블(3NF).
+
+    package_id는 creator 패키지 논리 참조(DB FK 없음). 단건 결제는 항목이 없다.
+    """
+
+    __tablename__ = "payment_intent_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    intent_id: Mapped[int] = mapped_column(ForeignKey("payment_intents.id"), index=True)
+    package_id: Mapped[int] = mapped_column(Integer)

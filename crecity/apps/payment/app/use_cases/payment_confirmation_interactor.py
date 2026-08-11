@@ -59,7 +59,18 @@ class PaymentConfirmationInteractor(PaymentConfirmationUseCase):
                 raise
 
         # 2) 주문 생성+예치+크레딧 차감 (order 내부 원자적 — §3). 실패 시 PG 취소로 보정한다.
-        if intent.application_id is not None:
+        placed_orders: list = []
+        if intent.cart_package_ids:
+            placed_list = await self._orders.place_paid_cart_orders(
+                package_ids=list(intent.cart_package_ids),
+                requirements=intent.requirements,
+                brand_user_id=intent.brand_user_id,
+                expected_brand_total_krw=intent.amount_krw,
+                credit_used_krw=intent.credit_applied_krw,
+            )
+            placed = placed_list[0] if placed_list else None
+            placed_orders = placed_list or []
+        elif intent.application_id is not None:
             placed = await self._orders.place_paid_application_order(
                 application_id=intent.application_id,
                 requirements=intent.requirements,
@@ -104,4 +115,6 @@ class PaymentConfirmationInteractor(PaymentConfirmationUseCase):
             await self._offers.mark_paid(intent.offer_id, placed.id)
         if intent.application_id is not None and self._applications is not None:
             await self._applications.mark_paid(intent.application_id, placed.id)
-        return ConfirmResult(order_id=placed.id)
+        return ConfirmResult(
+            order_id=placed.id, order_ids=tuple(p.id for p in placed_orders)
+        )

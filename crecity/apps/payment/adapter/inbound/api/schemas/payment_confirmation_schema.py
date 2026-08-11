@@ -15,4 +15,5 @@ class ConfirmRequestSchema(BaseModel):
 
 class ConfirmResponseSchema(BaseModel):
 
-    order_id: int
+    order_id: int  # 생성된 주문(장바구니는 첫 주문)
+    order_ids: list[int] = []  # 장바구니 결제 시 전체 주문 — 단건은 빈 목록

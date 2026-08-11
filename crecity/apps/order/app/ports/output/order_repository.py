@@ -31,6 +31,19 @@ class OrderRepository(ABC):
         ...
 
     @abstractmethod
+    async def create_many(
+        self,
+        drafts: list[tuple[Order, list[LedgerEntryDraft], list[OutboxEvent]]],
+        credit_spend: LedgerEntryDraft | None = None,
+    ) -> list[Order] | None:
+        """여러 주문(+각 원장 기입+이벤트)을 **단일 트랜잭션**으로 생성한다(장바구니 §3.8).
+
+        credit_spend가 있으면 create와 동일하게 advisory lock 잔액 재검증 후 함께 기입 —
+        부족하면 아무것도 저장하지 않고 None.
+        """
+        ...
+
+    @abstractmethod
     async def find_by_id(self, order_id: int) -> Order | None: ...
 
     @abstractmethod

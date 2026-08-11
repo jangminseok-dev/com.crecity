@@ -232,6 +232,58 @@ async def test_오퍼_결제는_커스텀_주문으로_생성되고_오퍼가_PA
     assert offers.paid == [(5, 9)]
 
 
+# ── 장바구니 결제 승인 (갭 #8) ────────────────────────────────────
+
+
+class _StubOrderPlacementPortWithCart(_StubOrderPlacementPort):
+    def __init__(self, placed_list):
+        super().__init__(None)
+        self.placed_list = placed_list
+        self.cart_calls = []
+
+    async def place_paid_cart_orders(
+        self, package_ids, requirements, brand_user_id, expected_brand_total_krw,
+        credit_used_krw=0,
+    ):
+        self.cart_calls.append((tuple(package_ids), expected_brand_total_krw))
+        return self.placed_list
+
+
+async def test_장바구니_결제는_주문_전체_id를_돌려준다():
+    intent = PaymentIntent(
+        id=1, pg_order_id="crecity-abc", package_id=None, brand_user_id=BRAND,
+        requirements="공통 브리프", amount_krw=550000,
+        status=PaymentIntentStatus.READY, cart_package_ids=(10, 11),
+    )
+    intents = _StubIntentRepository(intent)
+    orders = _StubOrderPlacementPortWithCart(
+        [PlacedOrder(id=7, brand_total_krw=330000), PlacedOrder(id=8, brand_total_krw=220000)]
+    )
+    result = await PaymentConfirmationInteractor(intents, _StubGateway(), orders).confirm(
+        _command(amount_krw=550000)
+    )
+    assert result.order_id == 7
+    assert result.order_ids == (7, 8)
+    assert orders.cart_calls == [((10, 11), 550000)]
+    assert intents.confirmed == [(1, "pay-key", 7)]
+
+
+async def test_장바구니_주문_생성_실패면_결제를_취소_보정한다():
+    intent = PaymentIntent(
+        id=1, pg_order_id="crecity-abc", package_id=None, brand_user_id=BRAND,
+        requirements="공통 브리프", amount_krw=550000,
+        status=PaymentIntentStatus.READY, cart_package_ids=(10, 11),
+    )
+    intents = _StubIntentRepository(intent)
+    gateway = _StubGateway()
+    orders = _StubOrderPlacementPortWithCart(None)
+    with pytest.raises(PaymentConfirmError):
+        await PaymentConfirmationInteractor(intents, gateway, orders).confirm(
+            _command(amount_krw=550000)
+        )
+    assert len(gateway.cancels) == 1
+
+
 # ── 캠페인 지원 수락 결제 승인 (갭 #7) ────────────────────────────
 
 

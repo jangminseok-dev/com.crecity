@@ -2,7 +2,10 @@ from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from payment.adapter.outbound.mappers.payment_intent_mapper import PaymentIntentMapper
-from payment.adapter.outbound.orm.payment_intent_orm import PaymentIntentOrm
+from payment.adapter.outbound.orm.payment_intent_orm import (
+    PaymentIntentItemOrm,
+    PaymentIntentOrm,
+)
 from payment.app.ports.output.payment_intent_repository import PaymentIntentRepository
 from payment.domain.entities.payment_intent_entity import PaymentIntent, PaymentIntentStatus
 
@@ -22,6 +25,7 @@ class PaymentIntentPgRepository(PaymentIntentRepository):
         offer_id: int | None = None,
         application_id: int | None = None,
         credit_applied_krw: int = 0,
+        cart_package_ids: list[int] | None = None,
     ) -> PaymentIntent:
         result = await self._session.execute(
             insert(PaymentIntentOrm)
@@ -38,15 +42,32 @@ class PaymentIntentPgRepository(PaymentIntentRepository):
             )
             .returning(PaymentIntentOrm)
         )
+        orm = result.scalar_one()
+        for item_package_id in cart_package_ids or []:
+            await self._session.execute(
+                insert(PaymentIntentItemOrm).values(
+                    intent_id=orm.id, package_id=item_package_id
+                )
+            )
         await self._session.commit()
-        return PaymentIntentMapper.to_entity(result.scalar_one())
+        return PaymentIntentMapper.to_entity(orm, tuple(cart_package_ids or ()))
+
+    async def _cart_package_ids(self, intent_id: int) -> tuple[int, ...]:
+        result = await self._session.execute(
+            select(PaymentIntentItemOrm.package_id)
+            .where(PaymentIntentItemOrm.intent_id == intent_id)
+            .order_by(PaymentIntentItemOrm.id)
+        )
+        return tuple(result.scalars())
 
     async def find_by_pg_order_id(self, pg_order_id: str) -> PaymentIntent | None:
         result = await self._session.execute(
             select(PaymentIntentOrm).where(PaymentIntentOrm.pg_order_id == pg_order_id)
         )
         orm = result.scalar_one_or_none()
-        return PaymentIntentMapper.to_entity(orm) if orm is not None else None
+        if orm is None:
+            return None
+        return PaymentIntentMapper.to_entity(orm, await self._cart_package_ids(orm.id))
 
     async def mark_confirmed(self, intent_id: int, payment_key: str, order_id: int) -> None:
         await self._session.execute(

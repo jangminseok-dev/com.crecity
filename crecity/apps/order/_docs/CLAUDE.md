@@ -7,7 +7,7 @@
 | 슬라이스 | 엔드포인트 | 설명 |
 |---|---|---|
 | bookkeeper (myself) | `GET /order/myself` | 자기소개 |
-| order_placement | (HTTP 없음 — 결제 경유 전용) | 주문 생성 — payment 승인 후 허브 `OrderPlacementPort`(order 구현 `PaidOrderPlacementGateway`)로만 호출된다. 커스텀 오퍼 주문(`place_custom`)은 `CustomOfferPort`로, 캠페인 지원 수락 주문(`place_application`)은 `CampaignApplicationPort`로 가격·당사자를 해석하며 package_id가 NULL. 금액·수수료율(§7-4)·패키지 제목 스냅샷, 72h 수락 마감, 에스크로 예치 기입. 결제 금액과 현재 계산 불일치 시 생성 거부(None). 크레딧 사용분(`credit_used_krw`)은 advisory lock 잔액 재검증 + CREDIT_SPENT 기입을 주문 생성과 단일 트랜잭션으로 — 부족 시 생성 거부 |
+| order_placement | (HTTP 없음 — 결제 경유 전용) | 주문 생성 — payment 승인 후 허브 `OrderPlacementPort`(order 구현 `PaidOrderPlacementGateway`)로만 호출된다. 커스텀 오퍼 주문(`place_custom`)은 `CustomOfferPort`로, 캠페인 지원 수락 주문(`place_application`)은 `CampaignApplicationPort`로 가격·당사자를 해석하며 package_id가 NULL. 금액·수수료율(§7-4)·패키지 제목 스냅샷, 72h 수락 마감, 에스크로 예치 기입. 결제 금액과 현재 계산 불일치 시 생성 거부(None). 크레딧 사용분(`credit_used_krw`)은 advisory lock 잔액 재검증 + CREDIT_SPENT 기입을 주문 생성과 단일 트랜잭션으로 — 부족 시 생성 거부. 장바구니(`place_cart`, §3.8)는 주문 N건+예치 N건을 `create_many` **단일 트랜잭션**으로 — 불가 패키지·크레딧 부족 시 전체 거부(부분 생성 없음) |
 | order_progress | `POST /order/orders/{id}/accept·reject·submit·request-revision·approve` | 상태 전이 — 규칙·행위자 검증은 도메인 `Order`가 강제(403/409). 거절→크레딧 환불, 승인→적립+수수료 확정 |
 | deliverable_submission | `POST /order/orders/{id}/deliverables/files·links` · `GET /order/orders/{id}/deliverables` | 납품물(파일·링크) — 등록은 **IN_PROGRESS의 크리에이터만**(도메인 `ensure_can_attach_deliverable`), 열람은 당사자만(403). append-only(분쟁 근거 보존), 파일은 `/uploads/deliverables/` 로컬 저장(이미지·영상·PDF·ZIP, 100MB) |
 | order_cancellation | `POST /order/orders/{id}/cancel-request·cancel-consent·cancel-decline` | 양측 합의 취소 — 요청은 IN_PROGRESS·IN_REVIEW의 당사자 누구나(중복 409), 동의·거부는 **상대방만**(403). 동의 시 CANCELLED + 브랜드 전액 크레딧 환불(단일 트랜잭션). `orders.cancel_requested_by`가 대기 상태 표현 |
@@ -40,5 +40,5 @@ IN_PROGRESS·IN_REVIEW ──취소 요청→상대 동의──▶ CANCELLED (�
   차감 합(`BALANCE_DEBIT_TYPES`: WITHDRAWAL·CREDIT_SPENT).
 - `package_id`·user_id들은 타 스포크 논리 참조(DB FK 없음). 패키지 제목은 표시용 스냅샷
   (이력 보존 — 3NF 허용 예외).
-- 예정: 장바구니 · admin 분쟁 중재.
-  (인출·납품물 업로드·합의 취소·크레딧 재결제는 2026-08-11 구축 완료)
+- 예정: admin 분쟁 중재.
+  (인출·납품물 업로드·합의 취소·크레딧 재결제·장바구니는 2026-08-11 구축 완료)

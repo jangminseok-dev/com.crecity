@@ -2,9 +2,10 @@
 
 import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import ContactCreatorButton from "@/components/contact-creator-button";
+import { useCartStore } from "@/lib/cart-store";
 import { PLATFORM_LABELS, formatKrw } from "@/lib/labels";
 import type { CreatorPackage } from "@/lib/types";
 
@@ -16,7 +17,18 @@ export default function PackagePicker({
   slug: string;
   packages: CreatorPackage[];
 }) {
-  const [selectedId, setSelectedId] = useState<number | null>(packages[0]?.id ?? null);
+  // 단일 객체 상태 — 선택 패키지 + 카트 하이드레이션 완료 여부(localStorage와 SSR 불일치 방지)
+  const [ui, setUi] = useState<{ selectedId: number | null; cartReady: boolean }>({
+    selectedId: packages[0]?.id ?? null,
+    cartReady: false,
+  });
+  const selectedId = ui.selectedId;
+  const cart = useCartStore();
+  useEffect(() => setUi((prev) => ({ ...prev, cartReady: true })), []);
+
+  const selectedPkg = packages.find((p) => p.id === selectedId);
+  const inCart =
+    ui.cartReady && selectedId !== null && cart.items.some((i) => i.package_id === selectedId);
 
   return (
     <aside className="top-24 flex flex-col gap-2.5 rounded-2xl border bg-card p-5 shadow-card lg:sticky">
@@ -34,7 +46,7 @@ export default function PackagePicker({
               <button
                 key={pkg.id}
                 type="button"
-                onClick={() => setSelectedId(pkg.id)}
+                onClick={() => setUi((prev) => ({ ...prev, selectedId: pkg.id }))}
                 className={`flex w-full flex-col gap-1.5 rounded-xl border-[1.5px] p-4 text-left transition-colors ${
                   selected ? "border-primary bg-accent" : "hover:border-[#d1d6db]"
                 }`}
@@ -68,6 +80,31 @@ export default function PackagePicker({
               패키지 구매
             </Link>
           )}
+          {selectedPkg &&
+            (inCart ? (
+              <Link
+                href="/cart"
+                className="inline-flex h-11 w-full items-center justify-center rounded-xl border text-sm font-semibold text-muted-foreground transition-colors hover:bg-secondary"
+              >
+                ✓ 장바구니에 담김 — 보러 가기
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() =>
+                  cart.add({
+                    package_id: selectedPkg.id,
+                    title: selectedPkg.title,
+                    price_krw: selectedPkg.price_krw,
+                    platform: selectedPkg.platform,
+                    creator_slug: slug,
+                  })
+                }
+                className="inline-flex h-11 w-full items-center justify-center rounded-xl border text-sm font-semibold transition-colors hover:bg-secondary"
+              >
+                장바구니 담기 — 여러 크리에이터 한 번에 결제
+              </button>
+            ))}
         </>
       )}
 

@@ -30,3 +30,14 @@ class ApplicationOrderPlacementCommand:
     brand_user_id: int
     account_type: str  # BRAND만 주문 가능
     credit_used_krw: int = 0
+
+
+@dataclass(frozen=True)
+class CartOrderPlacementCommand:
+    """장바구니 일괄 주문(§3.8) — 패키지별 주문 N건을 단일 트랜잭션으로 생성한다."""
+
+    package_ids: tuple[int, ...]  # 중복 제거된 패키지 목록
+    requirements: str  # 일괄 결제 공통 브리프
+    brand_user_id: int
+    account_type: str  # BRAND만 주문 가능
+    credit_used_krw: int = 0

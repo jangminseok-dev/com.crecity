@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 
 from payment.app.dtos.checkout_preparation_dto import (
     ApplicationCheckoutCommand,
+    CartCheckoutCommand,
     CheckoutCommand,
     CheckoutResult,
     OfferCheckoutCommand,
@@ -33,6 +34,16 @@ class CheckoutPreparationUseCase(ABC):
         Raises:
             NotBrandAccountError: 브랜드 계정이 아니거나 오퍼 수신 브랜드가 아님.
             PackageNotOrderableError: 오퍼가 없거나 이미 결제됨.
+        """
+        ...
+
+    @abstractmethod
+    async def prepare_cart(self, command: CartCheckoutCommand) -> CheckoutResult:
+        """장바구니 일괄 결제 준비(§3.8) — 총액 = 패키지별 (가격+수수료) 합.
+
+        Raises:
+            NotBrandAccountError: 브랜드 계정이 아님.
+            PackageNotOrderableError: 장바구니가 비었거나 주문 불가 패키지 포함.
         """
         ...
 

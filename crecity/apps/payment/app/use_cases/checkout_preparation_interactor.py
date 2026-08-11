@@ -8,6 +8,7 @@ from hub.app.ports.output.custom_offer_port import CustomOfferPort
 from hub.app.ports.output.package_summary_port import PackageSummaryPort
 from payment.app.dtos.checkout_preparation_dto import (
     ApplicationCheckoutCommand,
+    CartCheckoutCommand,
     CheckoutCommand,
     CheckoutResult,
     OfferCheckoutCommand,
@@ -103,6 +104,45 @@ class CheckoutPreparationInteractor(CheckoutPreparationUseCase):
             credit_applied_krw=intent.credit_applied_krw,
             pg_amount_krw=intent.pg_amount_krw(),
             order_name=offer.title,
+            client_key=self._client_key,
+        )
+
+    async def prepare_cart(self, command: CartCheckoutCommand) -> CheckoutResult:
+        if command.account_type != "BRAND":
+            raise NotBrandAccountError("브랜드 계정만 결제할 수 있습니다.")
+        package_ids = tuple(dict.fromkeys(command.package_ids))  # 중복 제거(순서 유지)
+        if not package_ids:
+            raise PackageNotOrderableError("장바구니가 비어 있습니다.")
+
+        # 총액 = 패키지별 (가격 + 브랜드 수수료) 합 — 주문별 스냅샷 공식과 일치해야 한다
+        amount_krw = 0
+        titles = []
+        for package_id in package_ids:
+            summary = await self._packages.get_package_summary(package_id)
+            if summary is None:
+                raise PackageNotOrderableError(f"주문할 수 없는 패키지입니다: {package_id}")
+            amount_krw += summary.price_krw + summary.price_krw * self._brand_fee_percent // 100
+            titles.append(summary.title)
+        order_name = titles[0] if len(titles) == 1 else f"{titles[0]} 외 {len(titles) - 1}건"
+
+        credit_applied = await self._credit_applied_krw(
+            command.use_credit, command.brand_user_id, amount_krw
+        )
+        intent = await self._intents.create(
+            pg_order_id=f"crecity-{uuid.uuid4().hex}",
+            package_id=None,
+            brand_user_id=command.brand_user_id,
+            requirements=command.requirements,
+            amount_krw=amount_krw,
+            credit_applied_krw=credit_applied,
+            cart_package_ids=list(package_ids),
+        )
+        return CheckoutResult(
+            pg_order_id=intent.pg_order_id,
+            amount_krw=intent.amount_krw,
+            credit_applied_krw=intent.credit_applied_krw,
+            pg_amount_krw=intent.pg_amount_krw(),
+            order_name=order_name,
             client_key=self._client_key,
         )
 

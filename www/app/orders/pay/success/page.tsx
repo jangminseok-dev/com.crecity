@@ -7,6 +7,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { useCartStore } from "@/lib/cart-store";
 
 type ConfirmState =
   | { phase: "confirming" }
@@ -35,7 +36,10 @@ function PaySuccessContent() {
 
     const confirm = async () => {
       try {
-        const { order_id } = await apiFetch<{ order_id: number }>("/payment/confirm", {
+        const { order_id, order_ids } = await apiFetch<{
+          order_id: number;
+          order_ids: number[];
+        }>("/payment/confirm", {
           method: "POST",
           body: JSON.stringify({
             payment_key: paymentKey,
@@ -43,7 +47,11 @@ function PaySuccessContent() {
             amount_krw: amount,
           }),
         });
-        router.replace(`/dashboard/orders/${order_id}`);
+        // 장바구니 결제(order_ids 존재)면 카트를 비우고, 여러 건이면 주문 목록으로 간다
+        if (order_ids.length > 0) useCartStore.getState().clear();
+        router.replace(
+          order_ids.length > 1 ? "/dashboard/orders" : `/dashboard/orders/${order_id}`,
+        );
       } catch (error) {
         setState({
           phase: "error",

@@ -24,13 +24,14 @@ class _StubIntentRepository:
 
     async def create(
         self, pg_order_id, package_id, brand_user_id, requirements, amount_krw,
-        offer_id=None, application_id=None, credit_applied_krw=0,
+        offer_id=None, application_id=None, credit_applied_krw=0, cart_package_ids=None,
     ):
         intent = PaymentIntent(
             id=1, pg_order_id=pg_order_id, package_id=package_id, brand_user_id=brand_user_id,
             requirements=requirements, amount_krw=amount_krw, status=PaymentIntentStatus.READY,
             offer_id=offer_id, application_id=application_id,
             credit_applied_krw=credit_applied_krw,
+            cart_package_ids=tuple(cart_package_ids or ()),
         )
         self.created.append(intent)
         return intent
@@ -172,6 +173,71 @@ async def test_오퍼_수신_브랜드가_아니면_준비가_거부된다():
     interactor, _ = _offer_interactor(_offer_summary(brand_user_id=999))
     with pytest.raises(NotBrandAccountError):
         await interactor.prepare_offer(_offer_command())
+
+
+# ── 장바구니 결제 준비 (갭 #8) ────────────────────────────────────
+
+
+class _MultiPackagePort:
+    def __init__(self, summaries):
+        self.by_id = {s.package_id: s for s in summaries}
+
+    async def get_package_summary(self, package_id):
+        return self.by_id.get(package_id)
+
+
+def _cart_interactor(summaries, intents=None):
+    repo = intents if intents is not None else _StubIntentRepository()
+    return CheckoutPreparationInteractor(
+        intents=repo,
+        packages=_MultiPackagePort(summaries),
+        credits=_StubCreditBalancePort(),
+        brand_fee_percent=10,
+        client_key="test_ck",
+    ), repo
+
+
+def _cart_command(package_ids=(10, 11)):
+    from payment.app.dtos.checkout_preparation_dto import CartCheckoutCommand
+
+    return CartCheckoutCommand(
+        package_ids=tuple(package_ids), requirements="공통 브리프",
+        brand_user_id=BRAND, account_type="BRAND",
+    )
+
+
+_CART_SUMMARIES = [
+    PackageSummary(package_id=10, title="릴스 1개", price_krw=300000, creator_user_id=200),
+    PackageSummary(package_id=11, title="쇼츠 1개", price_krw=200000, creator_user_id=300),
+]
+
+
+async def test_장바구니_결제는_패키지별_수수료_합으로_확정한다():
+    interactor, repo = _cart_interactor(_CART_SUMMARIES)
+    result = await interactor.prepare_cart(_cart_command())
+    assert result.amount_krw == 550000  # 330,000 + 220,000 (패키지별 내림 후 합)
+    assert result.order_name == "릴스 1개 외 1건"
+    created = repo.created[0]
+    assert created.package_id is None
+    assert created.cart_package_ids == (10, 11)
+
+
+async def test_장바구니_중복_패키지는_한_번만_계산된다():
+    interactor, _ = _cart_interactor(_CART_SUMMARIES)
+    result = await interactor.prepare_cart(_cart_command(package_ids=(10, 10, 11)))
+    assert result.amount_krw == 550000
+
+
+async def test_불가_패키지가_섞이면_준비가_거부된다():
+    interactor, _ = _cart_interactor(_CART_SUMMARIES)
+    with pytest.raises(PackageNotOrderableError):
+        await interactor.prepare_cart(_cart_command(package_ids=(10, 999)))
+
+
+async def test_빈_장바구니는_준비가_거부된다():
+    interactor, _ = _cart_interactor(_CART_SUMMARIES)
+    with pytest.raises(PackageNotOrderableError):
+        await interactor.prepare_cart(_cart_command(package_ids=()))
 
 
 # ── 캠페인 지원 수락 결제 준비 (갭 #7) ────────────────────────────

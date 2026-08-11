@@ -13,4 +13,5 @@ class ConfirmCommand:
 @dataclass(frozen=True)
 class ConfirmResult:
 
-    order_id: int  # 생성된 주문 — 프론트는 주문 상세로 이동
+    order_id: int  # 생성된 주문(장바구니는 첫 주문) — 프론트는 주문 상세로 이동
+    order_ids: tuple[int, ...] = ()  # 장바구니 결제 시 생성된 전체 주문 — 단건은 빈 튜플

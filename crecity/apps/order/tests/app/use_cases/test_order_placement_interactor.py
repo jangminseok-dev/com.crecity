@@ -39,6 +39,15 @@ class _StubOrderRepository:
 
         return replace(order, id=1)
 
+    async def create_many(self, drafts, credit_spend=None):
+        if credit_spend is not None and not self.credit_ok:
+            return None
+        from dataclasses import replace
+
+        self.created.extend(drafts)
+        self.credit_spends.append(credit_spend)
+        return [replace(order, id=index + 1) for index, (order, _, _) in enumerate(drafts)]
+
     async def find_by_id(self, order_id):
         raise NotImplementedError
 
@@ -201,6 +210,77 @@ async def test_결제_불가_오퍼는_주문할_수_없다():
 async def test_오퍼_수신_브랜드가_아니면_주문할_수_없다():
     with pytest.raises(NotBrandAccountError):
         await _custom_interactor(_offer()).place_custom(_custom_command(brand_user_id=999))
+
+
+# ── 장바구니 일괄 주문 (갭 #8) ──────────────────────────────────
+
+
+class _MultiPackagePort:
+    def __init__(self, summaries):
+        self.by_id = {s.package_id: s for s in summaries}
+
+    async def get_package_summary(self, package_id):
+        return self.by_id.get(package_id)
+
+
+def _cart_interactor(summaries, orders=None):
+    return OrderPlacementInteractor(
+        orders=orders if orders is not None else _StubOrderRepository(),
+        packages=_MultiPackagePort(summaries),
+        brand_fee_percent=10,
+        creator_fee_percent=10,
+        accept_deadline=timedelta(hours=72),
+    )
+
+
+def _cart_command(package_ids=(10, 11), credit_used_krw=0):
+    from order.app.dtos.order_placement_dto import CartOrderPlacementCommand
+
+    return CartOrderPlacementCommand(
+        package_ids=tuple(package_ids), requirements="공통 브리프",
+        brand_user_id=BRAND, account_type="BRAND", credit_used_krw=credit_used_krw,
+    )
+
+
+_CART_SUMMARIES = [
+    PackageSummary(package_id=10, title="릴스 1개", price_krw=300000, creator_user_id=CREATOR),
+    PackageSummary(package_id=11, title="쇼츠 1개", price_krw=200000, creator_user_id=300),
+]
+
+
+async def test_장바구니는_패키지별_주문이_한_번에_생성된다():
+    orders = _StubOrderRepository()
+    results = await _cart_interactor(_CART_SUMMARIES, orders).place_cart(_cart_command())
+    assert len(results) == 2
+    assert {r.creator_user_id for r in results} == {CREATOR, 300}
+    # 주문별 예치 기입과 order.placed 이벤트가 각각 동반된다
+    for order, entries, events in orders.created:
+        assert entries[0].entry_type is LedgerEntryType.ESCROW_DEPOSIT
+        assert events[0].event_type == "order.placed"
+    assert orders.created[0][1][0].amount_krw == 330000
+    assert orders.created[1][1][0].amount_krw == 220000
+
+
+async def test_불가_패키지가_섞이면_전체_거부된다():
+    orders = _StubOrderRepository()
+    with pytest.raises(PackageNotOrderableError):
+        await _cart_interactor(_CART_SUMMARIES, orders).place_cart(
+            _cart_command(package_ids=(10, 999))
+        )
+    assert orders.created == []  # 부분 생성 없음
+
+
+async def test_빈_장바구니는_거부된다():
+    with pytest.raises(PackageNotOrderableError):
+        await _cart_interactor(_CART_SUMMARIES).place_cart(_cart_command(package_ids=()))
+
+
+async def test_장바구니_크레딧_부족이면_전체_롤백된다():
+    orders = _StubOrderRepository(credit_ok=False)
+    with pytest.raises(InsufficientCreditError):
+        await _cart_interactor(_CART_SUMMARIES, orders).place_cart(
+            _cart_command(credit_used_krw=999999)
+        )
 
 
 # ── 캠페인 지원 수락 주문 (갭 #7) ────────────────────────────────

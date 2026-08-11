@@ -34,27 +34,22 @@ class OrderPgRepository(OrderRepository):
                 )
             )
 
-    async def create(
-        self,
-        order: Order,
-        entries: list[LedgerEntryDraft],
-        events: list[OutboxEvent],
-        credit_spend: LedgerEntryDraft | None = None,
-    ) -> Order | None:
-        if credit_spend is not None:
-            # 사용자 단위 트랜잭션 잠금 — 동시 사용(인출·중복 결제)의 초과 차감을 차단한다
-            await self._session.execute(
-                text("SELECT pg_advisory_xact_lock(:key)").bindparams(key=credit_spend.user_id)
+    async def _has_credit_balance(self, credit_spend: LedgerEntryDraft) -> bool:
+        """advisory lock 후 잔액 재검증 — 동시 사용(인출·중복 결제)의 초과 차감을 차단한다."""
+        await self._session.execute(
+            text("SELECT pg_advisory_xact_lock(:key)").bindparams(key=credit_spend.user_id)
+        )
+        balance = await self._session.execute(
+            select(func.coalesce(func.sum(_SIGNED_AMOUNT), 0)).where(
+                LedgerEntryOrm.user_id == credit_spend.user_id
             )
-            balance = await self._session.execute(
-                select(func.coalesce(func.sum(_SIGNED_AMOUNT), 0)).where(
-                    LedgerEntryOrm.user_id == credit_spend.user_id
-                )
-            )
-            if int(balance.scalar_one()) < credit_spend.amount_krw:
-                await self._session.rollback()
-                return None
-            entries = [*entries, credit_spend]
+        )
+        return int(balance.scalar_one()) >= credit_spend.amount_krw
+
+    async def _insert_order(
+        self, order: Order, entries: list[LedgerEntryDraft], events: list[OutboxEvent]
+    ) -> OrderOrm:
+        """주문 1건 + 원장 기입 + 이벤트를 세션에 적재한다(커밋은 호출자 몫)."""
         result = await self._session.execute(
             insert(OrderOrm)
             .values(
@@ -78,8 +73,40 @@ class OrderPgRepository(OrderRepository):
             self._session,
             [OutboxEvent(e.event_type, {**e.payload, "order_id": orm.id}) for e in events],
         )
+        return orm
+
+    async def create(
+        self,
+        order: Order,
+        entries: list[LedgerEntryDraft],
+        events: list[OutboxEvent],
+        credit_spend: LedgerEntryDraft | None = None,
+    ) -> Order | None:
+        if credit_spend is not None:
+            if not await self._has_credit_balance(credit_spend):
+                await self._session.rollback()
+                return None
+            entries = [*entries, credit_spend]
+        orm = await self._insert_order(order, entries, events)
         await self._session.commit()
         return OrderMapper.to_entity(orm)
+
+    async def create_many(
+        self,
+        drafts: list[tuple[Order, list[LedgerEntryDraft], list[OutboxEvent]]],
+        credit_spend: LedgerEntryDraft | None = None,
+    ) -> list[Order] | None:
+        if credit_spend is not None and not await self._has_credit_balance(credit_spend):
+            await self._session.rollback()
+            return None
+        orms = []
+        for index, (order, entries, events) in enumerate(drafts):
+            # 크레딧 차감은 결제 1건 몫 — 감사 추적을 위해 배치의 첫 주문에 귀속시킨다
+            if index == 0 and credit_spend is not None:
+                entries = [*entries, credit_spend]
+            orms.append(await self._insert_order(order, entries, events))
+        await self._session.commit()
+        return [OrderMapper.to_entity(orm) for orm in orms]
 
     async def find_by_id(self, order_id: int) -> Order | None:
         result = await self._session.execute(select(OrderOrm).where(OrderOrm.id == order_id))
