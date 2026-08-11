@@ -10,6 +10,8 @@ class PackageRegistrationCommand:
     title: str
     description: str
     price_krw: int
+    revision_limit: int
+    usage_rights: str
     requester_user_id: int  # 로그인 사용자 — 프로필 소유자만 등록 가능
 
 
@@ -21,6 +23,8 @@ class PackageUpdateCommand:
     title: str
     description: str
     price_krw: int
+    revision_limit: int
+    usage_rights: str
     requester_user_id: int
 
 
@@ -46,4 +50,6 @@ class PackageResult:
     title: str
     description: str
     price_krw: int
+    revision_limit: int
+    usage_rights: str
     created_at: datetime | None

@@ -63,6 +63,9 @@ class OrderPgRepository(OrderRepository):
                 requirements=order.requirements,
                 status=order.status.value,
                 deadline_at=order.deadline_at,
+                revision_limit=order.revision_limit,
+                revisions_used=order.revisions_used,
+                usage_rights=order.usage_rights,
             )
             .returning(OrderOrm)
         )
@@ -123,6 +126,7 @@ class OrderPgRepository(OrderRepository):
                 status=order.status.value,
                 deadline_at=order.deadline_at,
                 cancel_requested_by=order.cancel_requested_by,
+                revisions_used=order.revisions_used,
             )
         )
         await self._insert_entries(order.id, entries)

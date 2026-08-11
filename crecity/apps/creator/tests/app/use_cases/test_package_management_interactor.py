@@ -41,7 +41,10 @@ class _StubPackageRepository:
     async def find_by_id(self, package_id):
         return self.packages.get(package_id)
 
-    async def create(self, profile_id, platform, title, description, price_krw):
+    async def create(
+        self, profile_id, platform, title, description, price_krw,
+        revision_limit=2, usage_rights="",
+    ):
         package = CreatorPackage(
             id=self._next_id,
             profile_id=profile_id,
@@ -49,12 +52,17 @@ class _StubPackageRepository:
             title=title,
             description=description,
             price_krw=price_krw,
+            revision_limit=revision_limit,
+            usage_rights=usage_rights,
         )
         self.packages[package.id] = package
         self._next_id += 1
         return package
 
-    async def update(self, package_id, platform, title, description, price_krw):
+    async def update(
+        self, package_id, platform, title, description, price_krw,
+        revision_limit=2, usage_rights="",
+    ):
         if package_id not in self.packages:
             return None
         existing = self.packages[package_id]
@@ -106,6 +114,7 @@ def _register_command(platform="INSTAGRAM", price_krw=300000, slug="kim-beauty",
     return PackageRegistrationCommand(
         slug=slug, platform=platform, title="릴스 1개",
         description="수정 2회 포함", price_krw=price_krw,
+        revision_limit=2, usage_rights="SNS 게시 6개월",
         requester_user_id=requester,
     )
 
@@ -143,7 +152,8 @@ async def test_수정하면_변경값이_반영된다():
     result = await interactor.update(
         PackageUpdateCommand(
             package_id=1, platform="UGC", title="UGC 사진 4장",
-            description="원본 제공", price_krw=200000, requester_user_id=7,
+            description="원본 제공", price_krw=200000,
+            revision_limit=1, usage_rights="원본 2차 활용 가능", requester_user_id=7,
         )
     )
     assert result.platform == "UGC"
@@ -155,7 +165,7 @@ async def test_없는_패키지_수정이면_PackageNotFoundError():
         await _interactor().update(
             PackageUpdateCommand(
                 package_id=99, platform="UGC", title="t", description="d",
-                price_krw=1000, requester_user_id=7,
+                price_krw=1000, revision_limit=2, usage_rights="", requester_user_id=7,
             )
         )
 
@@ -182,7 +192,7 @@ async def test_남의_패키지_수정이면_NotProfileOwnerError():
         await interactor.update(
             PackageUpdateCommand(
                 package_id=1, platform="UGC", title="t", description="d",
-                price_krw=1000, requester_user_id=99,
+                price_krw=1000, revision_limit=2, usage_rights="", requester_user_id=99,
             )
         )
 

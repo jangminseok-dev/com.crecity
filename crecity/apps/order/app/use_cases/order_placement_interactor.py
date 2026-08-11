@@ -59,6 +59,8 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
             brand_user_id=command.brand_user_id,
             requirements=command.requirements,
             credit_used_krw=command.credit_used_krw,
+            revision_limit=summary.revision_limit,
+            usage_rights=summary.usage_rights,
         )
 
     async def place_custom(self, command: CustomOrderPlacementCommand) -> OrderResult:
@@ -121,6 +123,8 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
                 brand_user_id=command.brand_user_id,
                 requirements=command.requirements,
                 now=now,
+                revision_limit=summary.revision_limit,
+                usage_rights=summary.usage_rights,
             )
             deposit = LedgerEntryDraft(
                 entry_type=LedgerEntryType.ESCROW_DEPOSIT,
@@ -152,8 +156,12 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
         brand_user_id: int,
         requirements: str,
         now: datetime,
+        revision_limit: int = 2,  # 패키지 없는 주문(오퍼·지원 수락)은 기본값
+        usage_rights: str = "",
     ) -> Order:
         return Order(
+            revision_limit=revision_limit,
+            usage_rights=usage_rights,
             id=0,  # 저장 시 발급
             package_id=package_id,
             package_title=title,
@@ -176,6 +184,8 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
         brand_user_id: int,
         requirements: str,
         credit_used_krw: int = 0,
+        revision_limit: int = 2,
+        usage_rights: str = "",
     ) -> OrderResult:
         draft = self._draft(
             package_id=package_id,
@@ -185,6 +195,8 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
             brand_user_id=brand_user_id,
             requirements=requirements,
             now=datetime.now(timezone.utc),
+            revision_limit=revision_limit,
+            usage_rights=usage_rights,
         )
         deposit = LedgerEntryDraft(
             entry_type=LedgerEntryType.ESCROW_DEPOSIT,

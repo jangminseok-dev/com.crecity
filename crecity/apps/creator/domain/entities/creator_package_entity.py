@@ -18,6 +18,10 @@ class PackagePlatform(StrEnum):
     UGC = "UGC"
 
 
+# 수정 횟수 기본값 — 표준계약 조항의 관행치(§9.2). 0이면 수정 불가 상품
+DEFAULT_REVISION_LIMIT = 2
+
+
 @dataclass(frozen=True, slots=True)
 class CreatorPackage:
     """가격 공개 판매 패키지 — 프로필 페이지의 핵심 전환 단위(collabstr §2.1)."""
@@ -26,6 +30,9 @@ class CreatorPackage:
     profile_id: int
     platform: PackagePlatform
     title: str  # 예: "인스타그램 릴스 1개"
-    description: str  # 납품물·수정 횟수 등 상세
+    description: str  # 납품물 등 상세
     price_krw: int
+    # 표준계약 조항의 구조화 필드(§3.3·§9.2, 갭 #29) — 주문 생성 시 스냅샷된다
+    revision_limit: int = DEFAULT_REVISION_LIMIT  # 브랜드가 요청할 수 있는 수정 횟수
+    usage_rights: str = ""  # 2차 활용 범위(예: "SNS 게시 6개월, 유료 광고 별도 협의")
     created_at: datetime | None = None

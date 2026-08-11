@@ -14,5 +14,7 @@ class CreatorPackageMapper:
             title=orm.title,
             description=orm.description,
             price_krw=orm.price_krw,
+            revision_limit=orm.revision_limit,
+            usage_rights=orm.usage_rights,
             created_at=orm.created_at,
         )

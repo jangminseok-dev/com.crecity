@@ -31,6 +31,8 @@ def _to_schema(result) -> PackageResponseSchema:
         title=result.title,
         description=result.description,
         price_krw=result.price_krw,
+        revision_limit=result.revision_limit,
+        usage_rights=result.usage_rights,
         created_at=result.created_at,
     )
 
@@ -52,6 +54,8 @@ async def register_package(
                 title=body.title,
                 description=body.description,
                 price_krw=body.price_krw,
+                revision_limit=body.revision_limit,
+                usage_rights=body.usage_rights,
                 requester_user_id=user.id,
             )
         )
@@ -95,6 +99,8 @@ async def update_package(
                 title=body.title,
                 description=body.description,
                 price_krw=body.price_krw,
+                revision_limit=body.revision_limit,
+                usage_rights=body.usage_rights,
                 requester_user_id=user.id,
             )
         )

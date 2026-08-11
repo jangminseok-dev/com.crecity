@@ -62,6 +62,9 @@ export type Order = {
   status: "PENDING_ACCEPT" | "IN_PROGRESS" | "IN_REVIEW" | "COMPLETED" | "REFUNDED" | "CANCELLED";
   deadline_at: string | null;
   cancel_requested_by: number | null;
+  revision_limit: number;
+  revisions_used: number;
+  usage_rights: string;
   created_at: string | null;
 };
 
@@ -132,6 +135,8 @@ export type CreatorPackage = {
   title: string;
   description: string;
   price_krw: number;
+  revision_limit: number; // 수정 요청 허용 횟수
+  usage_rights: string; // 2차 활용 범위
   created_at: string | null;
 };
 

@@ -24,6 +24,9 @@ class OrderResult:
     status: str
     deadline_at: datetime | None
     cancel_requested_by: int | None
+    revision_limit: int
+    revisions_used: int
+    usage_rights: str
     created_at: datetime | None
 
     @classmethod
@@ -43,5 +46,8 @@ class OrderResult:
             status=order.status.value,
             deadline_at=order.deadline_at,
             cancel_requested_by=order.cancel_requested_by,
+            revision_limit=order.revision_limit,
+            revisions_used=order.revisions_used,
+            usage_rights=order.usage_rights,
             created_at=order.created_at,
         )

@@ -26,4 +26,6 @@ class CreatorPackageSummaryGateway(PackageSummaryPort):
             title=package.title,
             price_krw=package.price_krw,
             creator_user_id=profile.user_id,
+            revision_limit=package.revision_limit,
+            usage_rights=package.usage_rights,
         )

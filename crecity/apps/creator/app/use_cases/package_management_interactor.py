@@ -36,6 +36,8 @@ def _to_result(package: CreatorPackage) -> PackageResult:
         title=package.title,
         description=package.description,
         price_krw=package.price_krw,
+        revision_limit=package.revision_limit,
+        usage_rights=package.usage_rights,
         created_at=package.created_at,
     )
 
@@ -68,6 +70,8 @@ class PackageManagementInteractor(PackageManagementUseCase):
             title=command.title,
             description=command.description,
             price_krw=price.krw,
+            revision_limit=command.revision_limit,
+            usage_rights=command.usage_rights,
         )
         return _to_result(package)
 
@@ -90,6 +94,8 @@ class PackageManagementInteractor(PackageManagementUseCase):
             title=command.title,
             description=command.description,
             price_krw=price.krw,
+            revision_limit=command.revision_limit,
+            usage_rights=command.usage_rights,
         )
         if package is None:
             raise PackageNotFoundError(f"패키지를 찾을 수 없습니다: {command.package_id}")

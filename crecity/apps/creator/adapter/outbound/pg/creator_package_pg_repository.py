@@ -19,6 +19,8 @@ class CreatorPackagePgRepository(CreatorPackageRepository):
         title: str,
         description: str,
         price_krw: int,
+        revision_limit: int,
+        usage_rights: str,
     ) -> CreatorPackage:
         result = await self._session.execute(
             insert(CreatorPackageOrm)
@@ -28,6 +30,8 @@ class CreatorPackagePgRepository(CreatorPackageRepository):
                 title=title,
                 description=description,
                 price_krw=price_krw,
+                revision_limit=revision_limit,
+                usage_rights=usage_rights,
             )
             .returning(CreatorPackageOrm)
         )
@@ -48,6 +52,8 @@ class CreatorPackagePgRepository(CreatorPackageRepository):
         title: str,
         description: str,
         price_krw: int,
+        revision_limit: int,
+        usage_rights: str,
     ) -> CreatorPackage | None:
         result = await self._session.execute(
             update(CreatorPackageOrm)
@@ -57,6 +63,8 @@ class CreatorPackagePgRepository(CreatorPackageRepository):
                 title=title,
                 description=description,
                 price_krw=price_krw,
+                revision_limit=revision_limit,
+                usage_rights=usage_rights,
             )
             .returning(CreatorPackageOrm)
         )

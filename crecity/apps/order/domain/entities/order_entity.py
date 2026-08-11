@@ -52,7 +52,14 @@ class Order:
     status: OrderStatus
     deadline_at: datetime | None
     cancel_requested_by: int | None = None  # 양측 합의 취소의 요청자 — 상대 동의·거부 대기 중
+    # 표준계약 구조화 필드(§3.3·§9.2, 갭 #29) — 주문 생성 시 패키지에서 스냅샷
+    revision_limit: int = 2  # 브랜드가 요청할 수 있는 수정 횟수(0이면 수정 불가)
+    revisions_used: int = 0
+    usage_rights: str = ""  # 2차 활용 범위
     created_at: datetime | None = None
+
+    def revisions_left(self) -> int:
+        return max(0, self.revision_limit - self.revisions_used)
 
     # ── 수수료 계산 (정수 원 단위, 내림 — 부동소수 금지) ──────────────────
 
@@ -125,10 +132,19 @@ class Order:
         self._require_status(OrderStatus.IN_PROGRESS, "납품물 등록")
 
     def request_revision(self, actor_user_id: int) -> Order:
-        """브랜드 수정 요청 → 재작업(원 요구사항 범위 내 무제한 — collabstr §3.8)."""
+        """브랜드 수정 요청 → 재작업. 원 요구사항 범위 내에서 스냅샷된 횟수만큼(§3.3)."""
         self._require_brand(actor_user_id)
         self._require_status(OrderStatus.IN_REVIEW, "수정 요청")
-        return replace(self, status=OrderStatus.IN_PROGRESS, deadline_at=None)
+        if self.revisions_left() <= 0:
+            raise InvalidOrderTransitionError(
+                f"수정 요청은 {self.revision_limit}회까지 가능합니다 (이미 {self.revisions_used}회 사용)."
+            )
+        return replace(
+            self,
+            status=OrderStatus.IN_PROGRESS,
+            deadline_at=None,
+            revisions_used=self.revisions_used + 1,
+        )
 
     def approve(self, actor_user_id: int) -> tuple[Order, list[LedgerEntryDraft]]:
         """브랜드 승인 → 구매 확정: 크리에이터 잔액 적립 + 플랫폼 수수료 확정."""

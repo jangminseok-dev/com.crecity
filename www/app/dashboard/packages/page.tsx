@@ -24,6 +24,8 @@ const packageSchema = z.object({
     .number()
     .int("가격은 정수(원)로 입력해 주세요.")
     .positive("가격은 0보다 커야 합니다."),
+  revision_limit: z.coerce.number().int().min(0).max(10),
+  usage_rights: z.string().max(300).optional(),
 });
 
 async function fetchMyProfile(): Promise<CreatorProfile | null> {
@@ -123,14 +125,37 @@ function PackageForm({ slug, ui, setUi }: {
               placeholder="인스타그램 릴스 1개"
             />
           </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="revision_limit">수정 요청 허용 횟수</Label>
+              <Input
+                id="revision_limit"
+                name="revision_limit"
+                type="number"
+                min={0}
+                max={10}
+                defaultValue={ui.editing?.revision_limit ?? 2}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="usage_rights">2차 활용 범위 (선택)</Label>
+              <Input
+                id="usage_rights"
+                name="usage_rights"
+                maxLength={300}
+                defaultValue={ui.editing?.usage_rights ?? ""}
+                placeholder="SNS 게시 6개월, 유료 광고 별도 협의"
+              />
+            </div>
+          </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="description">상세 설명 (납품물·수정 횟수 등)</Label>
+            <Label htmlFor="description">상세 설명 (납품물 등)</Label>
             <Textarea
               id="description"
               name="description"
               rows={3}
               defaultValue={ui.editing?.description ?? ""}
-              placeholder="60초 이내 릴스 1건 제작·게시, 수정 2회 포함"
+              placeholder="60초 이내 릴스 1건 제작·게시, 원본 파일 제공"
             />
           </div>
           {ui.error && <p className="text-sm text-destructive">{ui.error}</p>}

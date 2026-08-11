@@ -16,6 +16,8 @@ class CreatorPackageRepository(ABC):
         title: str,
         description: str,
         price_krw: int,
+        revision_limit: int,
+        usage_rights: str,
     ) -> CreatorPackage: ...
 
     @abstractmethod
@@ -31,6 +33,8 @@ class CreatorPackageRepository(ABC):
         title: str,
         description: str,
         price_krw: int,
+        revision_limit: int,
+        usage_rights: str,
     ) -> CreatorPackage | None:
         """수정 후 결과 반환 — 대상 없으면 None."""
         ...

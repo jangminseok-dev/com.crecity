@@ -97,7 +97,8 @@ export default function PackagePicker({
                   {pkg.description}
                 </span>
                 <span className="text-xs text-muted-foreground/70">
-                  {PLATFORM_LABELS[pkg.platform]}
+                  {PLATFORM_LABELS[pkg.platform]} · 수정 {pkg.revision_limit}회
+                  {pkg.usage_rights ? ` · ${pkg.usage_rights}` : ""}
                 </span>
               </button>
             );

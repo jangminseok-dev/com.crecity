@@ -138,6 +138,17 @@ export default function OrderDetailPage() {
             <p className="mt-1 whitespace-pre-line text-sm">{order.requirements}</p>
           </div>
           <Separator />
+          <div className="grid gap-1 text-sm">
+            <p className="text-muted-foreground">계약 조건</p>
+            <p className="mt-0.5">
+              수정 요청 {order.revisions_used}/{order.revision_limit}회 사용
+              {order.revision_limit - order.revisions_used <= 0 && " — 더 이상 요청할 수 없습니다"}
+            </p>
+            {order.usage_rights && (
+              <p className="text-muted-foreground">2차 활용: {order.usage_rights}</p>
+            )}
+          </div>
+          <Separator />
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">패키지 가격</p>

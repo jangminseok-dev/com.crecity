@@ -12,3 +12,6 @@ class PackageSummary:
     title: str
     price_krw: int
     creator_user_id: int
+    # 표준계약 구조화 필드(§3.3·§9.2) — 주문이 생성 시점에 스냅샷한다
+    revision_limit: int = 2
+    usage_rights: str = ""

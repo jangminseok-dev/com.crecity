@@ -83,12 +83,14 @@ def test_수정_요청하면_다시_작업중이_된다():
     assert revising.deadline_at is None
 
 
-def test_수정_요청은_반복_가능하다():
-    order = _order(OrderStatus.IN_PROGRESS, deadline_at=None)
-    for _ in range(3):
+def test_수정_요청은_스냅샷된_횟수까지만_가능하다():
+    order = _order(OrderStatus.IN_PROGRESS, deadline_at=None)  # revision_limit 기본 2
+    for _ in range(2):
         order = order.submit(CREATOR, _NOW, _72H, 1)
         order = order.request_revision(BRAND)
-    assert order.status is OrderStatus.IN_PROGRESS
+    assert order.revisions_used == 2 and order.revisions_left() == 0
+    with pytest.raises(InvalidOrderTransitionError):
+        order.submit(CREATOR, _NOW, _72H, 1).request_revision(BRAND)
 
 
 def test_승인하면_완료되고_적립과_수수료가_기록된다():

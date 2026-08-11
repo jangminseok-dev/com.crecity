@@ -30,6 +30,8 @@ IN_PROGRESS·IN_REVIEW ──취소 요청→상대 동의──▶ CANCELLED (�
 - **제출은 납품물 ≥1건이 전제**(`Order.submit`의 `deliverable_count`) — 상태 전이가 아니라
   결과물 인도이며, 에스크로 승인·분쟁 판단의 근거를 남긴다(갭 #3, 2026-08-11).
 - 상태 전이·수수료 계산은 **순수 도메인**(`Order`) — 정수 원 단위 내림, 부동소수 금지.
+- **수정 요청은 스냅샷된 횟수까지**(`revision_limit`/`revisions_used`, 갭 #29) — 초과 409.
+  `usage_rights`와 함께 주문 생성 시 패키지에서 스냅샷(오퍼·지원 수락 주문은 기본값 2회).
 - 브랜드 결제 총액 = 가격 + 브랜드 수수료(예치액) · 크리에이터 적립 = 가격 − 크리에이터 수수료.
   요율은 `core/config.py`(`ORDER_*_FEE_PERCENT`, 초기 10/10) — 주문 생성 시점 스냅샷.
 - **전이 + 원장 기입 + Outbox 이벤트 = 단일 트랜잭션**(`OrderRepository.create/save_transition`의

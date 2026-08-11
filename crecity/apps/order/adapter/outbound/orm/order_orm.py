@@ -29,6 +29,10 @@ class OrderOrm(Base):
     deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # 양측 합의 취소의 요청자(auth users 논리 참조) — 상대 동의·거부 대기 중이면 non-NULL
     cancel_requested_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # 표준계약 구조화 필드(§3.3·§9.2) — 생성 시점 패키지 스냅샷
+    revision_limit: Mapped[int] = mapped_column(Integer, server_default="2")
+    revisions_used: Mapped[int] = mapped_column(Integer, server_default="0")
+    usage_rights: Mapped[str] = mapped_column(String(300), server_default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
