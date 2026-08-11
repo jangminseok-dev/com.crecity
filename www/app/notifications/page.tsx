@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,7 +13,6 @@ import type { NotificationsResult } from "@/lib/types";
 export default function NotificationsPage() {
   const status = useAuthStore((s) => s.status);
   const queryClient = useQueryClient();
-  const markedRef = useRef(false); // StrictMode 이중 실행 가드
 
   const { data, isPending } = useQuery({
     queryKey: ["notifications"],
@@ -22,14 +20,19 @@ export default function NotificationsPage() {
     enabled: status === "authenticated",
   });
 
-  // 페이지를 열면 모두 읽음 처리 — 목록의 안 읽음 표시는 유지하고 뱃지만 갱신한다.
-  useEffect(() => {
-    if (status !== "authenticated" || markedRef.current) return;
-    markedRef.current = true;
-    apiFetch<void>("/notification/notifications/read-all", { method: "POST" }).then(() =>
-      queryClient.invalidateQueries({ queryKey: ["notifications"] }),
-    );
-  }, [status, queryClient]);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["notifications"] });
+
+  // 개별 읽음(갭 #34) — 항목을 열거나 점을 누르면 그 알림만 읽음이 된다
+  const markRead = useMutation({
+    mutationFn: (notificationId: number) =>
+      apiFetch<void>(`/notification/notifications/${notificationId}/read`, { method: "POST" }),
+    onSuccess: invalidate,
+  });
+  const markAllRead = useMutation({
+    mutationFn: () =>
+      apiFetch<void>("/notification/notifications/read-all", { method: "POST" }),
+    onSuccess: invalidate,
+  });
 
   if (status === "guest") {
     return (
@@ -42,7 +45,19 @@ export default function NotificationsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-bold tracking-[-0.02em]">알림</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-[-0.02em]">알림</h1>
+        {(data?.unread_count ?? 0) > 0 && (
+          <button
+            type="button"
+            onClick={() => markAllRead.mutate()}
+            disabled={markAllRead.isPending}
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            모두 읽음 ({data?.unread_count})
+          </button>
+        )}
+      </div>
       <div className="mt-6 grid gap-2">
         {status === "loading" || isPending ? (
           <Skeleton className="h-40 w-full" />
@@ -56,7 +71,15 @@ export default function NotificationsPage() {
               <Card className={item.link ? "transition-shadow hover:shadow-md" : undefined}>
                 <CardContent className="flex items-start gap-3 p-4">
                   {!item.is_read && (
-                    <span className="mt-1.5 size-2 shrink-0 rounded-full bg-destructive" />
+                    <button
+                      type="button"
+                      aria-label="읽음으로 표시"
+                      onClick={(event) => {
+                        event.preventDefault(); // 링크 이동 대신 읽음 처리만
+                        markRead.mutate(item.id);
+                      }}
+                      className="mt-1.5 size-2 shrink-0 rounded-full bg-destructive"
+                    />
                   )}
                   <div className="min-w-0">
                     <p className="text-sm">{item.body}</p>
@@ -70,7 +93,13 @@ export default function NotificationsPage() {
               </Card>
             );
             return item.link ? (
-              <Link key={item.id} href={item.link}>
+              <Link
+                key={item.id}
+                href={item.link}
+                onClick={() => {
+                  if (!item.is_read) markRead.mutate(item.id);
+                }}
+              >
                 {card}
               </Link>
             ) : (

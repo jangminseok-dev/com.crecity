@@ -34,5 +34,6 @@ class ConversationOpeningInteractor(ConversationOpeningUseCase):
             counterpart_slug=creator.slug,
             last_message=None,
             last_message_at=None,
+            unread_count=0,  # 막 열린 대화방
             created_at=conversation.created_at,
         )

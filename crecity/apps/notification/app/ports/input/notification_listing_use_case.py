@@ -14,6 +14,15 @@ class NotificationListingUseCase(ABC):
         ...
 
     @abstractmethod
+    async def mark_read(self, user_id: int, notification_id: int) -> None:
+        """알림 하나만 읽음 처리(갭 #34).
+
+        Raises:
+            NotificationNotFoundError: 없거나 본인 알림이 아님.
+        """
+        ...
+
+    @abstractmethod
     async def mark_all_read(self, user_id: int) -> None:
         """내 알림 전체 읽음 처리."""
         ...

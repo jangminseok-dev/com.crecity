@@ -36,3 +36,15 @@ class NotificationPgRepository(NotificationRepository):
             .values(is_read=True)
         )
         await self._session.commit()
+
+    async def mark_read(self, user_id: int, notification_id: int) -> bool:
+        result = await self._session.execute(
+            update(NotificationOrm)
+            .where(
+                NotificationOrm.id == notification_id,
+                NotificationOrm.user_id == user_id,  # 남의 알림은 건드리지 못한다
+            )
+            .values(is_read=True)
+        )
+        await self._session.commit()
+        return result.rowcount > 0

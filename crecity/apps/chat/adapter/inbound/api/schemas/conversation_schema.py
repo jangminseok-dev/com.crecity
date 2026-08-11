@@ -15,4 +15,5 @@ class ConversationResponseSchema(BaseModel):
     counterpart_slug: str | None
     last_message: str | None
     last_message_at: datetime | None
+    unread_count: int = 0  # 내가 안 읽은 상대 메시지 수(갭 #35)
     created_at: datetime | None

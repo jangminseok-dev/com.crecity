@@ -119,6 +119,7 @@ export type ChatConversation = {
   counterpart_slug: string | null;
   last_message: string | null;
   last_message_at: string | null;
+  unread_count: number; // 내가 안 읽은 상대 메시지 수
   created_at: string | null;
 };
 

@@ -53,6 +53,7 @@ class _StubConversationRepository:
 
 class _StubMessageRepository:
     def __init__(self):
+        self.read_marks: list[tuple[int, int]] = []
         self.messages: list[Message] = []
 
     async def create(self, conversation_id, sender_user_id, body):
@@ -69,6 +70,17 @@ class _StubMessageRepository:
     async def last_by_conversation(self, conversation_id):
         found = [m for m in self.messages if m.conversation_id == conversation_id]
         return found[-1] if found else None
+
+    async def unread_counts(self, user_id, conversation_ids):
+        # 읽음 기록 없음 가정 — 상대가 보낸 메시지를 모두 안 읽음으로 센다
+        counts: dict[int, int] = {}
+        for message in self.messages:
+            if message.conversation_id in conversation_ids and message.sender_user_id != user_id:
+                counts[message.conversation_id] = counts.get(message.conversation_id, 0) + 1
+        return counts
+
+    async def mark_read(self, conversation_id, user_id):
+        self.read_marks.append((conversation_id, user_id))
 
 
 class _StubCreatorRefPort:

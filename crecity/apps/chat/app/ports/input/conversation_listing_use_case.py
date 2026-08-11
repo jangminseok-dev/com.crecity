@@ -21,3 +21,13 @@ class ConversationListingUseCase(ABC):
             ConversationNotFoundError · NotParticipantError(도메인, 403)
         """
         ...
+
+    @abstractmethod
+    async def mark_read(self, conversation_id: int, requester_user_id: int) -> None:
+        """대화방 읽음 처리(갭 #35) — 참여자만.
+
+        Raises:
+            ConversationNotFoundError: 대화방 없음.
+            NotParticipantError: 참여자가 아님.
+        """
+        ...

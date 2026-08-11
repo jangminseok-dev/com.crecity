@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, HTTPException, Response
 
 from hub.app.dtos.verified_user_dto import VerifiedUser
 from hub.dependencies.current_user_provider import get_current_user
@@ -6,6 +6,7 @@ from notification.adapter.inbound.api.schemas.notification_listing_schema import
     NotificationItemSchema,
     NotificationsResponseSchema,
 )
+from notification.app.exceptions import NotificationNotFoundError
 from notification.app.ports.input.notification_listing_use_case import (
     NotificationListingUseCase,
 )
@@ -44,4 +45,17 @@ async def mark_all_read(
     use_case: NotificationListingUseCase = Depends(get_notification_listing_use_case),
 ) -> Response:
     await use_case.mark_all_read(user.id)
+    return Response(status_code=204)
+
+
+@notification_listing_router.post("/notifications/{notification_id}/read", status_code=204)
+async def mark_read(
+    notification_id: int,
+    user: VerifiedUser = Depends(get_current_user),
+    use_case: NotificationListingUseCase = Depends(get_notification_listing_use_case),
+) -> Response:
+    try:
+        await use_case.mark_read(user.id, notification_id)
+    except NotificationNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error))
     return Response(status_code=204)

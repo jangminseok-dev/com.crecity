@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from notification.app.dtos.notification_listing_dto import NotificationItem, NotificationsResult
+from notification.app.exceptions import NotificationNotFoundError
 from notification.app.ports.input.notification_listing_use_case import NotificationListingUseCase
 from notification.app.ports.output.notification_repository import NotificationRepository
 
@@ -29,6 +30,10 @@ class NotificationListingInteractor(NotificationListingUseCase):
                 for n in items
             ],
         )
+
+    async def mark_read(self, user_id: int, notification_id: int) -> None:
+        if not await self._notifications.mark_read(user_id, notification_id):
+            raise NotificationNotFoundError(f"알림을 찾을 수 없습니다: {notification_id}")
 
     async def mark_all_read(self, user_id: int) -> None:
         await self._notifications.mark_all_read(user_id)

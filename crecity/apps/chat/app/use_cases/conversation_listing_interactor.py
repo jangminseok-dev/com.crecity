@@ -24,7 +24,9 @@ class ConversationListingInteractor(ConversationListingUseCase):
         self._creators = creators
         self._users = users
 
-    async def _to_result(self, conversation: Conversation, viewer_user_id: int) -> ConversationResult:
+    async def _to_result(
+        self, conversation: Conversation, viewer_user_id: int, unread: int = 0
+    ) -> ConversationResult:
         counterpart_id = conversation.counterpart_of(viewer_user_id)
         # 상대가 크리에이터면 프로필(이름·슬러그), 아니면 회원 디렉토리(이름)로 해석
         counterpart_slug = None
@@ -46,12 +48,16 @@ class ConversationListingInteractor(ConversationListingUseCase):
             counterpart_slug=counterpart_slug,
             last_message=last_preview,
             last_message_at=last.created_at if last else None,
+            unread_count=unread,
             created_at=conversation.created_at,
         )
 
     async def list_mine(self, user_id: int) -> list[ConversationResult]:
         conversations = await self._conversations.list_by_participant(user_id)
-        results = [await self._to_result(c, user_id) for c in conversations]
+        unread = await self._messages.unread_counts(user_id, [c.id for c in conversations])
+        results = [
+            await self._to_result(c, user_id, unread.get(c.id, 0)) for c in conversations
+        ]
 
         # 마지막 메시지 시각 내림차순(메시지 없으면 생성 시각)
         def recency(result: ConversationResult) -> float:
@@ -67,3 +73,10 @@ class ConversationListingInteractor(ConversationListingUseCase):
             raise ConversationNotFoundError(f"대화방을 찾을 수 없습니다: {conversation_id}")
         conversation.ensure_participant(requester_user_id)
         return await self._to_result(conversation, requester_user_id)
+
+    async def mark_read(self, conversation_id: int, requester_user_id: int) -> None:
+        conversation = await self._conversations.find_by_id(conversation_id)
+        if conversation is None:
+            raise ConversationNotFoundError(f"대화방을 찾을 수 없습니다: {conversation_id}")
+        conversation.ensure_participant(requester_user_id)  # 참여자 검증은 도메인
+        await self._messages.mark_read(conversation_id, requester_user_id)

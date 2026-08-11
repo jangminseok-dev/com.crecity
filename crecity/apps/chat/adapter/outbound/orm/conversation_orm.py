@@ -36,3 +36,17 @@ class MessageOrm(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), index=True
     )
+
+
+class ConversationReadOrm(Base):
+    """대화방 읽음 시각 — 참여자별 1행(갭 #35). 안 읽음 = 이 시각 이후 상대 메시지."""
+
+    __tablename__ = "conversation_reads"
+
+    conversation_id: Mapped[int] = mapped_column(
+        ForeignKey("conversations.id"), primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    last_read_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

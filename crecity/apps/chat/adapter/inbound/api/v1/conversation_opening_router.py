@@ -21,6 +21,7 @@ def to_schema(result) -> ConversationResponseSchema:
         counterpart_slug=result.counterpart_slug,
         last_message=result.last_message,
         last_message_at=result.last_message_at,
+        unread_count=result.unread_count,
         created_at=result.created_at,
     )
 

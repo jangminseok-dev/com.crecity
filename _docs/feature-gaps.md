@@ -99,8 +99,10 @@
 - [x] 33. 계정 삭제(활성 주문 있으면 불가 규칙 포함, §3.8) — ✅ 2026-08-11 (auth
   `account_deletion` + 허브 `ActiveOrderPort`·`ProfileDeactivationPort` — 활성 주문·잔액
   있으면 409, 통과 시 프로필 DELETED·소셜 연결 해제·이메일 익명화 소프트 삭제·토큰 폐기)
-- [ ] 34. 알림 개별 읽음 처리
-- [ ] 35. 채팅 대화방 단위 안 읽음 표시
+- [x] 34. 알림 개별 읽음 처리 — ✅ 2026-08-11 (`POST /notification/notifications/{id}/read`
+  + 목록 자동 read-all 제거 → 항목별 읽음·"모두 읽음" 버튼)
+- [x] 35. 채팅 대화방 단위 안 읽음 표시 — ✅ 2026-08-11 (`conversation_reads` 조인 테이블 +
+  대화방별 안 읽음 수 집계 + `POST /chat/conversations/{id}/read`, 목록 뱃지·굵게 표시)
 - [ ] 36. admin 감사 로그 영속화(현재 로그 어댑터뿐)
 - [ ] 37. 카카오 로그인 활성화(비즈 앱 전환 대기)
 - [ ] 38. 홈 "검증된 크리에이터" 카피 ↔ 실제 vetting 수준 정합화

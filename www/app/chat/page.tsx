@@ -64,8 +64,21 @@ export default function ChatListPage() {
                     {formatTime(conversation.last_message_at)}
                   </span>
                 </span>
-                <span className="mt-0.5 block truncate text-[13px] text-muted-foreground">
-                  {conversation.last_message ?? "아직 메시지가 없습니다"}
+                <span className="mt-0.5 flex items-center gap-2">
+                  <span
+                    className={`min-w-0 flex-1 truncate text-[13px] ${
+                      conversation.unread_count > 0
+                        ? "font-semibold text-foreground"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {conversation.last_message ?? "아직 메시지가 없습니다"}
+                  </span>
+                  {conversation.unread_count > 0 && (
+                    <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground">
+                      {conversation.unread_count}
+                    </span>
+                  )}
                 </span>
               </span>
             </Link>

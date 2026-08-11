@@ -50,6 +50,15 @@ export default function ChatRoomPage() {
     refetchInterval: 5_000, // 실시간 대신 주기 폴링 — 단순·크래시 안전
   });
 
+  // 새 메시지를 볼 때마다 읽음 처리(갭 #35) — 목록의 안 읽음 뱃지가 따라 내려간다
+  const lastMessageId = messages?.[messages.length - 1]?.id;
+  useEffect(() => {
+    if (status !== "authenticated" || !messages) return;
+    void apiFetch<void>(`/chat/conversations/${id}/read`, { method: "POST" }).then(() =>
+      queryClient.invalidateQueries({ queryKey: ["conversations"] }),
+    );
+  }, [status, id, lastMessageId, messages, queryClient]);
+
   const send = useMutation({
     mutationFn: (body: string) =>
       apiFetch<ChatMessage>(`/chat/conversations/${id}/messages`, {

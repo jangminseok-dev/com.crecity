@@ -18,3 +18,8 @@ class NotificationRepository(ABC):
 
     @abstractmethod
     async def mark_all_read(self, user_id: int) -> None: ...
+
+    @abstractmethod
+    async def mark_read(self, user_id: int, notification_id: int) -> bool:
+        """개별 읽음 — 본인 알림만(다른 사용자 것이거나 없으면 False)."""
+        ...

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 
 from chat.adapter.inbound.api.schemas.conversation_schema import ConversationResponseSchema
 from chat.adapter.inbound.api.v1.conversation_opening_router import to_schema
@@ -36,3 +36,18 @@ async def get_conversation(
     except NotParticipantError as error:
         raise HTTPException(status_code=403, detail=str(error))
     return to_schema(result)
+
+
+@conversation_listing_router.post("/conversations/{conversation_id}/read", status_code=204)
+async def mark_conversation_read(
+    conversation_id: int,
+    user: VerifiedUser = Depends(get_current_user),
+    use_case: ConversationListingUseCase = Depends(get_conversation_listing_use_case),
+) -> Response:
+    try:
+        await use_case.mark_read(conversation_id, user.id)
+    except ConversationNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error))
+    except NotParticipantError as error:
+        raise HTTPException(status_code=403, detail=str(error))
+    return Response(status_code=204)
