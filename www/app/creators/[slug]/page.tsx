@@ -176,7 +176,21 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
           </section>
         </div>
 
-        <PackagePicker slug={profile.slug} packages={packages ?? []} />
+        <PackagePicker
+          slug={profile.slug}
+          packages={packages ?? []}
+          shortlistItem={{
+            slug: profile.slug,
+            name: profile.name,
+            primary_category: profile.primary_category,
+            tagline: profile.tagline,
+            location: profile.location,
+            cover_image_url: cover?.image_url ?? null,
+            price_from: packages?.[0]?.price_krw ?? null, // 목록은 가격 오름차순
+            rating_avg: reviews?.average_overall ?? null,
+            rating_count: reviews?.total ?? 0,
+          }}
+        />
       </div>
     </div>
   );

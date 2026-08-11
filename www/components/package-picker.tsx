@@ -5,17 +5,21 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import ContactCreatorButton from "@/components/contact-creator-button";
+import ShortlistButton from "@/components/shortlist-button";
 import { useCartStore } from "@/lib/cart-store";
 import { PLATFORM_LABELS, formatKrw } from "@/lib/labels";
+import type { ShortlistItem } from "@/lib/shortlist-store";
 import type { CreatorPackage } from "@/lib/types";
 
 /** 프로필 우측 sticky 패키지 선택 사이드바 — 디자인 시스템 ProfileScreen의 aside. */
 export default function PackagePicker({
   slug,
   packages,
+  shortlistItem,
 }: {
   slug: string;
   packages: CreatorPackage[];
+  shortlistItem: ShortlistItem;
 }) {
   // 단일 객체 상태 — 선택 패키지 + 플랫폼 탭(null=전체) + 카트 하이드레이션 완료 여부
   const [ui, setUi] = useState<{
@@ -141,6 +145,7 @@ export default function PackagePicker({
       )}
 
       <ContactCreatorButton slug={slug} />
+      <ShortlistButton item={shortlistItem} withLabel />
     </aside>
   );
 }

@@ -33,6 +33,16 @@ const PRICE_RANGES: { value: string; label: string }[] = [
   { value: "500000-", label: "50만원 이상" },
 ];
 
+/* 큐레이션 프리셋(§3.1) — 자주 쓰는 조합을 공유 가능한 URL 하나로 묶는다 */
+const PRESETS: { label: string; query: string }[] = [
+  { label: "10만원 이하 릴스", query: "platform=INSTAGRAM&price=0-100000" },
+  { label: "30만원 이하 유튜브", query: "platform=YOUTUBE&price=100000-300000" },
+  { label: "숏폼 전문(틱톡)", query: "platform=TIKTOK" },
+  { label: "블로그 체험단", query: "platform=NAVER_BLOG" },
+  { label: "서울 크리에이터", query: "location=서울" },
+  { label: "프리미엄 50만원 이상", query: "price=500000-" },
+];
+
 function parsePriceRange(price?: string): { price_min?: string; price_max?: string } {
   if (!price || !/^\d+-\d*$/.test(price)) return {};
   const [min, max] = price.split("-");
@@ -208,11 +218,25 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
           </section>
         )}
 
+        {/* 큐레이션 프리셋 — 필터 조합 바로가기(공유 가능한 URL) */}
+        <div className="mt-12 flex flex-wrap items-center gap-2">
+          <span className="text-sm font-semibold">이런 조합은 어때요?</span>
+          {PRESETS.map((preset) => (
+            <Link
+              key={preset.label}
+              href={`/?${preset.query}`}
+              className="inline-flex h-8 items-center rounded-full border bg-background px-3.5 text-[13px] text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+            >
+              {preset.label}
+            </Link>
+          ))}
+        </div>
+
         {/* 검색 필터 확장 — 플랫폼·가격대·위치 (§3.1, GET 폼이라 상태 없이 URL로 수렴) */}
         <form
           action="/"
           method="get"
-          className="mt-10 flex flex-wrap items-center gap-2 rounded-2xl border bg-card p-3"
+          className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border bg-card p-3"
         >
           {q && <input type="hidden" name="q" value={q} />}
           {category && <input type="hidden" name="category" value={category} />}

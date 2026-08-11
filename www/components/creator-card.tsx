@@ -1,6 +1,7 @@
 import { Star } from "lucide-react";
 import Link from "next/link";
 
+import ShortlistButton from "@/components/shortlist-button";
 import { formatKrw } from "@/lib/labels";
 import type { ProfileListingItem } from "@/lib/types";
 
@@ -16,7 +17,23 @@ const TINTS: [string, string][] = [
 export default function CreatorCard({ profile }: { profile: ProfileListingItem }) {
   const [from, to] = TINTS[profile.name.charCodeAt(0) % TINTS.length];
   return (
-    <Link href={`/creators/${profile.slug}`} className="group flex flex-col gap-2.5">
+    <div className="group relative flex flex-col">
+      {/* 찜 버튼은 링크 밖에 둔다 — 링크 안 버튼은 중첩 인터랙션이 된다 */}
+      <ShortlistButton
+        className="absolute right-2.5 top-2.5 z-10"
+        item={{
+          slug: profile.slug,
+          name: profile.name,
+          primary_category: profile.primary_category,
+          tagline: profile.tagline,
+          location: profile.location,
+          cover_image_url: profile.cover_image_url,
+          price_from: profile.price_from,
+          rating_avg: profile.rating_avg,
+          rating_count: profile.rating_count,
+        }}
+      />
+      <Link href={`/creators/${profile.slug}`} className="flex flex-col gap-2.5">
       <span className="relative block aspect-[4/5] overflow-hidden rounded-xl">
         {profile.cover_image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -55,7 +72,8 @@ export default function CreatorCard({ profile }: { profile: ProfileListingItem }
             <span className="ml-1 text-xs font-normal text-muted-foreground/70">부터</span>
           </span>
         )}
-      </span>
-    </Link>
+        </span>
+      </Link>
+    </div>
   );
 }

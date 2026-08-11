@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle, ShoppingCart } from "lucide-react";
+import { Heart, MessageCircle, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -8,10 +8,12 @@ import NotificationBell from "@/components/notification-bell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/lib/auth-store";
 import { useCartStore } from "@/lib/cart-store";
+import { useShortlistStore } from "@/lib/shortlist-store";
 
 export default function SiteHeader() {
   const { status, user, clearSession } = useAuthStore();
   const cartCount = useCartStore((s) => s.items.length);
+  const shortlistCount = useShortlistStore((s) => s.items.length);
   // 단일 객체 상태 — 계정 메뉴 열림 + 카트 하이드레이션 완료(SSR 불일치 방지)
   const [ui, setUi] = useState<{ menuOpen: boolean; cartReady: boolean }>({
     menuOpen: false,
@@ -52,6 +54,18 @@ export default function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1">
+          {ui.cartReady && shortlistCount > 0 && (
+            <Link
+              href="/shortlist"
+              aria-label="찜한 크리에이터"
+              className="relative inline-flex size-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              <Heart className="size-5" />
+              <span className="absolute -right-0.5 -top-0.5 inline-flex size-[18px] items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
+                {shortlistCount}
+              </span>
+            </Link>
+          )}
           {ui.cartReady && cartCount > 0 && (
             <Link
               href="/cart"
