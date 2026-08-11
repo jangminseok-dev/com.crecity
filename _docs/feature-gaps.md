@@ -32,7 +32,10 @@
   `CampaignApplicationPort` + `POST /payment/checkouts/application`(견적+수수료, 크레딧
   사용 가능) + `place_application` 주문 생성 + 지원 order_id 표식(재수락 차단) +
   지원자 카드 "수락하고 결제"/"주문 보기".
-- [ ] **8. 멀티 크리에이터 장바구니 일괄 결제** — §3.8. 객단가 직결.
+- [x] **8. 멀티 크리에이터 장바구니 일괄 결제** — ✅ 2026-08-11 구축. 장바구니는
+  클라이언트 상태(zustand persist), 서버는 체크아웃부터(`/payment/checkouts/cart` —
+  가격 전부 재확정, `payment_intent_items` 3NF). 승인 시 주문 N건+예치를 `create_many`
+  단일 트랜잭션(부분 생성 없음), 크레딧·0원 결제 지원. 담기·/cart·헤더 뱃지 UI.
 - [ ] **9. 검색 필터 확장 — 플랫폼·가격대·위치** — §3.1. (팔로워·참여율 필터는 14번 데이터
   수집에 종속이라 후순위)
 
