@@ -8,6 +8,10 @@ export type ProfileListingItem = {
   location: string | null;
   primary_category: string;
   created_at: string | null;
+  cover_image_url: string | null; // 정적 서빙 경로 — /api/backend 프리픽스 붙여 사용
+  price_from: number | null; // 최저 패키지 가격
+  rating_avg: number | null;
+  rating_count: number;
 };
 
 export type ProfileListingResponse = {

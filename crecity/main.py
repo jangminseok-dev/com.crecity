@@ -77,6 +77,8 @@ from notification.adapter.inbound.api.v1.bellman_router import bellman_router
 from notification.adapter.inbound.api.v1.notification_listing_router import (
     notification_listing_router,
 )
+from hub.dependencies.creator_rating_provider import register_creator_rating_port
+from review.adapter.outbound.hub.creator_rating_gateway import ReviewCreatorRatingGateway
 from review.adapter.inbound.api.v1.appraiser_router import appraiser_router
 from review.adapter.inbound.api.v1.review_listing_router import review_listing_router
 from review.adapter.inbound.api.v1.review_submission_router import review_submission_router
@@ -91,6 +93,7 @@ register_order_placement_port(PaidOrderPlacementGateway())  # order → 결제 �
 register_order_participants_port(OrderParticipantsGateway())  # order → 주문 당사자(리뷰 자격)
 register_creator_ref_port(CreatorRefGateway())  # creator → 크리에이터 참조(리뷰·캠페인·채팅)
 register_user_directory_port(UserDirectoryGateway())  # auth → 회원 디렉토리(채팅 상대 표시)
+register_creator_rating_port(ReviewCreatorRatingGateway())  # review → 평점 요약(목록 카드)
 
 
 @asynccontextmanager

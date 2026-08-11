@@ -42,3 +42,8 @@ class CreatorPackageRepository(ABC):
 
     @abstractmethod
     async def list_by_profile_id(self, profile_id: int) -> list[CreatorPackage]: ...
+
+    @abstractmethod
+    async def min_prices_by_profile_ids(self, profile_ids: list[int]) -> dict[int, int]:
+        """프로필별 최저 패키지 가격(목록 카드 '부터' 가격) — 패키지 없는 프로필은 키 부재."""
+        ...

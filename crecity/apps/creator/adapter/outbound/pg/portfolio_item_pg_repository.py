@@ -39,6 +39,18 @@ class PortfolioItemPgRepository(PortfolioItemRepository):
         )
         return (await self._session.execute(stmt)).scalar_one()
 
+    async def first_file_names_by_profile_ids(self, profile_ids: list[int]) -> dict[int, str]:
+        if not profile_ids:
+            return {}
+        stmt = (
+            select(PortfolioItemOrm.profile_id, PortfolioItemOrm.file_name)
+            .distinct(PortfolioItemOrm.profile_id)  # PG DISTINCT ON — 프로필별 등록순 첫 장
+            .where(PortfolioItemOrm.profile_id.in_(profile_ids))
+            .order_by(PortfolioItemOrm.profile_id, PortfolioItemOrm.id)
+        )
+        result = await self._session.execute(stmt)
+        return dict(result.all())
+
     async def delete(self, item_id: int) -> bool:
         result = await self._session.execute(
             delete(PortfolioItemOrm).where(PortfolioItemOrm.id == item_id)

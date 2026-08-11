@@ -39,6 +39,12 @@ async def list_profiles(
                 location=item.location,
                 primary_category=item.primary_category,
                 created_at=item.created_at,
+                cover_image_url=(
+                    f"/uploads/portfolio/{item.cover_file_name}" if item.cover_file_name else None
+                ),
+                price_from=item.price_from,
+                rating_avg=item.rating_avg,
+                rating_count=item.rating_count,
             )
             for item in result.items
         ],

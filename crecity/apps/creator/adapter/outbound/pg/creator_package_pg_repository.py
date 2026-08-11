@@ -1,4 +1,4 @@
-from sqlalchemy import delete, insert, select, update
+from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from creator.adapter.outbound.mappers.creator_package_mapper import CreatorPackageMapper
@@ -78,3 +78,13 @@ class CreatorPackagePgRepository(CreatorPackageRepository):
             .order_by(CreatorPackageOrm.price_krw)
         )
         return [CreatorPackageMapper.to_entity(orm) for orm in result.scalars().all()]
+
+    async def min_prices_by_profile_ids(self, profile_ids: list[int]) -> dict[int, int]:
+        if not profile_ids:
+            return {}
+        result = await self._session.execute(
+            select(CreatorPackageOrm.profile_id, func.min(CreatorPackageOrm.price_krw))
+            .where(CreatorPackageOrm.profile_id.in_(profile_ids))
+            .group_by(CreatorPackageOrm.profile_id)
+        )
+        return {profile_id: int(price) for profile_id, price in result}

@@ -1,16 +1,23 @@
+import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import ContactCreatorButton from "@/components/contact-creator-button";
 import CreatorReviews from "@/components/creator-reviews";
+import PackagePicker from "@/components/package-picker";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { PLATFORM_LABELS, formatKrw } from "@/lib/labels";
+import { PLATFORM_LABELS } from "@/lib/labels";
 import { backendGet } from "@/lib/server/backend-api";
 import type { CreatorPackage, CreatorProfile, PortfolioItem } from "@/lib/types";
+
+/* 프로필 사진이 없을 때 이니셜 뒤에 깔리는 틴트 — creator-card와 동일 */
+const TINTS: [string, string][] = [
+  ["#f2f4f6", "#e5e8eb"],
+  ["#eef0f3", "#dde1e6"],
+  ["#f4f3f1", "#e8e6e2"],
+  ["#eef1f5", "#dfe4ea"],
+  ["#f0f2f4", "#e2e6ea"],
+];
 
 type PageParams = Promise<{ slug: string }>;
 
@@ -40,94 +47,100 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
   ]);
   if (!profile) notFound();
 
+  const photos = portfolio ?? [];
+  const cover = photos[0];
+  const [tintFrom, tintTo] = TINTS[profile.name.charCodeAt(0) % TINTS.length];
+  const platforms = [...new Set((packages ?? []).map((pkg) => pkg.platform))];
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      {/* 프로필 헤더 */}
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="flex size-20 shrink-0 items-center justify-center rounded-full bg-muted text-3xl font-bold">
-          {profile.name.slice(0, 1)}
-        </div>
-        <div className="flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold">{profile.name}</h1>
-            <Badge variant="secondary">{profile.primary_category}</Badge>
-            {profile.status !== "APPROVED" && <Badge variant="outline">심사 대기 중</Badge>}
-          </div>
-          <p className="mt-1 text-muted-foreground">{profile.tagline}</p>
-          {profile.location && (
-            <p className="mt-1 text-sm text-muted-foreground">📍 {profile.location}</p>
-          )}
-        </div>
-        <ContactCreatorButton slug={profile.slug} />
-      </section>
+    <div className="mx-auto max-w-6xl px-6 pb-20 pt-7">
+      <Link
+        href="/"
+        className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" />
+        크리에이터 찾기
+      </Link>
 
-      <Separator className="my-8" />
-
-      {/* 소개 */}
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">소개</h2>
-        <p className="whitespace-pre-line leading-relaxed text-foreground/90">{profile.bio}</p>
-      </section>
-
-      {/* 포트폴리오 갤러리 */}
-      {portfolio && portfolio.length > 0 && (
-        <section className="mt-10">
-          <h2 className="mb-4 text-lg font-semibold">포트폴리오</h2>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-            {portfolio.map((item) => (
-              <div key={item.id} className="aspect-square overflow-hidden rounded-lg border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+      <div className="grid items-start gap-12 lg:grid-cols-[1fr_360px]">
+        <div>
+          {/* 프로필 헤더 */}
+          <section className="mb-7 flex flex-col gap-6 sm:flex-row sm:items-start">
+            <div className="w-[180px] shrink-0 overflow-hidden rounded-xl">
+              {cover ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={`/api/backend${item.image_url}`}
-                  alt={`${profile.name} 포트폴리오`}
-                  className="size-full object-cover"
+                  src={`/api/backend${cover.image_url}`}
+                  alt={`${profile.name} 프로필`}
+                  className="aspect-[4/5] w-full object-cover"
                 />
+              ) : (
+                <div
+                  className="flex aspect-[4/5] w-full items-center justify-center text-[40px] font-bold text-foreground/25"
+                  style={{ background: `linear-gradient(160deg, ${tintFrom}, ${tintTo})` }}
+                >
+                  {profile.name.slice(0, 1)}
+                </div>
+              )}
+            </div>
+            <div className="flex-1 pt-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-[26px] font-bold tracking-[-0.02em]">{profile.name}</h1>
+                {profile.status !== "APPROVED" && <Badge variant="outline">심사 대기 중</Badge>}
               </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* 패키지 가격표 */}
-      <section className="mt-10">
-        <h2 className="mb-4 text-lg font-semibold">판매 패키지</h2>
-        {!packages || packages.length === 0 ? (
-          <p className="rounded-lg border border-dashed py-10 text-center text-muted-foreground">
-            아직 등록된 패키지가 없습니다.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {packages.map((pkg) => (
-              <Card key={pkg.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-base">{pkg.title}</CardTitle>
-                    <Badge variant="outline">{PLATFORM_LABELS[pkg.platform]}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                  <p className="text-sm text-muted-foreground">{pkg.description}</p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xl font-bold">{formatKrw(pkg.price_krw)}</p>
-                    <Link
-                      href={`/orders/new?slug=${profile.slug}&package=${pkg.id}`}
-                      className={buttonVariants({ size: "sm" })}
+              <p className="mt-2 text-[15px] text-muted-foreground">
+                {profile.primary_category}
+                {profile.location ? ` · ${profile.location}` : ""}
+              </p>
+              <p className="mt-1 text-[15px] text-muted-foreground">{profile.tagline}</p>
+              <div className="mt-3.5 flex flex-wrap gap-1.5">
+                {[profile.primary_category, ...platforms.map((p) => PLATFORM_LABELS[p])].map(
+                  (tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex h-7 items-center rounded-full bg-secondary px-3 text-[13px] text-secondary-foreground"
                     >
-                      주문하기
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </section>
+                      {tag}
+                    </span>
+                  ),
+                )}
+              </div>
+              <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed">{profile.bio}</p>
+            </div>
+          </section>
 
-      {/* 리뷰 — 집계 공개, 원문은 로그인 시(블러 정책) */}
-      <section className="mt-10">
-        <h2 className="mb-4 text-lg font-semibold">리뷰</h2>
-        <CreatorReviews slug={profile.slug} />
-      </section>
+          {/* 포트폴리오 갤러리 */}
+          {photos.length > 0 && (
+            <section className="mt-10">
+              <h2 className="border-b pb-3 text-[15px] font-semibold">
+                포트폴리오 <span className="ml-1 font-normal text-muted-foreground">{photos.length}</span>
+              </h2>
+              <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                {photos.map((item) => (
+                  <div key={item.id} className="aspect-square overflow-hidden rounded-xl">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/api/backend${item.image_url}`}
+                      alt={`${profile.name} 포트폴리오`}
+                      className="size-full object-cover transition-transform duration-200 hover:scale-[1.03]"
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 리뷰 — 집계 공개, 원문은 로그인 시(블러 정책) */}
+          <section className="mt-10">
+            <h2 className="border-b pb-3 text-[15px] font-semibold">리뷰</h2>
+            <div className="mt-5">
+              <CreatorReviews slug={profile.slug} />
+            </div>
+          </section>
+        </div>
+
+        <PackagePicker slug={profile.slug} packages={packages ?? []} />
+      </div>
     </div>
   );
 }
