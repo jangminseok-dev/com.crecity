@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
-import { PROFILE_STATUS_LABELS } from "@/lib/labels";
+import { CREATOR_CATEGORIES, PROFILE_STATUS_LABELS } from "@/lib/labels";
 import type { CreatorProfile } from "@/lib/types";
 
 const profileSchema = z.object({
@@ -97,7 +97,16 @@ function ProfileRegistrationForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
             <Label htmlFor="primary_category">대표 카테고리</Label>
-            <Input id="primary_category" name="primary_category" placeholder="뷰티" />
+            <select
+              id="primary_category"
+              name="primary_category"
+              defaultValue="뷰티"
+              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            >
+              {CREATOR_CATEGORIES.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="location">활동 지역 (선택)</Label>
@@ -168,7 +177,16 @@ function ProfileEditForm({ profile, onDone }: { profile: CreatorProfile; onDone:
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
             <Label htmlFor="primary_category">대표 카테고리</Label>
-            <Input id="primary_category" name="primary_category" defaultValue={profile.primary_category} />
+            <select
+              id="primary_category"
+              name="primary_category"
+              defaultValue={profile.primary_category}
+              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            >
+              {CREATOR_CATEGORIES.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="location">활동 지역 (선택)</Label>

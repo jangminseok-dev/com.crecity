@@ -31,6 +31,8 @@ async def update_my_profile(
         )
     except ProfileNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error))
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error))
     return MyProfileResponseSchema(
         id=result.id,
         slug=result.slug,

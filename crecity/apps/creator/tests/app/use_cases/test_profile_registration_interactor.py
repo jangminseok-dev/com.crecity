@@ -96,3 +96,24 @@ async def test_형식_위반_슬러그면_ValueError_저장_없음():
     with pytest.raises(ValueError):
         await ProfileRegistrationInteractor(repository).register(_command(slug="Kim Beauty!"))
     assert repository.created == []
+
+
+async def test_고정_목록_밖_카테고리는_거부한다():
+    import pytest
+
+    from creator.app.dtos.profile_registration_dto import ProfileRegistrationCommand
+
+    interactor = ProfileRegistrationInteractor(_StubRepository())
+    with pytest.raises(ValueError, match="지원하지 않는 카테고리"):
+        await interactor.register(
+            ProfileRegistrationCommand(
+                user_id=1,
+                account_type="CREATOR",
+                slug="new-creator",
+                name="이름",
+                tagline="소개",
+                bio="상세",
+                location=None,
+                primary_category="개발",
+            )
+        )

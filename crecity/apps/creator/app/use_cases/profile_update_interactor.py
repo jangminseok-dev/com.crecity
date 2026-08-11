@@ -5,6 +5,7 @@ from creator.app.dtos.profile_update_dto import ProfileUpdateCommand
 from creator.app.exceptions import ProfileNotFoundError
 from creator.app.ports.input.profile_update_use_case import ProfileUpdateUseCase
 from creator.app.ports.output.creator_profile_repository import CreatorProfileRepository
+from creator.domain.value_objects.category import Category
 
 
 class ProfileUpdateInteractor(ProfileUpdateUseCase):
@@ -13,13 +14,14 @@ class ProfileUpdateInteractor(ProfileUpdateUseCase):
         self._repository = repository
 
     async def update_my_profile(self, command: ProfileUpdateCommand) -> MyProfileResult:
+        category = Category(command.primary_category)  # 고정 목록 밖이면 ValueError
         profile = await self._repository.update_profile(
             user_id=command.user_id,
             name=command.name,
             tagline=command.tagline,
             bio=command.bio,
             location=command.location,
-            primary_category=command.primary_category,
+            primary_category=category.value,
         )
         if profile is None:
             raise ProfileNotFoundError("등록된 프로필이 없습니다.")

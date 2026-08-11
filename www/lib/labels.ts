@@ -8,6 +8,19 @@ export const PLATFORM_LABELS: Record<CreatorPackage["platform"], string> = {
   UGC: "UGC",
 };
 
+/* 고정 카테고리 목록 — 백엔드 creator/domain/value_objects/category.py와 1:1 */
+export const CREATOR_CATEGORIES = [
+  "뷰티",
+  "패션",
+  "푸드",
+  "여행",
+  "테크",
+  "피트니스",
+  "라이프",
+  "포토",
+  "영상",
+] as const;
+
 export const PROFILE_STATUS_LABELS: Record<string, string> = {
   PENDING: "심사 대기",
   APPROVED: "승인됨",

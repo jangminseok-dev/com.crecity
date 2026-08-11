@@ -12,6 +12,7 @@ from creator.app.exceptions import (
 from creator.app.ports.input.profile_registration_use_case import ProfileRegistrationUseCase
 from creator.app.ports.output.creator_profile_repository import CreatorProfileRepository
 from creator.domain.entities.creator_profile_entity import ProfileStatus
+from creator.domain.value_objects.category import Category
 from creator.domain.value_objects.slug import Slug
 
 
@@ -26,6 +27,7 @@ class ProfileRegistrationInteractor(ProfileRegistrationUseCase):
         if await self._repository.find_by_user_id(command.user_id) is not None:
             raise DuplicateProfileError("이미 등록된 프로필이 있습니다 — 계정당 1개만 만들 수 있습니다.")
         slug = Slug(command.slug)  # 형식 위반은 여기서 ValueError
+        category = Category(command.primary_category)  # 고정 목록 밖이면 ValueError
         if await self._repository.exists_by_slug(slug.value):
             raise DuplicateSlugError(f"이미 사용 중인 슬러그입니다: {slug.value}")
 
@@ -35,7 +37,7 @@ class ProfileRegistrationInteractor(ProfileRegistrationUseCase):
             tagline=command.tagline,
             bio=command.bio,
             location=command.location,
-            primary_category=command.primary_category,
+            primary_category=category.value,
             status=ProfileStatus.PENDING,
             user_id=command.user_id,
         )
