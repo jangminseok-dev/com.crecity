@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import OrderDeliverablesSection from "@/components/order-deliverables-section";
 import OrderReviewSection from "@/components/order-review-section";
 import OrderStatusBadge from "@/components/order-status-badge";
 import { Button } from "@/components/ui/button";
@@ -148,6 +149,13 @@ export default function OrderDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {["IN_PROGRESS", "IN_REVIEW", "COMPLETED"].includes(order.status) && (
+        <OrderDeliverablesSection
+          orderId={order.id}
+          canUpload={!isBrand && order.status === "IN_PROGRESS"}
+        />
+      )}
 
       {actions.length > 0 && (
         <div className="grid gap-2">

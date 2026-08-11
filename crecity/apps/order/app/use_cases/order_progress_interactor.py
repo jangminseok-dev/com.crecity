@@ -7,14 +7,21 @@ from order.app.dtos.order_result_dto import OrderResult
 from order.app.events import order_event
 from order.app.exceptions import OrderNotFoundError
 from order.app.ports.input.order_progress_use_case import OrderProgressUseCase
+from order.app.ports.output.deliverable_repository import DeliverableRepository
 from order.app.ports.output.order_repository import OrderRepository
 from order.domain.entities.order_entity import Order
 
 
 class OrderProgressInteractor(OrderProgressUseCase):
 
-    def __init__(self, orders: OrderRepository, review_deadline: timedelta) -> None:
+    def __init__(
+        self,
+        orders: OrderRepository,
+        deliverables: DeliverableRepository,
+        review_deadline: timedelta,
+    ) -> None:
         self._orders = orders
+        self._deliverables = deliverables
         self._review_deadline = review_deadline
 
     async def _get(self, order_id: int) -> Order:
@@ -37,8 +44,9 @@ class OrderProgressInteractor(OrderProgressUseCase):
 
     async def submit(self, command: OrderTransitionCommand) -> OrderResult:
         now = datetime.now(timezone.utc)
+        deliverable_count = await self._deliverables.count_by_order(command.order_id)
         order = (await self._get(command.order_id)).submit(
-            command.actor_user_id, now, self._review_deadline
+            command.actor_user_id, now, self._review_deadline, deliverable_count
         )
         await self._orders.save_transition(order, [], [order_event("order.submitted", order)])
         return OrderResult.from_order(order)

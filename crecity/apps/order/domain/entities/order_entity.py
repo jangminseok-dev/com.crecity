@@ -100,11 +100,28 @@ class Order:
         self._require_status(OrderStatus.PENDING_ACCEPT, "거절")
         return self._refund()
 
-    def submit(self, actor_user_id: int, now: datetime, review_deadline: timedelta) -> Order:
-        """크리에이터 콘텐츠 제출 → 브랜드 검토 대기(72h 마감 시작)."""
+    def submit(
+        self,
+        actor_user_id: int,
+        now: datetime,
+        review_deadline: timedelta,
+        deliverable_count: int,
+    ) -> Order:
+        """크리에이터 콘텐츠 제출 → 브랜드 검토 대기(72h 마감 시작).
+
+        제출은 상태 전이가 아니라 결과물 인도다 — 납품물이 없으면 제출 불가
+        (에스크로 승인·분쟁 판단의 근거를 남긴다).
+        """
         self._require_creator(actor_user_id)
         self._require_status(OrderStatus.IN_PROGRESS, "제출")
+        if deliverable_count <= 0:
+            raise InvalidOrderTransitionError("납품물(파일 또는 링크)을 먼저 등록해야 제출할 수 있습니다.")
         return replace(self, status=OrderStatus.IN_REVIEW, deadline_at=now + review_deadline)
+
+    def ensure_can_attach_deliverable(self, actor_user_id: int) -> None:
+        """납품물 등록 검증 — 작업 중(IN_PROGRESS)인 주문의 크리에이터만."""
+        self._require_creator(actor_user_id)
+        self._require_status(OrderStatus.IN_PROGRESS, "납품물 등록")
 
     def request_revision(self, actor_user_id: int) -> Order:
         """브랜드 수정 요청 → 재작업(원 요구사항 범위 내 무제한 — collabstr §3.8)."""

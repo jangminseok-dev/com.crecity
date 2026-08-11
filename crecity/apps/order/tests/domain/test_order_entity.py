@@ -67,9 +67,14 @@ def test_거절하면_환불되고_브랜드_크레딧이_적립된다():
 
 
 def test_제출하면_검토중이_되고_72h_마감이_걸린다():
-    submitted = _order(OrderStatus.IN_PROGRESS, deadline_at=None).submit(CREATOR, _NOW, _72H)
+    submitted = _order(OrderStatus.IN_PROGRESS, deadline_at=None).submit(CREATOR, _NOW, _72H, 1)
     assert submitted.status is OrderStatus.IN_REVIEW
     assert submitted.deadline_at == _NOW + _72H
+
+
+def test_납품물이_없으면_제출할_수_없다():
+    with pytest.raises(InvalidOrderTransitionError):
+        _order(OrderStatus.IN_PROGRESS, deadline_at=None).submit(CREATOR, _NOW, _72H, 0)
 
 
 def test_수정_요청하면_다시_작업중이_된다():
@@ -81,7 +86,7 @@ def test_수정_요청하면_다시_작업중이_된다():
 def test_수정_요청은_반복_가능하다():
     order = _order(OrderStatus.IN_PROGRESS, deadline_at=None)
     for _ in range(3):
-        order = order.submit(CREATOR, _NOW, _72H)
+        order = order.submit(CREATOR, _NOW, _72H, 1)
         order = order.request_revision(BRAND)
     assert order.status is OrderStatus.IN_PROGRESS
 
@@ -129,7 +134,7 @@ def test_완료된_주문은_어떤_전이도_거부한다():
     with pytest.raises(InvalidOrderTransitionError):
         done.reject(CREATOR)
     with pytest.raises(InvalidOrderTransitionError):
-        done.submit(CREATOR, _NOW, _72H)
+        done.submit(CREATOR, _NOW, _72H, 1)
     with pytest.raises(InvalidOrderTransitionError):
         done.approve(BRAND)
 

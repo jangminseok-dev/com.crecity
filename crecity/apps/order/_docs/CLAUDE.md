@@ -9,6 +9,7 @@
 | bookkeeper (myself) | `GET /order/myself` | 자기소개 |
 | order_placement | (HTTP 없음 — 결제 경유 전용) | 주문 생성 — payment 승인 후 허브 `OrderPlacementPort`(order 구현 `PaidOrderPlacementGateway`)로만 호출된다. 커스텀 오퍼 주문(`place_custom`)은 `CustomOfferPort`로 가격·당사자를 해석하며 package_id가 NULL. 금액·수수료율(§7-4)·패키지 제목 스냅샷, 72h 수락 마감, 에스크로 예치 기입. 결제 금액과 현재 계산 불일치 시 생성 거부(None) |
 | order_progress | `POST /order/orders/{id}/accept·reject·submit·request-revision·approve` | 상태 전이 — 규칙·행위자 검증은 도메인 `Order`가 강제(403/409). 거절→크레딧 환불, 승인→적립+수수료 확정 |
+| deliverable_submission | `POST /order/orders/{id}/deliverables/files·links` · `GET /order/orders/{id}/deliverables` | 납품물(파일·링크) — 등록은 **IN_PROGRESS의 크리에이터만**(도메인 `ensure_can_attach_deliverable`), 열람은 당사자만(403). append-only(분쟁 근거 보존), 파일은 `/uploads/deliverables/` 로컬 저장(이미지·영상·PDF·ZIP, 100MB) |
 | order_lookup | `GET /order/orders` · `GET /order/orders/{id}` | 내 주문 목록(최신순)·상세 — **당사자만(403)** |
 | balance_lookup | `GET /order/balance` | 내 잔액 = 적립성 기입 합 − 차감성 기입 합 |
 | withdrawal_request | `POST/GET /order/withdrawals` | 크리에이터 적립금 인출 — 요청 시 잔액 재검증+차감 기입(WITHDRAWAL)을 advisory lock 단일 트랜잭션으로(과인출 차단), 원천징수 3.3% 세액·실지급액 스냅샷. 운영 처리(완료/실패·복원)는 허브 `WithdrawalSettlementPort`(order 구현 게이트웨이)로 admin이 수행 |
@@ -22,6 +23,8 @@ PENDING_ACCEPT ──수락──▶ IN_PROGRESS ──제출──▶ IN_REVIEW
       ├─ 거절/72h 만료 ─▶ REFUNDED           └─ 수정 요청 ─▶ IN_PROGRESS (무제한)
 ```
 
+- **제출은 납품물 ≥1건이 전제**(`Order.submit`의 `deliverable_count`) — 상태 전이가 아니라
+  결과물 인도이며, 에스크로 승인·분쟁 판단의 근거를 남긴다(갭 #3, 2026-08-11).
 - 상태 전이·수수료 계산은 **순수 도메인**(`Order`) — 정수 원 단위 내림, 부동소수 금지.
 - 브랜드 결제 총액 = 가격 + 브랜드 수수료(예치액) · 크리에이터 적립 = 가격 − 크리에이터 수수료.
   요율은 `core/config.py`(`ORDER_*_FEE_PERCENT`, 초기 10/10) — 주문 생성 시점 스냅샷.
@@ -31,5 +34,5 @@ PENDING_ACCEPT ──수락──▶ IN_PROGRESS ──제출──▶ IN_REVIEW
 - 원장(`ledger_entries`)은 append-only. 잔액 = 적립성 기입 합(`BALANCE_CREDIT_TYPES`).
 - `package_id`·user_id들은 타 스포크 논리 참조(DB FK 없음). 패키지 제목은 표시용 스냅샷
   (이력 보존 — 3NF 허용 예외).
-- 예정: 장바구니 · 양측 합의 취소(CANCELLED 전이) · 크레딧 사용(차감성 기입 유형) ·
-  납품물 파일 업로드. (인출은 2026-08-11 구축 완료)
+- 예정: 장바구니 · 양측 합의 취소(CANCELLED 전이) · 크레딧 사용(차감성 기입 유형).
+  (인출·납품물 업로드는 2026-08-11 구축 완료)

@@ -6,7 +6,11 @@ from order.app.dtos.order_progress_dto import OrderTransitionCommand
 from order.app.exceptions import OrderNotFoundError
 from order.app.use_cases.order_progress_interactor import OrderProgressInteractor
 from order.domain.entities.ledger_entry_entity import LedgerEntryType
-from order.domain.entities.order_entity import Order, OrderStatus
+from order.domain.entities.order_entity import (
+    InvalidOrderTransitionError,
+    Order,
+    OrderStatus,
+)
 
 _NOW = datetime(2026, 8, 10, 12, 0, tzinfo=timezone.utc)
 BRAND, CREATOR = 100, 200
@@ -33,6 +37,20 @@ class _StubOrderRepository:
         raise NotImplementedError
 
 
+class _StubDeliverableRepository:
+    def __init__(self, count: int):
+        self.count = count
+
+    async def add(self, order_id, kind, file_name, original_name, url):
+        raise NotImplementedError
+
+    async def list_by_order(self, order_id):
+        raise NotImplementedError
+
+    async def count_by_order(self, order_id):
+        return self.count
+
+
 def _order(status=OrderStatus.PENDING_ACCEPT, deadline_at=_NOW + timedelta(hours=72)):
     return Order(
         id=1,
@@ -49,9 +67,14 @@ def _order(status=OrderStatus.PENDING_ACCEPT, deadline_at=_NOW + timedelta(hours
     )
 
 
-def _interactor(order):
+def _interactor(order, deliverable_count=1):
     repo = _StubOrderRepository(order)
-    return OrderProgressInteractor(orders=repo, review_deadline=timedelta(hours=72)), repo
+    interactor = OrderProgressInteractor(
+        orders=repo,
+        deliverables=_StubDeliverableRepository(deliverable_count),
+        review_deadline=timedelta(hours=72),
+    )
+    return interactor, repo
 
 
 async def test_수락하면_작업중으로_저장된다():
@@ -77,6 +100,15 @@ async def test_제출하면_검토_마감이_걸린다():
     result = await interactor.submit(OrderTransitionCommand(order_id=1, actor_user_id=CREATOR))
     assert result.status == OrderStatus.IN_REVIEW.value
     assert repo.saved[0][0].deadline_at is not None
+
+
+async def test_납품물이_없으면_제출할_수_없다():
+    interactor, repo = _interactor(
+        _order(OrderStatus.IN_PROGRESS, deadline_at=None), deliverable_count=0
+    )
+    with pytest.raises(InvalidOrderTransitionError):
+        await interactor.submit(OrderTransitionCommand(order_id=1, actor_user_id=CREATOR))
+    assert repo.saved == []
 
 
 async def test_승인하면_적립·수수료_기입과_함께_저장된다():

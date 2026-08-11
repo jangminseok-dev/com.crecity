@@ -48,6 +48,16 @@ export type Order = {
   created_at: string | null;
 };
 
+export type Deliverable = {
+  id: number;
+  order_id: number;
+  kind: "FILE" | "LINK";
+  file_url: string | null;
+  original_name: string | null;
+  url: string | null;
+  created_at: string | null;
+};
+
 export type Campaign = {
   id: number;
   brand_user_id: number;
