@@ -3,13 +3,22 @@ import "./globals.css";
 import Providers from "./providers";
 import SiteFooter from "@/components/site-footer";
 import SiteHeader from "@/components/site-header";
+import { SITE_URL } from "@/lib/site";
 
 const TITLE = "crecity — 크리에이터 마켓플레이스";
 const DESCRIPTION = "브랜드와 크리에이터를 잇는 셀프서브 마켓플레이스";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  metadataBase: new URL(SITE_URL),
+  title: { default: TITLE, template: "%s | crecity" },
   description: DESCRIPTION,
+  openGraph: {
+    siteName: "crecity",
+    type: "website",
+    locale: "ko_KR",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
   const { slug } = await params;
   const profile = await fetchProfile(slug);
   if (!profile) return { title: "크리에이터를 찾을 수 없습니다 — crecity" };
-  const title = `${profile.name} — ${profile.primary_category} 크리에이터 | crecity`;
+  const title = `${profile.name} — ${profile.primary_category} 크리에이터`;
   const description = profile.tagline || profile.bio.slice(0, 120);
   return {
     title,
