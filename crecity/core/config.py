@@ -40,6 +40,8 @@ WITHDRAWAL_TAX_PERMILLE = int(_secrets.get("WITHDRAWAL_TAX_PERMILLE", "33"))
 
 # 응답 마감(시간) — 수락 대기·검토 공통 72h(collabstr §3.8), 만료는 주기 스캔이 전이.
 ORDER_RESPONSE_DEADLINE_HOURS = int(_secrets.get("ORDER_RESPONSE_DEADLINE_HOURS", "72"))
+# 인기 랭킹에서 수락 만료 1건이 상쇄하는 성사 주문 수(§3.8 — 무응답 페널티)
+RANKING_ACCEPT_EXPIRY_PENALTY = int(_secrets.get("RANKING_ACCEPT_EXPIRY_PENALTY", "2"))
 
 # 업로드 파일 저장 루트 — 로컬 디스크 시작(오브젝트 스토리지 전환 시 어댑터 교체).
 UPLOAD_DIR = _secrets.get("UPLOAD_DIR", "uploads")

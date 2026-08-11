@@ -127,6 +127,7 @@ class OrderPgRepository(OrderRepository):
                 deadline_at=order.deadline_at,
                 cancel_requested_by=order.cancel_requested_by,
                 revisions_used=order.revisions_used,
+                accept_expired=order.accept_expired,
             )
         )
         await self._insert_entries(order.id, entries)

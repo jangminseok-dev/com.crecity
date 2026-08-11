@@ -39,6 +39,8 @@ IN_PROGRESS·IN_REVIEW ──취소 요청→상대 동의──▶ CANCELLED (�
   `events` 인자 — BOUNDARIES §1). 이벤트는 `app/events.py`의 `order_event`로 만든다
   (order.placed/accepted/rejected/submitted/revision_requested/completed/
   cancel_requested/cancelled/cancel_declined — notification이 소비).
+- **수락 만료 페널티(갭 #32)**: 72h 무응답 만료는 `accept_expired` 표식을 남겨 거절 환불과
+  구분한다 — 인기 랭킹 점수 = 성사 주문 − 만료×`RANKING_ACCEPT_EXPIRY_PENALTY`(core/config).
 - 원장(`ledger_entries`)은 append-only. 잔액 = 적립 합(`BALANCE_CREDIT_TYPES`) −
   차감 합(`BALANCE_DEBIT_TYPES`: WITHDRAWAL·CREDIT_SPENT).
 - `package_id`·user_id들은 타 스포크 논리 참조(DB FK 없음). 패키지 제목은 표시용 스냅샷

@@ -53,6 +53,7 @@ class Order:
     deadline_at: datetime | None
     cancel_requested_by: int | None = None  # 양측 합의 취소의 요청자 — 상대 동의·거부 대기 중
     # 표준계약 구조화 필드(§3.3·§9.2, 갭 #29) — 주문 생성 시 패키지에서 스냅샷
+    accept_expired: bool = False  # 72h 내 미수락으로 환불된 주문 — 랭킹 페널티 대상(§3.8)
     revision_limit: int = 2  # 브랜드가 요청할 수 있는 수정 횟수(0이면 수정 불가)
     revisions_used: int = 0
     usage_rights: str = ""  # 2차 활용 범위
@@ -160,7 +161,9 @@ class Order:
         if self.deadline_at is None or now < self.deadline_at:
             return None
         if self.status is OrderStatus.PENDING_ACCEPT:
-            return self._refund()
+            # 크리에이터 무응답 — 거절 환불과 구분해 표식을 남긴다(랭킹 페널티)
+            refunded, entries = self._refund()
+            return replace(refunded, accept_expired=True), entries
         if self.status is OrderStatus.IN_REVIEW:
             return self._complete()
         return None

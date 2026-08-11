@@ -237,12 +237,19 @@ def test_상대가_거부하면_요청이_해제되고_주문은_계속된다():
 # ── 만료(주기 스캔) ────────────────────────────────────────────────────────
 
 
-def test_수락_대기_만료는_자동_환불이다():
+def test_수락_대기_만료는_자동_환불이고_페널티_표식이_남는다():
     expired = _order(deadline_at=_NOW - timedelta(minutes=1)).expire(_NOW)
     assert expired is not None
     order, entries = expired
     assert order.status is OrderStatus.REFUNDED
+    assert order.accept_expired is True  # 랭킹 페널티 대상(§3.8)
     assert entries[0].entry_type is LedgerEntryType.BRAND_CREDIT_REFUND
+
+
+def test_크리에이터_거절_환불은_페널티_표식이_없다():
+    refunded, _entries = _order().reject(CREATOR)
+    assert refunded.status is OrderStatus.REFUNDED
+    assert refunded.accept_expired is False  # 무응답이 아니라 명시적 거절
 
 
 def test_검토_만료는_자동_승인이다():

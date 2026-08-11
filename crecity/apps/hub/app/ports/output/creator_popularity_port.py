@@ -10,5 +10,8 @@ class CreatorPopularityPort(ABC):
 
     @abstractmethod
     async def top_creators_by_recent_orders(self, days: int, limit: int) -> list[CreatorOrderCount]:
-        """최근 days일 주문 수 상위 크리에이터(환불·취소 제외) — 주문 수 내림차순."""
+        """최근 days일 상위 크리에이터 — 성사 주문 수에서 수락 만료 페널티를 뺀 점수 내림차순.
+
+        환불·취소 주문은 성사에서 제외하고, 72h 무응답 만료는 추가로 감점한다(§3.8).
+        """
         ...
