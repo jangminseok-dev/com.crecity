@@ -15,6 +15,7 @@ class ProfileStatus(StrEnum):
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
+    DELETED = "DELETED"  # 계정 삭제로 비활성화(§3.8, 갭 #33) — 공개 조회도 막힌다
 
 
 @dataclass(frozen=True, slots=True)

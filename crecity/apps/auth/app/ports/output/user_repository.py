@@ -16,3 +16,11 @@ class UserRepository(ABC):
 
     @abstractmethod
     async def find_by_email(self, email: str) -> User | None: ...
+
+    @abstractmethod
+    async def soft_delete(self, user_id: int, anonymized_email: str) -> None:
+        """탈퇴 처리(§3.8, 갭 #33) — 거래 기록 보존을 위해 행은 남기고 식별정보만 지운다.
+
+        이메일은 unique 제약이 있어 재가입을 막지 않도록 익명값으로 치환한다.
+        """
+        ...

@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from admin.adapter.inbound.api.v1.profile_review_router import profile_review_router
 from admin.adapter.inbound.api.v1.steward_router import steward_router
+from auth.adapter.inbound.api.v1.account_deletion_router import account_deletion_router
 from auth.adapter.inbound.api.v1.gatekeeper_router import gatekeeper_router
 from auth.adapter.inbound.api.v1.logout_router import logout_router
 from auth.adapter.inbound.api.v1.social_login_router import social_login_router
@@ -31,6 +32,9 @@ from creator.adapter.inbound.api.v1.analytics_management_router import (
     analytics_management_router,
 )
 from creator.adapter.inbound.api.v1.faq_management_router import faq_management_router
+from creator.adapter.outbound.hub.profile_deactivation_gateway import (
+    CreatorProfileDeactivationGateway,
+)
 from creator.adapter.inbound.api.v1.portfolio_management_router import (
     portfolio_management_router,
 )
@@ -55,6 +59,7 @@ from order.adapter.inbound.api.v1.order_lookup_router import order_lookup_router
 from order.adapter.inbound.api.v1.order_progress_router import order_progress_router
 from order.adapter.outbound.hub.creator_popularity_gateway import OrderCreatorPopularityGateway
 from order.adapter.outbound.hub.credit_balance_gateway import OrderCreditBalanceGateway
+from order.adapter.outbound.hub.active_order_gateway import OrderActiveOrderGateway
 from order.adapter.outbound.hub.order_adjustment_gateway import OrderAdjustmentGateway
 from order.adapter.outbound.hub.order_placement_gateway import PaidOrderPlacementGateway
 from order.adapter.outbound.hub.withdrawal_settlement_gateway import OrderWithdrawalSettlementGateway
@@ -68,7 +73,9 @@ from payment.adapter.inbound.api.v1.payment_confirmation_router import (
 )
 from payment.adapter.inbound.api.v1.paymaster_router import paymaster_router
 from hub.dependencies.campaign_application_provider import register_campaign_application_port
+from hub.dependencies.active_order_provider import register_active_order_port
 from hub.dependencies.order_adjustment_provider import register_order_adjustment_port
+from hub.dependencies.profile_deactivation_provider import register_profile_deactivation_port
 from hub.dependencies.credit_balance_provider import register_credit_balance_port
 from hub.dependencies.order_placement_provider import register_order_placement_port
 from creator.adapter.outbound.hub.creator_ref_gateway import CreatorRefGateway
@@ -125,6 +132,8 @@ register_withdrawal_settlement_port(OrderWithdrawalSettlementGateway())  # order
 register_credit_balance_port(OrderCreditBalanceGateway())  # order → 크레딧 잔액(체크아웃 적용액 확정)
 register_campaign_application_port(CampaignApplicationGateway())  # campaign → 지원 수락 결제
 register_order_adjustment_port(OrderAdjustmentGateway())  # order → 금액 변경 추가 결제
+register_active_order_port(OrderActiveOrderGateway())  # order → 활성 주문(탈퇴 차단)
+register_profile_deactivation_port(CreatorProfileDeactivationGateway())  # creator → 탈퇴 시 프로필 비활성화
 
 
 @asynccontextmanager
@@ -147,6 +156,7 @@ app.include_router(gatekeeper_router)
 app.include_router(social_login_router)
 app.include_router(token_refresh_router)
 app.include_router(logout_router)
+app.include_router(account_deletion_router)
 app.include_router(profile_router)
 app.include_router(profile_registration_router)
 app.include_router(profile_listing_router)

@@ -12,12 +12,14 @@ const CREATOR_TABS = [
   { href: "/dashboard/packages", label: "판매 패키지" },
   { href: "/dashboard/orders", label: "주문 관리" },
   { href: "/dashboard/balance", label: "잔액" },
+  { href: "/dashboard/settings", label: "설정" },
 ];
 
 const BRAND_TABS = [
   { href: "/dashboard/orders", label: "주문 관리" },
   { href: "/dashboard/campaigns", label: "내 공고" },
   { href: "/dashboard/balance", label: "크레딧" },
+  { href: "/dashboard/settings", label: "설정" },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select
+from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.adapter.outbound.mappers.social_identity_mapper import SocialIdentityMapper
@@ -34,3 +34,9 @@ class SocialIdentityPgRepository(SocialIdentityRepository):
         )
         orm = result.scalar_one_or_none()
         return SocialIdentityMapper.to_entity(orm) if orm is not None else None
+
+    async def delete_by_user_id(self, user_id: int) -> None:
+        await self._session.execute(
+            delete(SocialIdentityOrm).where(SocialIdentityOrm.user_id == user_id)
+        )
+        await self._session.commit()

@@ -17,6 +17,7 @@
 | analytics_management | `POST·GET /creator/my/analytics` · `DELETE /creator/my/analytics/{platform}` · `GET /creator/profiles/{slug}/analytics` | 채널 분석 지표(§9.2, 갭 #14) — 자가입력(팔로워·참여율‰) + 스크린샷 인증(`ImageFile` VO), 프로필당 플랫폼 1행(재제출=갱신), UGC 제외 4채널. **공개 열람은 로그인 필수(401 — 가입 게이트)**. 프로필 조회에 `followers_total` 합계 배지 |
 | profile_listing | `GET /creator/profiles` · `GET /creator/categories` | 마켓플레이스 공개 목록(SSR 데이터 소스) — APPROVED만, 최신 등록순. `category`·`q`(이름·태그라인 부분 일치)·`platform`·`price_min/max`(해당 조건 패키지 EXISTS)·`location`(부분 일치)·`limit`(≤50)·`offset`, 응답은 `items`+`total`(목록·총계 동일 조건 — §3.1 검색 필터, 갭 #9). categories는 필터 칩용 중복 제거 목록 |
 
+- `ProfileStatus.DELETED`는 계정 탈퇴 표식(갭 #33) — 목록 제외 + **공개 조회도 404**.
 - 엔티티: `CreatorProfile`(+`ProfileStatus`, `user_id` 소유 계정·`is_owned_by`) ·
   `CreatorPackage`(+`PackagePlatform`). 현재 사용자는 허브 `get_current_user`로 얻는다
   (auth 직접 import 금지). `user_id`는 auth users 논리 참조 — 스포크 경계라 DB FK 없음,

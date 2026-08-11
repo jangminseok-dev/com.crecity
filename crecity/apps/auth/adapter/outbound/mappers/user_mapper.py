@@ -12,5 +12,6 @@ class UserMapper:
             email=orm.email,
             name=orm.name,
             account_type=AccountType(orm.account_type),
+            deleted_at=orm.deleted_at,
             created_at=orm.created_at,
         )

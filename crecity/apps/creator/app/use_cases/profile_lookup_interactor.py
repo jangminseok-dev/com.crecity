@@ -5,6 +5,7 @@ from creator.app.exceptions import ProfileNotFoundError
 from creator.app.ports.input.profile_lookup_use_case import ProfileLookupUseCase
 from creator.app.ports.output.analytics_repository import AnalyticsRepository
 from creator.app.ports.output.creator_profile_repository import CreatorProfileRepository
+from creator.domain.entities.creator_profile_entity import ProfileStatus
 
 
 class ProfileLookupInteractor(ProfileLookupUseCase):
@@ -17,7 +18,7 @@ class ProfileLookupInteractor(ProfileLookupUseCase):
 
     async def lookup(self, query: ProfileLookupQuery) -> ProfileLookupResult:
         profile = await self._repository.find_by_slug(query.slug)
-        if profile is None:
+        if profile is None or profile.status is ProfileStatus.DELETED:
             raise ProfileNotFoundError(f"프로필을 찾을 수 없습니다: {query.slug}")
         return ProfileLookupResult(
             followers_total=await self._analytics.followers_total(profile.id),

@@ -10,6 +10,7 @@
 | gatekeeper (myself) | `GET /auth/myself` | 자기소개 |
 | social_login | `GET /auth/social/{provider}/authorize-url` · `POST /auth/social/{provider}/login` | 카카오·네이버·구글 OAuth. 프론트가 콜백 code를 login에 전달 → 가입(첫 로그인) 또는 로그인 → JWT(HS256, 30분) + 리프레시 토큰(Redis, 14일) 발급 |
 | token_refresh | `POST /auth/tokens/refresh` | 리프레시 토큰 회전(1회용) — 소비 후 새 쌍 발급, 재사용 401 |
+| account_deletion | `POST /auth/account/delete` | 계정 탈퇴(§3.8, 갭 #33) — 허브 `ActiveOrderPort`·`CreditBalancePort`로 **활성 주문·잔액 검사(409)**, 통과 시 프로필 비활성화(`ProfileDeactivationPort`)·소셜 연결 해제·이메일 익명화 **소프트 삭제**(거래 기록 보존)·리프레시 토큰 폐기. 액세스 토큰은 TTL(30분)까지 유효 — 표준 트레이드오프 |
 | logout | `POST /auth/tokens/logout` | 로그아웃 — 리프레시 토큰 즉시 폐기(Redis GETDEL). 없는 토큰도 멱등 204. BFF가 쿠키 삭제 전에 호출한다(갭 #5-1) |
 
 - 엔티티: `User`(+`AccountType` CREATOR/BRAND) · `SocialIdentity`(+`SocialProvider` KAKAO/NAVER/GOOGLE).

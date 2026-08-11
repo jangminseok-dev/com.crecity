@@ -16,6 +16,10 @@ class UserOrm(Base):
     name: Mapped[str] = mapped_column(String(100))
     # AccountType 값 — CREATOR | BRAND
     account_type: Mapped[str] = mapped_column(String(20))
+    # 탈퇴 시각(§3.8, 갭 #33) — 거래 기록 보존을 위해 행은 남기고 소프트 삭제한다
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

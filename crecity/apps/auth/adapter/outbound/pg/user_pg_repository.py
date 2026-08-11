@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select
+from sqlalchemy import func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.adapter.outbound.mappers.user_mapper import UserMapper
@@ -30,3 +30,11 @@ class UserPgRepository(UserRepository):
         result = await self._session.execute(select(UserOrm).where(UserOrm.email == email))
         orm = result.scalar_one_or_none()
         return UserMapper.to_entity(orm) if orm is not None else None
+
+    async def soft_delete(self, user_id: int, anonymized_email: str) -> None:
+        await self._session.execute(
+            update(UserOrm)
+            .where(UserOrm.id == user_id)
+            .values(email=anonymized_email, name="탈퇴한 사용자", deleted_at=func.now())
+        )
+        await self._session.commit()

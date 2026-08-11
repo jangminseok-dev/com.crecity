@@ -23,4 +23,8 @@ class User:
     email: str
     name: str
     account_type: AccountType
+    deleted_at: datetime | None = None  # 탈퇴한 계정(§3.8)
     created_at: datetime | None = None
+
+    def is_deleted(self) -> bool:
+        return self.deleted_at is not None

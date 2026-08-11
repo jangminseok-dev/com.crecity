@@ -12,3 +12,15 @@ class OAuthExchangeError(Exception):
 
 class InvalidRefreshTokenError(Exception):
     """무효·만료·재사용된 리프레시 토큰 — 라우터에서 401로 변환."""
+
+
+class UserNotFoundError(Exception):
+    """계정 없음(또는 이미 탈퇴) — 라우터에서 404로 변환."""
+
+
+class ActiveOrderExistsError(Exception):
+    """진행 중 주문이 남아 탈퇴 불가 — 라우터에서 409로 변환."""
+
+
+class RemainingBalanceError(Exception):
+    """잔액이 남아 탈퇴 불가 — 라우터에서 409로 변환."""

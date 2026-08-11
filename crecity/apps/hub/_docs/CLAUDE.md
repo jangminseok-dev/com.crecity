@@ -19,6 +19,8 @@
 | 크레딧 잔액 조회 | `CreditBalancePort` 포트(`dependencies/credit_balance_provider.py`) | order(`OrderCreditBalanceGateway`) — main.py가 `register_credit_balance_port`로 조립 | payment 체크아웃 준비(크레딧 적용액 확정 — 실차감·재검증은 주문 생성 트랜잭션이 수행) |
 | 캠페인 지원 조회·확정 | `CampaignApplicationPort` 포트 + `CampaignApplicationSummary` DTO(`dependencies/campaign_application_provider.py`) | campaign(`CampaignApplicationGateway`) — main.py가 `register_campaign_application_port`로 조립 | payment 지원 수락 결제 준비·order_id 기록 · order 지원 수락 주문 생성(견적·당사자 해석) — 갭 #7 |
 | 주문 금액 변경 | `OrderAdjustmentPort` 포트 + `OrderAdjustmentSummary` DTO(`dependencies/order_adjustment_provider.py`) | order(`OrderAdjustmentGateway`) — main.py가 `register_order_adjustment_port`로 조립 | payment 추가 결제 준비·반영(갭 #31 — 반영 실패 시 None → PG 취소 보정) |
+| 활성 주문 확인 | `ActiveOrderPort`(`dependencies/active_order_provider.py`) | order(`OrderActiveOrderGateway`) | auth 계정 탈퇴 차단(갭 #33) |
+| 프로필 비활성화 | `ProfileDeactivationPort`(`dependencies/profile_deactivation_provider.py`) | creator(`CreatorProfileDeactivationGateway`) | auth 탈퇴 시 공개 프로필 DELETED 처리 |
 | Outbox 이벤트 중계 | `OutboxEvent` DTO(`app/dtos/outbox_event_dto.py`, `"<도메인>.<사건>"` 규약) + `outbox_events` 테이블 + `enqueue_events`/`fetch_unpublished`/`mark_published`(`adapter/outbound/pg/outbox_pg_store.py` — 전부 무커밋, 호출자 트랜잭션 참여) | (허브 자체 소유 — 조립 불필요) | 발행: order 리포지토리·creator 심사 게이트웨이 / 소비: notification 워커(BOUNDARIES §1) |
 
 - 조립 규칙: 허브는 스포크를 모르므로 구현체 등록은 항상 main.py(조립 루트) 몫이다.
