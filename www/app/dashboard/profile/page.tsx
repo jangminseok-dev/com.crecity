@@ -94,7 +94,7 @@ function ProfileRegistrationForm() {
           <Label htmlFor="bio">상세 소개</Label>
           <Textarea id="bio" name="bio" rows={5} placeholder="어떤 콘텐츠를 만드는지 소개해 주세요." />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
             <Label htmlFor="primary_category">대표 카테고리</Label>
             <Input id="primary_category" name="primary_category" placeholder="뷰티" />
@@ -165,7 +165,7 @@ function ProfileEditForm({ profile, onDone }: { profile: CreatorProfile; onDone:
           <Label htmlFor="bio">상세 소개</Label>
           <Textarea id="bio" name="bio" rows={5} defaultValue={profile.bio} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
             <Label htmlFor="primary_category">대표 카테고리</Label>
             <Input id="primary_category" name="primary_category" defaultValue={profile.primary_category} />

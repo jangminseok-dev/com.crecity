@@ -53,6 +53,13 @@ class CreatorProfileRepository(ABC):
     ) -> int: ...
 
     @abstractmethod
+    async def list_by_user_ids(
+        self, user_ids: list[int], status: ProfileStatus
+    ) -> list[CreatorProfile]:
+        """소유 계정 id들로 조회(상태 필터) — 인기 순위를 프로필로 해석할 때 쓴다."""
+        ...
+
+    @abstractmethod
     async def list_categories(self, status: ProfileStatus) -> list[str]:
         """상태로 필터한 카테고리 목록(중복 제거, 가나다순)."""
         ...

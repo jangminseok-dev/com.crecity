@@ -20,7 +20,7 @@ import type { ComponentType } from "react";
 import CreatorCard from "@/components/creator-card";
 import { Button } from "@/components/ui/button";
 import { backendGet } from "@/lib/server/backend-api";
-import type { ProfileListingResponse } from "@/lib/types";
+import type { ProfileListingItem, ProfileListingResponse } from "@/lib/types";
 
 const PAGE_SIZE = 20;
 
@@ -58,9 +58,12 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
     ...(category ? { category } : {}),
     ...(q ? { q } : {}),
   });
-  const [listing, categories] = await Promise.all([
+  const isFiltered = Boolean(category || q || currentPage > 1);
+  const [listing, categories, popular] = await Promise.all([
     backendGet<ProfileListingResponse>(`/creator/profiles?${query}`),
     backendGet<string[]>("/creator/categories"),
+    // 인기 섹션은 필터 없는 첫 화면에서만 보여준다
+    isFiltered ? Promise.resolve(null) : backendGet<ProfileListingItem[]>("/creator/profiles/popular?limit=4"),
   ]);
   const items = listing?.items ?? [];
   const total = listing?.total ?? 0;
@@ -157,6 +160,23 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
               );
             })}
           </div>
+        )}
+
+        {/* 이번 주 인기 크리에이터 — 최근 7일 주문 수 기준 */}
+        {popular && popular.length > 0 && (
+          <section>
+            <div className="mb-6 mt-14">
+              <h2 className="text-[22px] font-bold tracking-[-0.02em]">이번 주 인기 크리에이터</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                지난 7일 동안 브랜드가 가장 많이 찾았어요
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-x-5 gap-y-7 md:grid-cols-3 lg:grid-cols-4">
+              {popular.map((profile) => (
+                <CreatorCard key={profile.id} profile={profile} />
+              ))}
+            </div>
+          </section>
         )}
 
         {/* 섹션 헤더 */}

@@ -20,6 +20,7 @@ from creator.adapter.inbound.api.v1.package_management_router import (
     package_management_router,
 )
 from creator.adapter.inbound.api.v1.my_profile_lookup_router import my_profile_lookup_router
+from creator.adapter.inbound.api.v1.popular_profiles_router import popular_profiles_router
 from creator.adapter.inbound.api.v1.profile_listing_router import profile_listing_router
 from creator.adapter.inbound.api.v1.profile_lookup_router import profile_lookup_router
 from creator.adapter.inbound.api.v1.profile_registration_router import (
@@ -42,6 +43,7 @@ from order.adapter.inbound.api.v1.balance_lookup_router import balance_lookup_ro
 from order.adapter.inbound.api.v1.bookkeeper_router import bookkeeper_router
 from order.adapter.inbound.api.v1.order_lookup_router import order_lookup_router
 from order.adapter.inbound.api.v1.order_progress_router import order_progress_router
+from order.adapter.outbound.hub.creator_popularity_gateway import OrderCreatorPopularityGateway
 from order.adapter.outbound.hub.order_placement_gateway import PaidOrderPlacementGateway
 from payment.adapter.inbound.api.v1.checkout_preparation_router import (
     checkout_preparation_router,
@@ -78,6 +80,7 @@ from notification.adapter.inbound.api.v1.bellman_router import bellman_router
 from notification.adapter.inbound.api.v1.notification_listing_router import (
     notification_listing_router,
 )
+from hub.dependencies.creator_popularity_provider import register_creator_popularity_port
 from hub.dependencies.creator_rating_provider import register_creator_rating_port
 from review.adapter.outbound.hub.creator_rating_gateway import ReviewCreatorRatingGateway
 from review.adapter.inbound.api.v1.appraiser_router import appraiser_router
@@ -95,6 +98,7 @@ register_order_participants_port(OrderParticipantsGateway())  # order → 주문
 register_creator_ref_port(CreatorRefGateway())  # creator → 크리에이터 참조(리뷰·캠페인·채팅)
 register_user_directory_port(UserDirectoryGateway())  # auth → 회원 디렉토리(채팅 상대 표시)
 register_creator_rating_port(ReviewCreatorRatingGateway())  # review → 평점 요약(목록 카드)
+register_creator_popularity_port(OrderCreatorPopularityGateway())  # order → 인기 순위(홈 섹션)
 
 
 @asynccontextmanager
@@ -119,6 +123,7 @@ app.include_router(token_refresh_router)
 app.include_router(profile_router)
 app.include_router(profile_registration_router)
 app.include_router(profile_listing_router)
+app.include_router(popular_profiles_router)
 app.include_router(my_profile_lookup_router)
 app.include_router(profile_update_router)
 app.include_router(portfolio_management_router)

@@ -88,7 +88,7 @@ function PackageForm({ slug, ui, setUi }: {
         <h3 className="font-semibold">{ui.editing ? `패키지 수정 — ${ui.editing.title}` : "새 패키지 등록"}</h3>
         {/* key로 수정 대상 전환 시 defaultValue를 리셋한다 */}
         <form key={ui.editing?.id ?? "new"} onSubmit={handleSubmit} className="mt-4 grid gap-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-1.5">
               <Label htmlFor="platform">플랫폼</Label>
               <select

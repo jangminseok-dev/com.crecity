@@ -92,6 +92,18 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         result = await self._session.execute(stmt)
         return [CreatorProfileMapper.to_entity(orm) for orm in result.scalars()]
 
+    async def list_by_user_ids(
+        self, user_ids: list[int], status: ProfileStatus
+    ) -> list[CreatorProfile]:
+        if not user_ids:
+            return []
+        result = await self._session.execute(
+            select(CreatorProfileOrm)
+            .where(CreatorProfileOrm.user_id.in_(user_ids))
+            .where(CreatorProfileOrm.status == status.value)
+        )
+        return [CreatorProfileMapper.to_entity(orm) for orm in result.scalars()]
+
     async def list_categories(self, status: ProfileStatus) -> list[str]:
         result = await self._session.execute(
             select(CreatorProfileOrm.primary_category)
