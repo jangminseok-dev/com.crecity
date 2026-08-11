@@ -37,6 +37,7 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
   return {
     title,
     description,
+    alternates: { canonical: `/creators/${encodeURIComponent(slug)}` },
     openGraph: { title, description, type: "profile" },
   };
 }
@@ -107,16 +108,21 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
                 </p>
               )}
               <div className="mt-3.5 flex flex-wrap gap-1.5">
-                {[profile.primary_category, ...platforms.map((p) => PLATFORM_LABELS[p])].map(
-                  (tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex h-7 items-center rounded-full bg-secondary px-3 text-[13px] text-secondary-foreground"
-                    >
-                      {tag}
-                    </span>
-                  ),
-                )}
+                {/* 카테고리 칩은 허브 페이지 역링크(§7-5) — 내부 링크로 인덱싱을 잇는다 */}
+                <Link
+                  href={`/creators/category/${encodeURIComponent(profile.primary_category)}`}
+                  className="inline-flex h-7 items-center rounded-full bg-secondary px-3 text-[13px] text-secondary-foreground transition-colors hover:bg-accent"
+                >
+                  {profile.primary_category} 크리에이터
+                </Link>
+                {platforms.map((p) => (
+                  <span
+                    key={p}
+                    className="inline-flex h-7 items-center rounded-full bg-secondary px-3 text-[13px] text-secondary-foreground"
+                  >
+                    {PLATFORM_LABELS[p]}
+                  </span>
+                ))}
               </div>
               <p className="mt-4 whitespace-pre-line text-[15px] leading-relaxed">{profile.bio}</p>
             </div>

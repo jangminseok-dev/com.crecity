@@ -6,8 +6,15 @@ import type { ProfileListingResponse } from "@/lib/types";
 
 const PAGE_SIZE = 50; // 백엔드 목록 limit 상한
 
-/** 프로그래매틱 SEO의 핵심 — 승인된 크리에이터 프로필 전부를 사이트맵에 올린다. */
+/** 프로그래매틱 SEO의 핵심 — 승인된 프로필 전부 + 카테고리 허브를 사이트맵에 올린다. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const categories = (await backendGet<string[]>("/creator/categories")) ?? [];
+  const categoryHubs: MetadataRoute.Sitemap = categories.map((name) => ({
+    url: `${SITE_URL}/creators/category/${encodeURIComponent(name)}`,
+    changeFrequency: "daily" as const,
+    priority: 0.9, // 허브는 프로필보다 상위 인덱싱 대상(§7-2)
+  }));
+
   const profiles: MetadataRoute.Sitemap = [];
   for (let offset = 0; ; offset += PAGE_SIZE) {
     const listing = await backendGet<ProfileListingResponse>(
@@ -27,6 +34,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     { url: SITE_URL, changeFrequency: "daily", priority: 1 },
+    ...categoryHubs,
     ...profiles,
+    { url: `${SITE_URL}/terms`, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/privacy`, changeFrequency: "yearly", priority: 0.3 },
   ];
 }

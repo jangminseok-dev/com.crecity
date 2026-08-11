@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: TITLE, template: "%s | crecity" },
   description: DESCRIPTION,
+  // 기본 canonical — 경로 기준(쿼리 제거)으로 페이지마다 해석된다. 동적 페이지는 개별 지정.
+  alternates: { canonical: "./" },
   openGraph: {
     siteName: "crecity",
     type: "website",
