@@ -4,6 +4,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from creator.adapter.outbound.pg.analytics_pg_repository import AnalyticsPgRepository
 from creator.adapter.outbound.pg.creator_profile_pg_repository import CreatorProfilePgRepository
 from creator.app.ports.input.profile_lookup_use_case import ProfileLookupUseCase
 from creator.app.use_cases.profile_lookup_interactor import ProfileLookupInteractor
@@ -12,4 +13,7 @@ from creator.app.use_cases.profile_lookup_interactor import ProfileLookupInterac
 def get_profile_lookup_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> ProfileLookupUseCase:
-    return ProfileLookupInteractor(repository=CreatorProfilePgRepository(session=db))
+    return ProfileLookupInteractor(
+        repository=CreatorProfilePgRepository(session=db),
+        analytics=AnalyticsPgRepository(session=db),
+    )

@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
 
+import AnalyticsManager from "@/components/analytics-manager";
 import PortfolioManager from "@/components/portfolio-manager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -262,6 +263,7 @@ export default function DashboardProfilePage() {
         <ProfileView profile={profile} onEdit={() => setEditing(true)} />
       )}
       <PortfolioManager slug={profile.slug} />
+      <AnalyticsManager />
     </>
   );
 }

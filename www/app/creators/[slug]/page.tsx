@@ -3,10 +3,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import CreatorAnalyticsSection from "@/components/creator-analytics-section";
 import CreatorReviews from "@/components/creator-reviews";
 import PackagePicker from "@/components/package-picker";
 import { Badge } from "@/components/ui/badge";
-import { PLATFORM_LABELS } from "@/lib/labels";
+import { PLATFORM_LABELS, formatFollowers } from "@/lib/labels";
 import { backendGet } from "@/lib/server/backend-api";
 import type { CreatorPackage, CreatorProfile, PortfolioItem } from "@/lib/types";
 
@@ -91,6 +92,11 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
             <div className="flex-1 pt-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-[26px] font-bold tracking-[-0.02em]">{profile.name}</h1>
+                {profile.followers_total > 0 && (
+                  <Badge variant="secondary">
+                    팔로워 {formatFollowers(profile.followers_total)}
+                  </Badge>
+                )}
                 {profile.status !== "APPROVED" && <Badge variant="outline">심사 대기 중</Badge>}
               </div>
               <p className="mt-2 text-[15px] text-muted-foreground">
@@ -148,6 +154,14 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
               </div>
             </section>
           )}
+
+          {/* 채널 분석 — 자가입력+스크린샷 인증, 비로그인은 가입 게이트(§9.2) */}
+          <section className="mt-10">
+            <h2 className="border-b pb-3 text-[15px] font-semibold">채널 분석</h2>
+            <div className="mt-5">
+              <CreatorAnalyticsSection slug={profile.slug} />
+            </div>
+          </section>
 
           {/* 리뷰 — 집계 공개, 원문은 로그인 시(블러 정책) */}
           <section className="mt-10">

@@ -1,0 +1,23 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime
+
+# 분석 지표를 받는 채널 — 패키지 플랫폼에서 채널이 아닌 UGC를 제외한 목록(§9.2)
+ANALYTICS_PLATFORMS: tuple[str, ...] = ("INSTAGRAM", "YOUTUBE", "TIKTOK", "NAVER_BLOG")
+
+
+@dataclass(frozen=True, slots=True)
+class ProfileAnalytics:
+    """채널 분석 지표 — 초기엔 자가입력 + 스크린샷 인증(§9.2, API 연동은 갭 #43 후속).
+
+    engagement_permille는 참여율 ×10 정수(3.5% → 35) — 부동소수 대신 정수 보관.
+    """
+
+    id: int
+    profile_id: int
+    platform: str  # ANALYTICS_PLATFORMS 중 하나
+    followers_count: int
+    engagement_permille: int | None  # 미입력 허용
+    screenshot_file_name: str  # 자가입력 증빙 스크린샷(필수)
+    updated_at: datetime | None = None

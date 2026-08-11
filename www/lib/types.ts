@@ -29,6 +29,15 @@ export type CreatorProfile = {
   primary_category: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
   created_at: string | null;
+  followers_total: number; // 전 채널 팔로워 합(자가입력) — 헤더 배지
+};
+
+export type ProfileAnalytics = {
+  platform: "INSTAGRAM" | "YOUTUBE" | "TIKTOK" | "NAVER_BLOG";
+  followers_count: number;
+  engagement_permille: number | null; // 참여율 ×10 (3.5% → 35)
+  screenshot_url: string;
+  updated_at: string | null;
 };
 
 export type Order = {

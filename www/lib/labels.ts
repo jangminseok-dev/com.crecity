@@ -51,3 +51,12 @@ const krwFormatter = new Intl.NumberFormat("ko-KR");
 export function formatKrw(amount: number): string {
   return `${krwFormatter.format(amount)}원`;
 }
+
+/** 팔로워 수 축약 표기 — 12500 → "1.3만", 980 → "980" */
+export function formatFollowers(count: number): string {
+  if (count >= 10000) {
+    const man = count / 10000;
+    return `${man >= 100 ? Math.round(man) : Math.round(man * 10) / 10}만`;
+  }
+  return krwFormatter.format(count);
+}

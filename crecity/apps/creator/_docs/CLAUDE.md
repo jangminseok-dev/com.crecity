@@ -13,6 +13,7 @@
 | my_profile_lookup | `GET /creator/my/profile` | 로그인 사용자의 프로필 조회(대시보드용) — 없으면 404 |
 | profile_update | `PUT /creator/my/profile` | 내 프로필 수정 — 슬러그(SEO 단위)·심사 상태 불변, 내용 필드만 |
 | portfolio_management | `POST /creator/my/portfolio` · `DELETE /creator/my/portfolio/{id}` · `GET /creator/profiles/{slug}/portfolio` | 포트폴리오 사진 — 업로드는 multipart(`ImageFile` VO: JPG·PNG·WebP·5MB 이하 422), 프로필당 12장(409), 쓰기는 소유자만(403), 목록은 공개(등록순). 파일은 `PortfolioFileStorage` 포트(로컬 디스크 구현 — `UPLOAD_DIR`, main.py가 `/uploads` 정적 서빙) |
+| analytics_management | `POST·GET /creator/my/analytics` · `DELETE /creator/my/analytics/{platform}` · `GET /creator/profiles/{slug}/analytics` | 채널 분석 지표(§9.2, 갭 #14) — 자가입력(팔로워·참여율‰) + 스크린샷 인증(`ImageFile` VO), 프로필당 플랫폼 1행(재제출=갱신), UGC 제외 4채널. **공개 열람은 로그인 필수(401 — 가입 게이트)**. 프로필 조회에 `followers_total` 합계 배지 |
 | profile_listing | `GET /creator/profiles` · `GET /creator/categories` | 마켓플레이스 공개 목록(SSR 데이터 소스) — APPROVED만, 최신 등록순. `category`·`q`(이름·태그라인 부분 일치)·`platform`·`price_min/max`(해당 조건 패키지 EXISTS)·`location`(부분 일치)·`limit`(≤50)·`offset`, 응답은 `items`+`total`(목록·총계 동일 조건 — §3.1 검색 필터, 갭 #9). categories는 필터 칩용 중복 제거 목록 |
 
 - 엔티티: `CreatorProfile`(+`ProfileStatus`, `user_id` 소유 계정·`is_owned_by`) ·

@@ -20,6 +20,27 @@ class _StubRepository:
         return self.profile is not None and self.profile.slug == slug
 
 
+class _StubAnalyticsRepository:
+    def __init__(self, total=125000):
+        self.total = total
+
+    async def followers_total(self, profile_id):
+        return self.total
+
+    async def upsert(self, **kwargs):
+        raise NotImplementedError
+
+    async def list_by_profile_id(self, profile_id):
+        raise NotImplementedError
+
+    async def delete(self, profile_id, platform):
+        raise NotImplementedError
+
+
+def _interactor(profile=None):
+    return ProfileLookupInteractor(_StubRepository(profile=profile), _StubAnalyticsRepository())
+
+
 def _profile(status=ProfileStatus.APPROVED):
     return CreatorProfile(
         id=1,
@@ -34,19 +55,19 @@ def _profile(status=ProfileStatus.APPROVED):
 
 
 async def test_슬러그로_프로필을_조회한다():
-    interactor = ProfileLookupInteractor(_StubRepository(profile=_profile()))
-    result = await interactor.lookup(ProfileLookupQuery(slug="kim-beauty"))
+    result = await _interactor(_profile()).lookup(ProfileLookupQuery(slug="kim-beauty"))
     assert result.slug == "kim-beauty"
     assert result.status == "APPROVED"
+    assert result.followers_total == 125000  # 헤더 배지(§2.1-2)
 
 
 async def test_거절된_프로필도_직접_조회는_된다():
-    interactor = ProfileLookupInteractor(_StubRepository(profile=_profile(ProfileStatus.REJECTED)))
-    result = await interactor.lookup(ProfileLookupQuery(slug="kim-beauty"))
+    result = await _interactor(_profile(ProfileStatus.REJECTED)).lookup(
+        ProfileLookupQuery(slug="kim-beauty")
+    )
     assert result.status == "REJECTED"
 
 
 async def test_없는_슬러그면_ProfileNotFoundError():
-    interactor = ProfileLookupInteractor(_StubRepository(profile=None))
     with pytest.raises(ProfileNotFoundError):
-        await interactor.lookup(ProfileLookupQuery(slug="no-one"))
+        await _interactor(None).lookup(ProfileLookupQuery(slug="no-one"))

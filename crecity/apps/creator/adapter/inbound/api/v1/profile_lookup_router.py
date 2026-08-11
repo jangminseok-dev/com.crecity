@@ -28,4 +28,5 @@ async def lookup_profile(
         primary_category=result.primary_category,
         status=result.status,
         created_at=result.created_at,
+        followers_total=result.followers_total,
     )
