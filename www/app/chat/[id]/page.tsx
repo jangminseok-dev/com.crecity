@@ -5,9 +5,9 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
+import { Send } from "lucide-react";
+
 import OfferPanel from "@/components/offer-panel";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -63,7 +63,10 @@ export default function ChatRoomPage() {
 
   return (
     <div className="mx-auto flex h-[calc(100dvh-8rem)] max-w-2xl flex-col px-4 py-6">
-      <div className="flex items-center gap-2 border-b pb-3">
+      <div className="flex items-center gap-3 border-b pb-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground">
+          {(conversation?.counterpart_name ?? "대").slice(0, 1)}
+        </span>
         <h1 className="text-lg font-bold">{conversation?.counterpart_name ?? "대화"}</h1>
         {conversation?.counterpart_slug && (
           <Link
@@ -105,11 +108,22 @@ export default function ChatRoomPage() {
         <div ref={bottomRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-2 border-t pt-3">
-        <Input name="body" placeholder="메시지 입력…" autoComplete="off" maxLength={2000} />
-        <Button type="submit" disabled={send.isPending}>
-          보내기
-        </Button>
+      <form onSubmit={handleSubmit} className="flex gap-2.5 border-t pt-3">
+        <input
+          name="body"
+          placeholder="메시지를 입력하세요"
+          autoComplete="off"
+          maxLength={2000}
+          className="h-11 flex-1 rounded-full border px-4 text-sm outline-none transition-colors focus:border-primary"
+        />
+        <button
+          type="submit"
+          disabled={send.isPending}
+          aria-label="보내기"
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-accent-foreground disabled:bg-muted disabled:text-muted-foreground"
+        >
+          <Send className="size-[18px]" />
+        </button>
       </form>
       {send.error && (
         <p className="mt-1 text-xs text-destructive">

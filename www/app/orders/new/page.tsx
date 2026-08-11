@@ -7,9 +7,10 @@ import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import { Suspense, useState } from "react";
 import { z } from "zod";
 
+import { ShieldCheck } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -139,33 +140,32 @@ function OrderNewContent() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">주문서 작성</h1>
-      <Card className="mt-6">
-        <CardContent className="flex items-center justify-between gap-4 p-4">
-          {isOfferMode ? (
-            <>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">커스텀 오퍼</Badge>
-                <p className="font-medium">{offer!.title}</p>
-              </div>
-              <p className="shrink-0 text-lg font-bold">{formatKrw(offer!.price_krw)}</p>
-            </>
-          ) : (
-            <>
-              <div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">{PLATFORM_LABELS[pkg!.platform]}</Badge>
-                  <p className="font-medium">{pkg!.title}</p>
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">{pkg!.description}</p>
-              </div>
-              <p className="shrink-0 text-lg font-bold">{formatKrw(pkg!.price_krw)}</p>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      <h1 className="text-[26px] font-bold tracking-[-0.02em]">주문·결제</h1>
 
-      <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
+      <section className="mt-7 rounded-2xl border p-5">
+        {isOfferMode ? (
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <Badge variant="outline">커스텀 오퍼</Badge>
+              <p className="mt-2 text-[15px] font-semibold">{offer!.title}</p>
+            </div>
+            <p className="shrink-0 text-lg font-bold">{formatKrw(offer!.price_krw)}</p>
+          </div>
+        ) : (
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <Badge variant="outline">{PLATFORM_LABELS[pkg!.platform]}</Badge>
+              <p className="mt-2 text-[15px] font-semibold">{pkg!.title}</p>
+              <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
+                {pkg!.description}
+              </p>
+            </div>
+            <p className="shrink-0 text-lg font-bold">{formatKrw(pkg!.price_krw)}</p>
+          </div>
+        )}
+      </section>
+
+      <form onSubmit={handleSubmit} className="mt-4 grid gap-4">
         <div className="grid gap-1.5">
           <Label htmlFor="requirements">요구사항</Label>
           <Textarea
@@ -175,14 +175,19 @@ function OrderNewContent() {
             placeholder="원하는 콘텐츠 방향·필수 포함 내용·게시 희망일 등을 구체적으로 적어 주세요. 수정 요청은 이 요구사항 범위 안에서 가능합니다."
           />
         </div>
-        <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
+        <div className="flex items-start gap-2 rounded-xl bg-[#f9fafb] px-3.5 py-3 text-[13px] leading-snug text-muted-foreground">
+          <ShieldCheck className="mt-0.5 size-[18px] shrink-0 text-primary" />
           결제하면 플랫폼 수수료가 더해진 총액이 안전거래(에스크로)로 보관되며, 콘텐츠 승인 후
           크리에이터에게 정산됩니다. 크리에이터가 72시간 내 수락하지 않으면 자동 환불됩니다.
-        </p>
+        </div>
         {form.error && <p className="text-sm text-destructive">{form.error}</p>}
-        <Button type="submit" size="lg" disabled={form.submitting}>
+        <button
+          type="submit"
+          disabled={form.submitting}
+          className="inline-flex h-[52px] w-full items-center justify-center rounded-xl bg-primary text-[17px] font-semibold text-primary-foreground transition-colors hover:bg-accent-foreground disabled:bg-muted disabled:text-muted-foreground"
+        >
           {form.submitting ? "결제창 여는 중…" : "결제하고 주문하기"}
-        </Button>
+        </button>
       </form>
     </div>
   );
@@ -190,7 +195,7 @@ function OrderNewContent() {
 
 export default function OrderNewPage() {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
+    <div className="mx-auto max-w-[520px] px-4 py-12">
       <Suspense>
         <OrderNewContent />
       </Suspense>

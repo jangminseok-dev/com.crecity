@@ -5,14 +5,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 import OrderReviewSection from "@/components/order-review-section";
-import { Badge } from "@/components/ui/badge";
+import OrderStatusBadge from "@/components/order-status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import { ORDER_STATUS_LABELS, formatDeadline, formatKrw } from "@/lib/labels";
+import { formatDeadline, formatKrw } from "@/lib/labels";
 import type { Order } from "@/lib/types";
 
 type TransitionAction = {
@@ -102,9 +102,7 @@ export default function OrderDetailPage() {
     <div className="grid gap-6">
       <div className="flex items-center gap-2">
         <h2 className="text-xl font-bold">주문 #{order.id}</h2>
-        <Badge variant={order.status === "COMPLETED" ? "secondary" : "outline"}>
-          {ORDER_STATUS_LABELS[order.status]}
-        </Badge>
+        <OrderStatusBadge status={order.status} />
       </div>
 
       <Card>
