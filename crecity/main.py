@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from admin.adapter.inbound.api.v1.profile_review_router import profile_review_router
 from admin.adapter.inbound.api.v1.steward_router import steward_router
 from auth.adapter.inbound.api.v1.gatekeeper_router import gatekeeper_router
+from auth.adapter.inbound.api.v1.logout_router import logout_router
 from auth.adapter.inbound.api.v1.social_login_router import social_login_router
 from auth.adapter.inbound.api.v1.token_refresh_router import token_refresh_router
 from core.database import dispose_engine, init_engine
@@ -132,6 +133,7 @@ app.include_router(dispatcher_router)
 app.include_router(gatekeeper_router)
 app.include_router(social_login_router)
 app.include_router(token_refresh_router)
+app.include_router(logout_router)
 app.include_router(profile_router)
 app.include_router(profile_registration_router)
 app.include_router(profile_listing_router)
