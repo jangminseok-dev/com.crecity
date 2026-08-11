@@ -11,6 +11,7 @@
 | order_progress | `POST /order/orders/{id}/accept·reject·submit·request-revision·approve` | 상태 전이 — 규칙·행위자 검증은 도메인 `Order`가 강제(403/409). 거절→크레딧 환불, 승인→적립+수수료 확정 |
 | deliverable_submission | `POST /order/orders/{id}/deliverables/files·links` · `GET /order/orders/{id}/deliverables` | 납품물(파일·링크) — 등록은 **IN_PROGRESS의 크리에이터만**(도메인 `ensure_can_attach_deliverable`), 열람은 당사자만(403). append-only(분쟁 근거 보존), 파일은 `/uploads/deliverables/` 로컬 저장(이미지·영상·PDF·ZIP, 100MB) |
 | order_cancellation | `POST /order/orders/{id}/cancel-request·cancel-consent·cancel-decline` | 양측 합의 취소 — 요청은 IN_PROGRESS·IN_REVIEW의 당사자 누구나(중복 409), 동의·거부는 **상대방만**(403). 동의 시 CANCELLED + 브랜드 전액 크레딧 환불(단일 트랜잭션). `orders.cancel_requested_by`가 대기 상태 표현 |
+| order_adjustment | `POST·GET /order/orders/{id}/adjustments` · `POST /order/adjustments/{id}/decline` | 진행 중 금액 변경(§3.8·§6, 갭 #31) — 요청은 **IN_PROGRESS·IN_REVIEW의 크리에이터만**(대기 중 중복 409), 거절은 브랜드만. **수락은 추가 결제**(payment `/checkouts/adjustment` → 허브 `OrderAdjustmentPort`로 주문 증액+증가분 예치 단일 트랜잭션). 감액은 미지원(합의 취소로) |
 | order_lookup | `GET /order/orders` · `GET /order/orders/{id}` | 내 주문 목록(최신순)·상세 — **당사자만(403)** |
 | balance_lookup | `GET /order/balance` | 내 잔액 = 적립성 기입 합 − 차감성 기입 합 |
 | withdrawal_request | `POST/GET /order/withdrawals` | 크리에이터 적립금 인출 — 요청 시 잔액 재검증+차감 기입(WITHDRAWAL)을 advisory lock 단일 트랜잭션으로(과인출 차단), 원천징수 3.3% 세액·실지급액 스냅샷. 운영 처리(완료/실패·복원)는 허브 `WithdrawalSettlementPort`(order 구현 게이트웨이)로 admin이 수행 |

@@ -8,6 +8,7 @@ from core.database import get_db
 from hub.dependencies.campaign_application_provider import get_campaign_application_port
 from hub.dependencies.credit_balance_provider import get_credit_balance_port
 from hub.dependencies.custom_offer_provider import get_custom_offer_port
+from hub.dependencies.order_adjustment_provider import get_order_adjustment_port
 from hub.dependencies.package_summary_provider import get_package_summary_port
 from payment.adapter.outbound.pg.payment_intent_pg_repository import PaymentIntentPgRepository
 from payment.app.ports.input.checkout_preparation_use_case import CheckoutPreparationUseCase
@@ -25,4 +26,5 @@ def get_checkout_preparation_use_case(
         client_key=TOSS_CLIENT_KEY,
         offers=get_custom_offer_port(),
         applications=get_campaign_application_port(),
+        adjustments=get_order_adjustment_port(),
     )

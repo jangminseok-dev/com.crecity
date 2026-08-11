@@ -44,6 +44,16 @@ class CartCheckoutCommand:
 
 
 @dataclass(frozen=True)
+class AdjustmentCheckoutCommand:
+    """주문 금액 변경 추가 결제 준비(§3.8·§6) — 금액은 요청에서 서버가 확정한다."""
+
+    adjustment_id: int
+    brand_user_id: int
+    account_type: str  # BRAND만 결제 가능
+    use_credit: bool = False
+
+
+@dataclass(frozen=True)
 class CheckoutResult:
     """프론트 결제창(SDK) 호출 파라미터 — 금액은 서버 확정값이다.
 

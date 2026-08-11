@@ -68,6 +68,15 @@ export type Order = {
   created_at: string | null;
 };
 
+export type OrderAdjustment = {
+  id: number;
+  order_id: number;
+  extra_amount_krw: number;
+  reason: string;
+  status: "REQUESTED" | "PAID" | "DECLINED";
+  created_at: string | null;
+};
+
 export type Deliverable = {
   id: number;
   order_id: number;

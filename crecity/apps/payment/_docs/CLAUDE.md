@@ -15,6 +15,8 @@ PG는 **토스페이먼츠**(§7-3 확정) — `PaymentGateway` 포트 뒤에 �
 | (checkout_preparation) | `POST /payment/checkouts/cart` | 장바구니 일괄 결제 준비(§3.8, 갭 #8) — 총액 = 패키지별 (가격+수수료) 합, 항목은 `payment_intent_items`(3NF). 승인 시 주문 N건 단일 트랜잭션(`place_paid_cart_orders`), 응답 `order_ids` |
 | payment_confirmation | `POST /payment/confirm` | 토스 승인 → 허브 `OrderPlacementPort`로 주문 생성(intent.offer_id → 커스텀 주문+오퍼 PAID · intent.application_id → 지원 수락 주문+지원 order_id 기록). 금액 대조는 PG 청구액 기준(불일치 400), 승인 후 주문 생성 실패 시 **PG 취소 보정**(§3) 후 502. **전액 크레딧(PG 청구액 0)은 결제창·PG 호출 없이 승인**(payment_key 빈 문자열) — 크레딧 차감이 주문 생성과 원자적이라 실패 시 보정 불필요 |
 
+| (checkout_preparation) | `POST /payment/checkouts/adjustment` | 주문 금액 변경 추가 결제 준비 — **주문한 브랜드만(403)**, 처리된 요청 404. 추가분에도 같은 수수료 공식. confirm은 새 주문 대신 기존 주문을 증액한다(갭 #31) |
+
 ## 결제 흐름 (§3)
 
 ```

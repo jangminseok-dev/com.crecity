@@ -146,6 +146,36 @@ def test_검토중이_아니면_승인할_수_없다():
         _order(OrderStatus.IN_PROGRESS, deadline_at=None).approve(BRAND)
 
 
+# ── 진행 중 금액 변경 (갭 #31) ────────────────────────────────────────────
+
+
+def test_추가_결제가_반영되면_금액이_늘고_증가분만_예치된다():
+    order = _order(OrderStatus.IN_PROGRESS, deadline_at=None)  # 300,000 / 예치 330,000
+    increased, entries = order.apply_adjustment(100000)
+    assert increased.amount_krw == 400000
+    assert increased.brand_total_krw() == 440000
+    assert entries[0].entry_type is LedgerEntryType.ESCROW_DEPOSIT
+    assert entries[0].amount_krw == 110000  # 늘어난 만큼만(수수료 포함)
+
+
+def test_종결된_주문은_금액_변경이_불가하다():
+    with pytest.raises(InvalidOrderTransitionError):
+        _order(OrderStatus.COMPLETED, deadline_at=None).apply_adjustment(100000)
+
+
+def test_추가_금액이_0이하면_거부된다():
+    with pytest.raises(InvalidOrderTransitionError):
+        _order(OrderStatus.IN_PROGRESS, deadline_at=None).apply_adjustment(0)
+
+
+def test_금액_변경_요청은_진행_중_크리에이터만():
+    _order(OrderStatus.IN_PROGRESS, deadline_at=None).ensure_can_request_adjustment(CREATOR)
+    with pytest.raises(NotOrderActorError):
+        _order(OrderStatus.IN_PROGRESS, deadline_at=None).ensure_can_request_adjustment(BRAND)
+    with pytest.raises(InvalidOrderTransitionError):
+        _order(OrderStatus.COMPLETED, deadline_at=None).ensure_can_request_adjustment(CREATOR)
+
+
 # ── 양측 합의 취소 ─────────────────────────────────────────────────────────
 
 

@@ -165,6 +165,37 @@ class Order:
             return self._complete()
         return None
 
+    # ── 진행 중 금액 변경 (§3.8·§6 — 갭 #31) ────────────────────────────
+
+    def _require_adjustable(self, action: str) -> None:
+        if self.status not in (OrderStatus.IN_PROGRESS, OrderStatus.IN_REVIEW):
+            raise InvalidOrderTransitionError(
+                f"{action}은(는) 작업 중·검토 중 상태에서만 가능합니다 (현재: {self.status.value})"
+            )
+
+    def ensure_can_request_adjustment(self, actor_user_id: int) -> None:
+        """추가 금액 요청 검증 — 진행 중 주문의 크리에이터만."""
+        self._require_creator(actor_user_id)
+        self._require_adjustable("금액 변경 요청")
+
+    def apply_adjustment(self, extra_amount_krw: int) -> tuple[Order, list[LedgerEntryDraft]]:
+        """추가 결제 완료 → 주문 금액 증액 + 늘어난 만큼만 추가 예치 기입.
+
+        수수료율은 주문 시점 스냅샷을 유지하므로 증가분에도 같은 요율이 적용된다.
+        """
+        self._require_adjustable("금액 변경")
+        if extra_amount_krw <= 0:
+            raise InvalidOrderTransitionError("추가 금액은 0보다 커야 합니다.")
+        increased = replace(self, amount_krw=self.amount_krw + extra_amount_krw)
+        entries = [
+            LedgerEntryDraft(
+                entry_type=LedgerEntryType.ESCROW_DEPOSIT,
+                user_id=self.brand_user_id,
+                amount_krw=increased.brand_total_krw() - self.brand_total_krw(),
+            )
+        ]
+        return increased, entries
+
     # ── 양측 합의 취소 (collabstr §3.8 — 갭 #4) ──────────────────────────
 
     def _require_participant(self, actor_user_id: int) -> None:

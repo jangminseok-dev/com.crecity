@@ -21,6 +21,8 @@ class PaymentIntentOrm(Base):
     offer_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 커스텀 오퍼(chat) 논리 참조
     # 캠페인 지원(campaign) 논리 참조 — 지원 수락 결제만 non-NULL
     application_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # 주문 금액 변경 요청(order) 논리 참조 — 추가 결제만 non-NULL
+    adjustment_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     brand_user_id: Mapped[int] = mapped_column(Integer, index=True)
     requirements: Mapped[str] = mapped_column(Text)
     amount_krw: Mapped[int] = mapped_column(BigInteger)

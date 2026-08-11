@@ -3,10 +3,12 @@ from __future__ import annotations
 import uuid
 
 from hub.app.ports.output.campaign_application_port import CampaignApplicationPort
+from hub.app.ports.output.order_adjustment_port import OrderAdjustmentPort
 from hub.app.ports.output.credit_balance_port import CreditBalancePort
 from hub.app.ports.output.custom_offer_port import CustomOfferPort
 from hub.app.ports.output.package_summary_port import PackageSummaryPort
 from payment.app.dtos.checkout_preparation_dto import (
+    AdjustmentCheckoutCommand,
     ApplicationCheckoutCommand,
     CartCheckoutCommand,
     CheckoutCommand,
@@ -29,6 +31,7 @@ class CheckoutPreparationInteractor(CheckoutPreparationUseCase):
         client_key: str,
         offers: CustomOfferPort | None = None,  # 커스텀 오퍼 결제에만 필요
         applications: CampaignApplicationPort | None = None,  # 지원 수락 결제에만 필요
+        adjustments: OrderAdjustmentPort | None = None,  # 금액 변경 추가 결제에만 필요
     ) -> None:
         self._intents = intents
         self._packages = packages
@@ -37,6 +40,7 @@ class CheckoutPreparationInteractor(CheckoutPreparationUseCase):
         self._client_key = client_key
         self._offers = offers
         self._applications = applications
+        self._adjustments = adjustments
 
     async def _credit_applied_krw(self, use_credit: bool, user_id: int, amount_krw: int) -> int:
         """크레딧 적용액 = min(잔액, 총액) — 조회 시점 스냅샷이며 실차감은 주문 생성이 재검증한다."""
@@ -143,6 +147,43 @@ class CheckoutPreparationInteractor(CheckoutPreparationUseCase):
             credit_applied_krw=intent.credit_applied_krw,
             pg_amount_krw=intent.pg_amount_krw(),
             order_name=order_name,
+            client_key=self._client_key,
+        )
+
+    async def prepare_adjustment(self, command: AdjustmentCheckoutCommand) -> CheckoutResult:
+        if command.account_type != "BRAND":
+            raise NotBrandAccountError("브랜드 계정만 결제할 수 있습니다.")
+        if self._adjustments is None:
+            raise RuntimeError("OrderAdjustmentPort 미주입 — 추가 결제를 준비할 수 없습니다.")
+        adjustment = await self._adjustments.get_payable_adjustment(command.adjustment_id)
+        if adjustment is None:
+            raise PackageNotOrderableError(f"결제할 수 없는 요청입니다: {command.adjustment_id}")
+        if adjustment.brand_user_id != command.brand_user_id:
+            raise NotBrandAccountError("주문한 브랜드만 추가 결제를 할 수 있습니다.")
+
+        # 추가분에도 주문과 같은 수수료 공식을 적용한다
+        amount_krw = (
+            adjustment.extra_amount_krw
+            + adjustment.extra_amount_krw * self._brand_fee_percent // 100
+        )
+        credit_applied = await self._credit_applied_krw(
+            command.use_credit, command.brand_user_id, amount_krw
+        )
+        intent = await self._intents.create(
+            pg_order_id=f"crecity-{uuid.uuid4().hex}",
+            package_id=None,
+            brand_user_id=command.brand_user_id,
+            requirements="",  # 추가 결제는 새 주문을 만들지 않는다
+            amount_krw=amount_krw,
+            adjustment_id=adjustment.adjustment_id,
+            credit_applied_krw=credit_applied,
+        )
+        return CheckoutResult(
+            pg_order_id=intent.pg_order_id,
+            amount_krw=intent.amount_krw,
+            credit_applied_krw=intent.credit_applied_krw,
+            pg_amount_krw=intent.pg_amount_krw(),
+            order_name=f"{adjustment.order_title} — 추가 결제",
             client_key=self._client_key,
         )
 

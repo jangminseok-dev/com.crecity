@@ -18,6 +18,7 @@ class PaymentIntentRepository(ABC):
         amount_krw: int,
         offer_id: int | None = None,
         application_id: int | None = None,
+        adjustment_id: int | None = None,
         credit_applied_krw: int = 0,
         cart_package_ids: list[int] | None = None,
     ) -> PaymentIntent: ...

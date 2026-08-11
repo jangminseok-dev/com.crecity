@@ -22,6 +22,12 @@ class CartCheckoutRequestSchema(BaseModel):
     use_credit: bool = Field(False, description="보유 크레딧 사용 여부 — 적용액은 서버가 확정")
 
 
+class AdjustmentCheckoutRequestSchema(BaseModel):
+
+    adjustment_id: int
+    use_credit: bool = Field(False, description="보유 크레딧 사용 여부 — 적용액은 서버가 확정")
+
+
 class ApplicationCheckoutRequestSchema(BaseModel):
 
     application_id: int

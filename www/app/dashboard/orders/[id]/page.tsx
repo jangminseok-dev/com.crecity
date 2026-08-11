@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import OrderAdjustmentSection from "@/components/order-adjustment-section";
 import OrderDeliverablesSection from "@/components/order-deliverables-section";
 import OrderReviewSection from "@/components/order-review-section";
 import OrderStatusBadge from "@/components/order-status-badge";
@@ -190,6 +191,16 @@ export default function OrderDetailPage() {
               : "상대방이 주문 취소를 요청했습니다 — 아래에서 동의 또는 거부를 선택해 주세요."}
           </p>
         )}
+
+      {["IN_PROGRESS", "IN_REVIEW"].includes(order.status) && (
+        <OrderAdjustmentSection
+          orderId={order.id}
+          userId={user.id}
+          isBrand={isBrand}
+          isCreator={!isBrand}
+          canRequest={!isBrand}
+        />
+      )}
 
       {["IN_PROGRESS", "IN_REVIEW", "COMPLETED"].includes(order.status) && (
         <OrderDeliverablesSection

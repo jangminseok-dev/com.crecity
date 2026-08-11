@@ -49,11 +49,13 @@ from order.adapter.inbound.api.v1.bookkeeper_router import bookkeeper_router
 from order.adapter.inbound.api.v1.deliverable_submission_router import (
     deliverable_submission_router,
 )
+from order.adapter.inbound.api.v1.order_adjustment_router import order_adjustment_router
 from order.adapter.inbound.api.v1.order_cancellation_router import order_cancellation_router
 from order.adapter.inbound.api.v1.order_lookup_router import order_lookup_router
 from order.adapter.inbound.api.v1.order_progress_router import order_progress_router
 from order.adapter.outbound.hub.creator_popularity_gateway import OrderCreatorPopularityGateway
 from order.adapter.outbound.hub.credit_balance_gateway import OrderCreditBalanceGateway
+from order.adapter.outbound.hub.order_adjustment_gateway import OrderAdjustmentGateway
 from order.adapter.outbound.hub.order_placement_gateway import PaidOrderPlacementGateway
 from order.adapter.outbound.hub.withdrawal_settlement_gateway import OrderWithdrawalSettlementGateway
 from order.adapter.inbound.api.v1.withdrawal_request_router import withdrawal_request_router
@@ -66,6 +68,7 @@ from payment.adapter.inbound.api.v1.payment_confirmation_router import (
 )
 from payment.adapter.inbound.api.v1.paymaster_router import paymaster_router
 from hub.dependencies.campaign_application_provider import register_campaign_application_port
+from hub.dependencies.order_adjustment_provider import register_order_adjustment_port
 from hub.dependencies.credit_balance_provider import register_credit_balance_port
 from hub.dependencies.order_placement_provider import register_order_placement_port
 from creator.adapter.outbound.hub.creator_ref_gateway import CreatorRefGateway
@@ -121,6 +124,7 @@ register_creator_popularity_port(OrderCreatorPopularityGateway())  # order → �
 register_withdrawal_settlement_port(OrderWithdrawalSettlementGateway())  # order → 인출 운영 처리
 register_credit_balance_port(OrderCreditBalanceGateway())  # order → 크레딧 잔액(체크아웃 적용액 확정)
 register_campaign_application_port(CampaignApplicationGateway())  # campaign → 지원 수락 결제
+register_order_adjustment_port(OrderAdjustmentGateway())  # order → 금액 변경 추가 결제
 
 
 @asynccontextmanager
@@ -157,6 +161,7 @@ app.include_router(package_management_router)
 app.include_router(bookkeeper_router)
 app.include_router(order_progress_router)
 app.include_router(order_cancellation_router)
+app.include_router(order_adjustment_router)
 app.include_router(deliverable_submission_router)
 app.include_router(order_lookup_router)
 app.include_router(balance_lookup_router)

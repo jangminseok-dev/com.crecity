@@ -4,6 +4,7 @@ import logging
 
 from hub.app.ports.output.campaign_application_port import CampaignApplicationPort
 from hub.app.ports.output.custom_offer_port import CustomOfferPort
+from hub.app.ports.output.order_adjustment_port import OrderAdjustmentPort
 from hub.app.ports.output.order_placement_port import OrderPlacementPort
 from payment.app.dtos.payment_confirmation_dto import ConfirmCommand, ConfirmResult
 from payment.app.exceptions import (
@@ -29,12 +30,14 @@ class PaymentConfirmationInteractor(PaymentConfirmationUseCase):
         orders: OrderPlacementPort,
         offers: CustomOfferPort | None = None,  # 커스텀 오퍼 결제에만 필요
         applications: CampaignApplicationPort | None = None,  # 지원 수락 결제에만 필요
+        adjustments: OrderAdjustmentPort | None = None,  # 금액 변경 추가 결제에만 필요
     ) -> None:
         self._intents = intents
         self._gateway = gateway
         self._orders = orders
         self._offers = offers
         self._applications = applications
+        self._adjustments = adjustments
 
     async def confirm(self, command: ConfirmCommand) -> ConfirmResult:
         intent = await self._intents.find_by_pg_order_id(command.pg_order_id)
@@ -57,6 +60,29 @@ class PaymentConfirmationInteractor(PaymentConfirmationUseCase):
             except PaymentConfirmError as error:
                 await self._intents.mark_failed(intent.id, command.payment_key, f"승인 실패: {error}")
                 raise
+
+        # 2-a) 금액 변경 추가 결제 — 새 주문 대신 기존 주문을 증액한다(갭 #31)
+        if intent.adjustment_id is not None:
+            if self._adjustments is None:
+                raise RuntimeError("OrderAdjustmentPort 미주입 — 추가 결제를 반영할 수 없습니다.")
+            adjusted_order_id = await self._adjustments.apply_paid_adjustment(
+                intent.adjustment_id
+            )
+            if adjusted_order_id is None:
+                reason = "금액 변경 반영 실패"
+                if intent.pg_amount_krw() > 0:
+                    try:
+                        await self._gateway.cancel(command.payment_key, "추가 결제 반영 실패 — 자동 환불")
+                        reason += " — 결제 취소 보정 완료"
+                    except PaymentConfirmError:
+                        logger.error("결제 취소 보정 실패: pg_order_id=%s", intent.pg_order_id)
+                        reason += " — 결제 취소 보정도 실패(운영 확인 필요)"
+                await self._intents.mark_failed(intent.id, command.payment_key, reason)
+                raise PaymentConfirmError("추가 결제를 반영하지 못해 결제를 취소했습니다.")
+            await self._intents.mark_confirmed(
+                intent.id, command.payment_key, adjusted_order_id
+            )
+            return ConfirmResult(order_id=adjusted_order_id)
 
         # 2) 주문 생성+예치+크레딧 차감 (order 내부 원자적 — §3). 실패 시 PG 취소로 보정한다.
         placed_orders: list = []

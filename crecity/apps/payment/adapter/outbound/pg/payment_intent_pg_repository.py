@@ -24,6 +24,7 @@ class PaymentIntentPgRepository(PaymentIntentRepository):
         amount_krw: int,
         offer_id: int | None = None,
         application_id: int | None = None,
+        adjustment_id: int | None = None,
         credit_applied_krw: int = 0,
         cart_package_ids: list[int] | None = None,
     ) -> PaymentIntent:
@@ -34,6 +35,7 @@ class PaymentIntentPgRepository(PaymentIntentRepository):
                 package_id=package_id,
                 offer_id=offer_id,
                 application_id=application_id,
+                adjustment_id=adjustment_id,
                 brand_user_id=brand_user_id,
                 requirements=requirements,
                 amount_krw=amount_krw,
