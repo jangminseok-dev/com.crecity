@@ -1,9 +1,16 @@
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from order.adapter.outbound.orm.ledger_entry_orm import LedgerEntryOrm
 from order.app.ports.output.ledger_repository import LedgerRepository
-from order.domain.entities.ledger_entry_entity import BALANCE_CREDIT_TYPES
+from order.domain.entities.ledger_entry_entity import BALANCE_CREDIT_TYPES, BALANCE_DEBIT_TYPES
+
+# 잔액 = 적립 합 − 차감 합 (append-only 원장에서 부호는 유형이 결정한다)
+_SIGNED_AMOUNT = case(
+    (LedgerEntryOrm.entry_type.in_(t.value for t in BALANCE_CREDIT_TYPES), LedgerEntryOrm.amount_krw),
+    (LedgerEntryOrm.entry_type.in_(t.value for t in BALANCE_DEBIT_TYPES), -LedgerEntryOrm.amount_krw),
+    else_=0,
+)
 
 
 class LedgerPgRepository(LedgerRepository):
@@ -13,9 +20,8 @@ class LedgerPgRepository(LedgerRepository):
 
     async def balance_krw(self, user_id: int) -> int:
         result = await self._session.execute(
-            select(func.coalesce(func.sum(LedgerEntryOrm.amount_krw), 0)).where(
-                LedgerEntryOrm.user_id == user_id,
-                LedgerEntryOrm.entry_type.in_(t.value for t in BALANCE_CREDIT_TYPES),
+            select(func.coalesce(func.sum(_SIGNED_AMOUNT), 0)).where(
+                LedgerEntryOrm.user_id == user_id
             )
         )
         return int(result.scalar_one())

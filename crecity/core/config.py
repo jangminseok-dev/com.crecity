@@ -35,6 +35,8 @@ TOSS_SECRET_KEY = _secrets.get("TOSS_SECRET_KEY")
 # 초기값 브랜드 10 / 크리에이터 10 — 런칭 전 경쟁사 실사 후 재조정 전제.
 ORDER_BRAND_FEE_PERCENT = int(_secrets.get("ORDER_BRAND_FEE_PERCENT", "10"))
 ORDER_CREATOR_FEE_PERCENT = int(_secrets.get("ORDER_CREATOR_FEE_PERCENT", "10"))
+# 인출 원천징수율(퍼밀) — 사업소득 3.3% = 33‰
+WITHDRAWAL_TAX_PERMILLE = int(_secrets.get("WITHDRAWAL_TAX_PERMILLE", "33"))
 
 # 응답 마감(시간) — 수락 대기·검토 공통 72h(collabstr §3.8), 만료는 주기 스캔이 전이.
 ORDER_RESPONSE_DEADLINE_HOURS = int(_secrets.get("ORDER_RESPONSE_DEADLINE_HOURS", "72"))

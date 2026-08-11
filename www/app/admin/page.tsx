@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import AdminWithdrawals from "@/components/admin-withdrawals";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -123,6 +124,8 @@ export default function AdminPage() {
           ))
         )}
       </div>
+
+      {(user?.permissions.includes("withdrawal.settle") ?? false) && <AdminWithdrawals />}
     </div>
   );
 }

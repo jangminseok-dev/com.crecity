@@ -18,12 +18,22 @@ class LedgerEntryType(StrEnum):
     BRAND_CREDIT_REFUND = "BRAND_CREDIT_REFUND"
     CREATOR_EARNING = "CREATOR_EARNING"
     PLATFORM_REVENUE = "PLATFORM_REVENUE"
+    # 인출(BOUNDARIES §3) — 요청 시 차감, 이체 실패 시 복원
+    WITHDRAWAL = "WITHDRAWAL"
+    WITHDRAWAL_REVERSAL = "WITHDRAWAL_REVERSAL"
 
 
-# 사용자 잔액으로 합산되는 기입 유형(적립성) — 추후 인출·크레딧 사용이 차감 유형으로 추가된다
+# 사용자 잔액으로 합산되는 기입 유형(적립성)
 BALANCE_CREDIT_TYPES = frozenset(
-    {LedgerEntryType.BRAND_CREDIT_REFUND, LedgerEntryType.CREATOR_EARNING}
+    {
+        LedgerEntryType.BRAND_CREDIT_REFUND,
+        LedgerEntryType.CREATOR_EARNING,
+        LedgerEntryType.WITHDRAWAL_REVERSAL,
+    }
 )
+
+# 잔액에서 빼는 기입 유형(차감성) — 잔액 = 적립 합 − 차감 합
+BALANCE_DEBIT_TYPES = frozenset({LedgerEntryType.WITHDRAWAL})
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,11 +47,15 @@ class LedgerEntryDraft:
 
 @dataclass(frozen=True, slots=True)
 class LedgerEntry:
-    """저장된 원장 기입 — 수정·삭제 없는 append-only."""
+    """저장된 원장 기입 — 수정·삭제 없는 append-only.
+
+    출처는 order_id(주문 전이) 또는 withdrawal_id(인출) 중 하나다.
+    """
 
     id: int
-    order_id: int
+    order_id: int | None
     entry_type: LedgerEntryType
     user_id: int | None
     amount_krw: int
+    withdrawal_id: int | None = None
     created_at: datetime | None = None

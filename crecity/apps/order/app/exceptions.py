@@ -12,3 +12,15 @@ class OrderNotFoundError(Exception):
 
 class NotOrderParticipantError(Exception):
     """주문 당사자(브랜드·크리에이터)가 아닌 조회 시도 — 라우터에서 403으로 변환."""
+
+
+class NotCreatorAccountError(Exception):
+    """크리에이터 계정이 아닌 인출 시도 — 라우터에서 403으로 변환."""
+
+
+class InsufficientBalanceError(Exception):
+    """잔액보다 큰 인출 요청 — 라우터에서 409로 변환."""
+
+
+class WithdrawalNotFoundError(Exception):
+    """id에 해당하는 인출 요청 없음 — 라우터에서 404로 변환."""

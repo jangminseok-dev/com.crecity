@@ -45,6 +45,9 @@ from order.adapter.inbound.api.v1.order_lookup_router import order_lookup_router
 from order.adapter.inbound.api.v1.order_progress_router import order_progress_router
 from order.adapter.outbound.hub.creator_popularity_gateway import OrderCreatorPopularityGateway
 from order.adapter.outbound.hub.order_placement_gateway import PaidOrderPlacementGateway
+from order.adapter.outbound.hub.withdrawal_settlement_gateway import OrderWithdrawalSettlementGateway
+from order.adapter.inbound.api.v1.withdrawal_request_router import withdrawal_request_router
+from admin.adapter.inbound.api.v1.withdrawal_settlement_router import withdrawal_settlement_router
 from payment.adapter.inbound.api.v1.checkout_preparation_router import (
     checkout_preparation_router,
 )
@@ -81,6 +84,7 @@ from notification.adapter.inbound.api.v1.notification_listing_router import (
     notification_listing_router,
 )
 from hub.dependencies.creator_popularity_provider import register_creator_popularity_port
+from hub.dependencies.withdrawal_settlement_provider import register_withdrawal_settlement_port
 from hub.dependencies.creator_rating_provider import register_creator_rating_port
 from review.adapter.outbound.hub.creator_rating_gateway import ReviewCreatorRatingGateway
 from review.adapter.inbound.api.v1.appraiser_router import appraiser_router
@@ -99,6 +103,7 @@ register_creator_ref_port(CreatorRefGateway())  # creator → 크리에이터 �
 register_user_directory_port(UserDirectoryGateway())  # auth → 회원 디렉토리(채팅 상대 표시)
 register_creator_rating_port(ReviewCreatorRatingGateway())  # review → 평점 요약(목록 카드)
 register_creator_popularity_port(OrderCreatorPopularityGateway())  # order → 인기 순위(홈 섹션)
+register_withdrawal_settlement_port(OrderWithdrawalSettlementGateway())  # order → 인출 운영 처리
 
 
 @asynccontextmanager
@@ -133,6 +138,8 @@ app.include_router(bookkeeper_router)
 app.include_router(order_progress_router)
 app.include_router(order_lookup_router)
 app.include_router(balance_lookup_router)
+app.include_router(withdrawal_request_router)
+app.include_router(withdrawal_settlement_router)
 app.include_router(steward_router)
 app.include_router(profile_review_router)
 app.include_router(paymaster_router)

@@ -15,7 +15,11 @@ class LedgerEntryOrm(Base):
     __tablename__ = "ledger_entries"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
+    # 출처 — 주문 전이(order_id) 또는 인출(withdrawal_id) 중 하나
+    order_id: Mapped[int | None] = mapped_column(ForeignKey("orders.id"), nullable=True, index=True)
+    withdrawal_id: Mapped[int | None] = mapped_column(
+        ForeignKey("withdrawals.id"), nullable=True, index=True
+    )
     # LedgerEntryType 값 — 잔액 합산 필터(user_id + entry_type)에 쓰인다
     entry_type: Mapped[str] = mapped_column(String(30), index=True)
     user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
