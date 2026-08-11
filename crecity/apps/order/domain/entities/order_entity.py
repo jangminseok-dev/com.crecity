@@ -20,7 +20,7 @@ class OrderStatus(StrEnum):
     IN_REVIEW = "IN_REVIEW"
     COMPLETED = "COMPLETED"
     REFUNDED = "REFUNDED"
-    CANCELLED = "CANCELLED"  # 양측 합의 취소 — 전이 로직은 취소 슬라이스 도입 시
+    CANCELLED = "CANCELLED"  # 양측 합의 취소 — IN_PROGRESS·IN_REVIEW에서 요청→상대 동의 시(전액 환불)
 
 
 class InvalidOrderTransitionError(Exception):
@@ -51,6 +51,7 @@ class Order:
     requirements: str  # 브랜드 요구사항 — 수정 요청 범위의 기준(collabstr §3.8)
     status: OrderStatus
     deadline_at: datetime | None
+    cancel_requested_by: int | None = None  # 양측 합의 취소의 요청자 — 상대 동의·거부 대기 중
     created_at: datetime | None = None
 
     # ── 수수료 계산 (정수 원 단위, 내림 — 부동소수 금지) ──────────────────
@@ -147,6 +148,58 @@ class Order:
         if self.status is OrderStatus.IN_REVIEW:
             return self._complete()
         return None
+
+    # ── 양측 합의 취소 (collabstr §3.8 — 갭 #4) ──────────────────────────
+
+    def _require_participant(self, actor_user_id: int) -> None:
+        if actor_user_id not in (self.brand_user_id, self.creator_user_id):
+            raise NotOrderActorError("주문 당사자만 할 수 있는 동작입니다.")
+
+    def _require_cancellable(self, action: str) -> None:
+        if self.status not in (OrderStatus.IN_PROGRESS, OrderStatus.IN_REVIEW):
+            raise InvalidOrderTransitionError(
+                f"{action}은(는) 작업 중·검토 중 상태에서만 가능합니다 (현재: {self.status.value})"
+            )
+
+    def _require_counterpart(self, actor_user_id: int) -> None:
+        self._require_participant(actor_user_id)
+        if actor_user_id == self.cancel_requested_by:
+            raise NotOrderActorError("취소 요청의 상대방만 할 수 있는 동작입니다.")
+
+    def request_cancellation(self, actor_user_id: int) -> Order:
+        """당사자 취소 요청 — 상대 동의를 기다린다(주문 상태는 그대로 유지)."""
+        self._require_participant(actor_user_id)
+        self._require_cancellable("취소 요청")
+        if self.cancel_requested_by is not None:
+            raise InvalidOrderTransitionError("이미 취소 요청이 대기 중입니다.")
+        return replace(self, cancel_requested_by=actor_user_id)
+
+    def consent_cancellation(self, actor_user_id: int) -> tuple[Order, list[LedgerEntryDraft]]:
+        """상대방 동의 → 합의 취소 확정: 브랜드에게 전액 환불(크레딧).
+
+        요청자 기록(cancel_requested_by)은 이력으로 보존한다.
+        """
+        self._require_cancellable("취소 동의")
+        if self.cancel_requested_by is None:
+            raise InvalidOrderTransitionError("대기 중인 취소 요청이 없습니다.")
+        self._require_counterpart(actor_user_id)
+        cancelled = replace(self, status=OrderStatus.CANCELLED, deadline_at=None)
+        entries = [
+            LedgerEntryDraft(
+                entry_type=LedgerEntryType.BRAND_CREDIT_REFUND,
+                user_id=self.brand_user_id,
+                amount_krw=self.brand_total_krw(),
+            )
+        ]
+        return cancelled, entries
+
+    def decline_cancellation(self, actor_user_id: int) -> Order:
+        """상대방 거부 → 취소 요청 해제, 주문은 계속 진행된다."""
+        self._require_cancellable("취소 거부")
+        if self.cancel_requested_by is None:
+            raise InvalidOrderTransitionError("대기 중인 취소 요청이 없습니다.")
+        self._require_counterpart(actor_user_id)
+        return replace(self, cancel_requested_by=None)
 
     # ── 전이 결과 (원장 기입과 원자적으로 저장돼야 한다 — BOUNDARIES §1) ──
 

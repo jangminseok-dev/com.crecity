@@ -55,6 +55,29 @@ async def test_완료_알림에는_적립액이_실린다():
     assert "270,000원 적립" in store.published[0][1][0].body
 
 
+async def test_취소_요청_알림은_요청자의_상대방에게_간다():
+    for requested_by, recipient in [(BRAND, CREATOR), (CREATOR, BRAND)]:
+        store = _StubRelayStore(
+            [_record(event_type="order.cancel_requested", requested_by=requested_by)]
+        )
+        await OutboxRelayInteractor(store).relay()
+        assert store.published[0][1][0].user_id == recipient, requested_by
+
+
+async def test_합의_취소_알림은_양측_모두에게_간다():
+    store = _StubRelayStore([_record(event_type="order.cancelled")])
+    await OutboxRelayInteractor(store).relay()
+    drafts = store.published[0][1]
+    assert {d.user_id for d in drafts} == {BRAND, CREATOR}
+    assert "환불" in next(d.body for d in drafts if d.user_id == BRAND)
+
+
+async def test_취소_거부_알림은_요청자에게_간다():
+    store = _StubRelayStore([_record(event_type="order.cancel_declined", requested_by=CREATOR)])
+    await OutboxRelayInteractor(store).relay()
+    assert store.published[0][1][0].user_id == CREATOR
+
+
 async def test_심사_이벤트는_프로필_링크로_안내한다():
     record = OutboxRecord(
         id=1, event_type="profile.approved",

@@ -23,6 +23,7 @@ class OrderResult:
     requirements: str
     status: str
     deadline_at: datetime | None
+    cancel_requested_by: int | None
     created_at: datetime | None
 
     @classmethod
@@ -41,5 +42,6 @@ class OrderResult:
             requirements=order.requirements,
             status=order.status.value,
             deadline_at=order.deadline_at,
+            cancel_requested_by=order.cancel_requested_by,
             created_at=order.created_at,
         )

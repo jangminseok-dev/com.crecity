@@ -27,6 +27,8 @@ class OrderOrm(Base):
     # OrderStatus 값 — 만료 스캔 필터(status + deadline_at)에 쓰인다
     status: Mapped[str] = mapped_column(String(20), index=True)
     deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # 양측 합의 취소의 요청자(auth users 논리 참조) — 상대 동의·거부 대기 중이면 non-NULL
+    cancel_requested_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

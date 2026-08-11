@@ -44,6 +44,7 @@ from order.adapter.inbound.api.v1.bookkeeper_router import bookkeeper_router
 from order.adapter.inbound.api.v1.deliverable_submission_router import (
     deliverable_submission_router,
 )
+from order.adapter.inbound.api.v1.order_cancellation_router import order_cancellation_router
 from order.adapter.inbound.api.v1.order_lookup_router import order_lookup_router
 from order.adapter.inbound.api.v1.order_progress_router import order_progress_router
 from order.adapter.outbound.hub.creator_popularity_gateway import OrderCreatorPopularityGateway
@@ -139,6 +140,7 @@ app.include_router(profile_lookup_router)
 app.include_router(package_management_router)
 app.include_router(bookkeeper_router)
 app.include_router(order_progress_router)
+app.include_router(order_cancellation_router)
 app.include_router(deliverable_submission_router)
 app.include_router(order_lookup_router)
 app.include_router(balance_lookup_router)

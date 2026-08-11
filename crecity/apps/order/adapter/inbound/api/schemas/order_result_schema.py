@@ -23,6 +23,7 @@ class OrderResponseSchema(BaseModel):
     requirements: str
     status: str
     deadline_at: datetime | None
+    cancel_requested_by: int | None
     created_at: datetime | None
 
     @classmethod
@@ -41,5 +42,6 @@ class OrderResponseSchema(BaseModel):
             requirements=result.requirements,
             status=result.status,
             deadline_at=result.deadline_at,
+            cancel_requested_by=result.cancel_requested_by,
             created_at=result.created_at,
         )

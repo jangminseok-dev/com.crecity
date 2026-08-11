@@ -33,6 +33,19 @@ def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
         payout = p.get("payout_krw")
         suffix = f" — {payout:,}원 적립" if isinstance(payout, int) else ""
         return [NotificationDraft(p["creator_user_id"], t, f"구매가 확정되었습니다{suffix}: {title}", _order_link(p))]
+    if t == "order.cancel_requested":
+        # 수신자 = 요청자의 상대방
+        recipient = (
+            p["creator_user_id"] if p.get("requested_by") == p["brand_user_id"] else p["brand_user_id"]
+        )
+        return [NotificationDraft(recipient, t, f"주문 취소 요청이 도착했습니다 — 동의 여부를 선택해 주세요: {title}", _order_link(p))]
+    if t == "order.cancelled":
+        return [
+            NotificationDraft(p["brand_user_id"], t, f"주문이 합의 취소되었습니다(전액 크레딧 환불): {title}", _order_link(p)),
+            NotificationDraft(p["creator_user_id"], t, f"주문이 합의 취소되었습니다: {title}", _order_link(p)),
+        ]
+    if t == "order.cancel_declined":
+        return [NotificationDraft(p["requested_by"], t, f"취소 요청이 거부되어 주문이 계속 진행됩니다: {title}", _order_link(p))]
     if t == "profile.approved":
         return [NotificationDraft(p["creator_user_id"], t, "프로필 심사가 승인되었습니다 — 마켓 목록에 노출됩니다.", "/dashboard/profile")]
     if t == "profile.rejected":

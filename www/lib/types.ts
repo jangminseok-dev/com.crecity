@@ -45,6 +45,7 @@ export type Order = {
   requirements: string;
   status: "PENDING_ACCEPT" | "IN_PROGRESS" | "IN_REVIEW" | "COMPLETED" | "REFUNDED" | "CANCELLED";
   deadline_at: string | null;
+  cancel_requested_by: number | null;
   created_at: string | null;
 };
 

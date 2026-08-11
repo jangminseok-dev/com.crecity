@@ -144,6 +144,64 @@ def test_검토중이_아니면_승인할_수_없다():
         _order(OrderStatus.IN_PROGRESS, deadline_at=None).approve(BRAND)
 
 
+# ── 양측 합의 취소 ─────────────────────────────────────────────────────────
+
+
+def test_취소_요청은_당사자_누구나_할_수_있고_상태는_유지된다():
+    for actor in (BRAND, CREATOR):
+        requested = _order(OrderStatus.IN_PROGRESS, deadline_at=None).request_cancellation(actor)
+        assert requested.cancel_requested_by == actor
+        assert requested.status is OrderStatus.IN_PROGRESS
+
+
+def test_제3자는_취소_요청을_못_한다():
+    with pytest.raises(NotOrderActorError):
+        _order(OrderStatus.IN_PROGRESS, deadline_at=None).request_cancellation(999)
+
+
+def test_작업_전이나_종결_후에는_취소_요청_불가():
+    for status in (OrderStatus.PENDING_ACCEPT, OrderStatus.COMPLETED, OrderStatus.REFUNDED):
+        with pytest.raises(InvalidOrderTransitionError):
+            _order(status, deadline_at=None).request_cancellation(BRAND)
+
+
+def test_취소_요청_중복은_거부된다():
+    requested = _order(OrderStatus.IN_PROGRESS, deadline_at=None).request_cancellation(BRAND)
+    with pytest.raises(InvalidOrderTransitionError):
+        requested.request_cancellation(CREATOR)
+
+
+def test_상대가_동의하면_취소되고_브랜드에게_전액_환불된다():
+    requested = _order(OrderStatus.IN_PROGRESS, deadline_at=None).request_cancellation(BRAND)
+    cancelled, entries = requested.consent_cancellation(CREATOR)
+    assert cancelled.status is OrderStatus.CANCELLED
+    assert cancelled.deadline_at is None
+    assert entries[0].entry_type is LedgerEntryType.BRAND_CREDIT_REFUND
+    assert entries[0].user_id == BRAND
+    assert entries[0].amount_krw == 330000  # 수수료 포함 전액
+
+
+def test_요청자_본인은_동의할_수_없다():
+    requested = _order(OrderStatus.IN_PROGRESS, deadline_at=None).request_cancellation(BRAND)
+    with pytest.raises(NotOrderActorError):
+        requested.consent_cancellation(BRAND)
+
+
+def test_대기_요청이_없으면_동의도_거부도_불가():
+    order = _order(OrderStatus.IN_PROGRESS, deadline_at=None)
+    with pytest.raises(InvalidOrderTransitionError):
+        order.consent_cancellation(CREATOR)
+    with pytest.raises(InvalidOrderTransitionError):
+        order.decline_cancellation(CREATOR)
+
+
+def test_상대가_거부하면_요청이_해제되고_주문은_계속된다():
+    requested = _order(OrderStatus.IN_REVIEW).request_cancellation(CREATOR)
+    declined = requested.decline_cancellation(BRAND)
+    assert declined.cancel_requested_by is None
+    assert declined.status is OrderStatus.IN_REVIEW
+
+
 # ── 만료(주기 스캔) ────────────────────────────────────────────────────────
 
 

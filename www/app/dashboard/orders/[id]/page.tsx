@@ -27,8 +27,9 @@ type TransitionAction = {
 function availableActions(order: Order, userId: number): TransitionAction[] {
   const isCreator = order.creator_user_id === userId;
   const isBrand = order.brand_user_id === userId;
+  const actions: TransitionAction[] = [];
   if (isCreator && order.status === "PENDING_ACCEPT") {
-    return [
+    actions.push(
       { path: "accept", label: "주문 수락" },
       {
         path: "reject",
@@ -36,28 +37,47 @@ function availableActions(order: Order, userId: number): TransitionAction[] {
         variant: "destructive",
         confirm: "주문을 거절하면 브랜드에게 전액 환불됩니다. 거절할까요?",
       },
-    ];
+    );
   }
   if (isCreator && order.status === "IN_PROGRESS") {
-    return [
-      {
-        path: "submit",
-        label: "콘텐츠 제출",
-        confirm: "제출하면 브랜드 검토가 시작됩니다(72시간 내 무응답 시 자동 승인). 제출할까요?",
-      },
-    ];
+    actions.push({
+      path: "submit",
+      label: "콘텐츠 제출",
+      confirm: "제출하면 브랜드 검토가 시작됩니다(72시간 내 무응답 시 자동 승인). 제출할까요?",
+    });
   }
   if (isBrand && order.status === "IN_REVIEW") {
-    return [
+    actions.push(
       {
         path: "approve",
         label: "승인 (구매 확정)",
         confirm: "승인하면 크리에이터에게 대금이 적립되고 주문이 완료됩니다. 승인할까요?",
       },
       { path: "request-revision", label: "수정 요청", variant: "outline" },
-    ];
+    );
   }
-  return [];
+  // 양측 합의 취소 — 진행 중 주문의 당사자만, 요청자 본인은 동의·거부 불가
+  if ((isCreator || isBrand) && ["IN_PROGRESS", "IN_REVIEW"].includes(order.status)) {
+    if (order.cancel_requested_by === null) {
+      actions.push({
+        path: "cancel-request",
+        label: "취소 요청",
+        variant: "outline",
+        confirm: "상대방이 동의하면 주문이 취소되고 브랜드에게 전액 환불됩니다. 취소를 요청할까요?",
+      });
+    } else if (order.cancel_requested_by !== userId) {
+      actions.push(
+        {
+          path: "cancel-consent",
+          label: "취소 동의 (환불)",
+          variant: "destructive",
+          confirm: "동의하면 주문이 취소되고 브랜드에게 전액 환불됩니다. 취소에 동의할까요?",
+        },
+        { path: "cancel-decline", label: "취소 거부", variant: "outline" },
+      );
+    }
+  }
+  return actions;
 }
 
 export default function OrderDetailPage() {
@@ -150,6 +170,16 @@ export default function OrderDetailPage() {
         </CardContent>
       </Card>
 
+      {order.cancel_requested_by !== null &&
+        ["IN_PROGRESS", "IN_REVIEW"].includes(order.status) && (
+          <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
+            ⚠️{" "}
+            {order.cancel_requested_by === user.id
+              ? "취소 요청을 보냈습니다 — 상대방의 동의를 기다리는 중입니다."
+              : "상대방이 주문 취소를 요청했습니다 — 아래에서 동의 또는 거부를 선택해 주세요."}
+          </p>
+        )}
+
       {["IN_PROGRESS", "IN_REVIEW", "COMPLETED"].includes(order.status) && (
         <OrderDeliverablesSection
           orderId={order.id}
@@ -186,6 +216,12 @@ export default function OrderDetailPage() {
         </p>
       )}
       {order.status === "COMPLETED" && isBrand && <OrderReviewSection orderId={order.id} />}
+      {order.status === "CANCELLED" && (
+        <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
+          양측 합의로 취소된 주문입니다 —{" "}
+          {isBrand ? "크레딧 탭에서 환불 금액을 확인하세요." : "브랜드에게 전액 환불되었습니다."}
+        </p>
+      )}
       {order.status === "REFUNDED" && (
         <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
           환불된 주문입니다 — {isBrand ? "크레딧 탭에서 환불 금액을 확인하세요." : "브랜드에게 전액 환불되었습니다."}

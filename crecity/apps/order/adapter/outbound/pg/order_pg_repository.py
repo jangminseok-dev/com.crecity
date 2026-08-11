@@ -73,7 +73,11 @@ class OrderPgRepository(OrderRepository):
         await self._session.execute(
             update(OrderOrm)
             .where(OrderOrm.id == order.id)
-            .values(status=order.status.value, deadline_at=order.deadline_at)
+            .values(
+                status=order.status.value,
+                deadline_at=order.deadline_at,
+                cancel_requested_by=order.cancel_requested_by,
+            )
         )
         await self._insert_entries(order.id, entries)
         enqueue_events(self._session, events)  # 전이·원장과 단일 커밋(BOUNDARIES §1)
