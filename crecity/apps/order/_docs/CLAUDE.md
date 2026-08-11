@@ -10,7 +10,8 @@
 | order_placement | (HTTP 없음 — 결제 경유 전용) | 주문 생성 — payment 승인 후 허브 `OrderPlacementPort`(order 구현 `PaidOrderPlacementGateway`)로만 호출된다. 커스텀 오퍼 주문(`place_custom`)은 `CustomOfferPort`로 가격·당사자를 해석하며 package_id가 NULL. 금액·수수료율(§7-4)·패키지 제목 스냅샷, 72h 수락 마감, 에스크로 예치 기입. 결제 금액과 현재 계산 불일치 시 생성 거부(None) |
 | order_progress | `POST /order/orders/{id}/accept·reject·submit·request-revision·approve` | 상태 전이 — 규칙·행위자 검증은 도메인 `Order`가 강제(403/409). 거절→크레딧 환불, 승인→적립+수수료 확정 |
 | order_lookup | `GET /order/orders` · `GET /order/orders/{id}` | 내 주문 목록(최신순)·상세 — **당사자만(403)** |
-| balance_lookup | `GET /order/balance` | 내 잔액 — 원장 적립성 기입 합산 |
+| balance_lookup | `GET /order/balance` | 내 잔액 = 적립성 기입 합 − 차감성 기입 합 |
+| withdrawal_request | `POST/GET /order/withdrawals` | 크리에이터 적립금 인출 — 요청 시 잔액 재검증+차감 기입(WITHDRAWAL)을 advisory lock 단일 트랜잭션으로(과인출 차단), 원천징수 3.3% 세액·실지급액 스냅샷. 운영 처리(완료/실패·복원)는 허브 `WithdrawalSettlementPort`(order 구현 게이트웨이)로 admin이 수행 |
 | deadline_sweep | (HTTP 없음) | 72h 만료 스캔 — `scripts/order_deadline_sweep.py`를 cron이 주기 실행. 수락 만료→환불, 검토 만료→자동 승인 |
 
 ## 도메인 규칙 (BOUNDARIES §4 · collabstr §3.8)
@@ -30,5 +31,5 @@ PENDING_ACCEPT ──수락──▶ IN_PROGRESS ──제출──▶ IN_REVIEW
 - 원장(`ledger_entries`)은 append-only. 잔액 = 적립성 기입 합(`BALANCE_CREDIT_TYPES`).
 - `package_id`·user_id들은 타 스포크 논리 참조(DB FK 없음). 패키지 제목은 표시용 스냅샷
   (이력 보존 — 3NF 허용 예외).
-- 예정: 결제(payment 연동 후 주문 생성 앞단에) · 장바구니 · 양측 합의 취소(CANCELLED 전이) ·
-  크레딧 사용·인출(차감성 기입 유형) · 납품물 파일 업로드.
+- 예정: 장바구니 · 양측 합의 취소(CANCELLED 전이) · 크레딧 사용(차감성 기입 유형) ·
+  납품물 파일 업로드. (인출은 2026-08-11 구축 완료)
