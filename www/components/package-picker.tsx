@@ -17,14 +17,25 @@ export default function PackagePicker({
   slug: string;
   packages: CreatorPackage[];
 }) {
-  // 단일 객체 상태 — 선택 패키지 + 카트 하이드레이션 완료 여부(localStorage와 SSR 불일치 방지)
-  const [ui, setUi] = useState<{ selectedId: number | null; cartReady: boolean }>({
+  // 단일 객체 상태 — 선택 패키지 + 플랫폼 탭(null=전체) + 카트 하이드레이션 완료 여부
+  const [ui, setUi] = useState<{
+    selectedId: number | null;
+    platform: CreatorPackage["platform"] | null;
+    cartReady: boolean;
+  }>({
     selectedId: packages[0]?.id ?? null,
+    platform: null,
     cartReady: false,
   });
-  const selectedId = ui.selectedId;
   const cart = useCartStore();
   useEffect(() => setUi((prev) => ({ ...prev, cartReady: true })), []);
+
+  // 플랫폼별 탭(§2.1-4) — 패키지가 있는 플랫폼만 탭으로 노출한다
+  const tabs = [...new Set(packages.map((pkg) => pkg.platform))];
+  const visible = ui.platform ? packages.filter((pkg) => pkg.platform === ui.platform) : packages;
+  const selectedId = visible.some((pkg) => pkg.id === ui.selectedId)
+    ? ui.selectedId
+    : (visible[0]?.id ?? null); // 탭을 바꿔 선택이 사라지면 첫 패키지로
 
   const selectedPkg = packages.find((p) => p.id === selectedId);
   const inCart =
@@ -40,7 +51,28 @@ export default function PackagePicker({
         </p>
       ) : (
         <>
-          {packages.map((pkg) => {
+          {tabs.length > 1 && (
+            <div className="mb-1 flex flex-wrap gap-1.5">
+              {[null, ...tabs].map((platform) => {
+                const active = ui.platform === platform;
+                return (
+                  <button
+                    key={platform ?? "ALL"}
+                    type="button"
+                    onClick={() => setUi((prev) => ({ ...prev, platform }))}
+                    className={`inline-flex h-8 items-center rounded-full px-3 text-[13px] font-medium transition-colors ${
+                      active
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-secondary-foreground hover:bg-accent"
+                    }`}
+                  >
+                    {platform ? PLATFORM_LABELS[platform] : "전체"}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {visible.map((pkg) => {
             const selected = pkg.id === selectedId;
             return (
               <button

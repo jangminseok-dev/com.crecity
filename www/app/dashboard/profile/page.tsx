@@ -6,6 +6,7 @@ import { useState } from "react";
 import { z } from "zod";
 
 import AnalyticsManager from "@/components/analytics-manager";
+import FaqManager from "@/components/faq-manager";
 import PortfolioManager from "@/components/portfolio-manager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -264,6 +265,7 @@ export default function DashboardProfilePage() {
       )}
       <PortfolioManager slug={profile.slug} />
       <AnalyticsManager />
+      <FaqManager />
     </>
   );
 }

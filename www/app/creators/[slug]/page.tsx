@@ -6,10 +6,12 @@ import { notFound } from "next/navigation";
 import CreatorAnalyticsSection from "@/components/creator-analytics-section";
 import CreatorReviews from "@/components/creator-reviews";
 import PackagePicker from "@/components/package-picker";
+import PortfolioGallery from "@/components/portfolio-gallery";
+import ProfileFaqAccordion from "@/components/profile-faq";
 import { Badge } from "@/components/ui/badge";
 import { PLATFORM_LABELS, formatFollowers } from "@/lib/labels";
 import { backendGet } from "@/lib/server/backend-api";
-import type { CreatorPackage, CreatorProfile, PortfolioItem } from "@/lib/types";
+import type { CreatorPackage, CreatorProfile, PortfolioItem, ProfileFaq } from "@/lib/types";
 
 /* 프로필 사진이 없을 때 이니셜 뒤에 깔리는 틴트 — creator-card와 동일 */
 const TINTS: [string, string][] = [
@@ -45,11 +47,12 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
 
 export default async function CreatorProfilePage({ params }: { params: PageParams }) {
   const { slug } = await params;
-  const [profile, packages, portfolio, reviews] = await Promise.all([
+  const [profile, packages, portfolio, reviews, faqs] = await Promise.all([
     fetchProfile(slug),
     backendGet<CreatorPackage[]>(`/creator/profiles/${encodeURIComponent(slug)}/packages`),
     backendGet<PortfolioItem[]>(`/creator/profiles/${encodeURIComponent(slug)}/portfolio`),
     backendGet<ReviewSummary>(`/review/creators/${encodeURIComponent(slug)}`),
+    backendGet<ProfileFaq[]>(`/creator/profiles/${encodeURIComponent(slug)}/faqs`),
   ]);
   if (!profile) notFound();
 
@@ -140,17 +143,18 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
               <h2 className="border-b pb-3 text-[15px] font-semibold">
                 포트폴리오 <span className="ml-1 font-normal text-muted-foreground">{photos.length}</span>
               </h2>
-              <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
-                {photos.map((item) => (
-                  <div key={item.id} className="aspect-square overflow-hidden rounded-xl">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/api/backend${item.image_url}`}
-                      alt={`${profile.name} 포트폴리오`}
-                      className="size-full object-cover transition-transform duration-200 hover:scale-[1.03]"
-                    />
-                  </div>
-                ))}
+              <div className="mt-5">
+                <PortfolioGallery photos={photos} name={profile.name} />
+              </div>
+            </section>
+          )}
+
+          {/* FAQ 아코디언(§2.1-9) — 크리에이터가 직접 쓴 Q&A */}
+          {faqs && faqs.length > 0 && (
+            <section className="mt-10">
+              <h2 className="border-b pb-3 text-[15px] font-semibold">자주 묻는 질문</h2>
+              <div className="mt-5">
+                <ProfileFaqAccordion faqs={faqs} />
               </div>
             </section>
           )}

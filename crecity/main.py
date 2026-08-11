@@ -30,6 +30,7 @@ from creator.adapter.inbound.api.v1.profile_registration_router import (
 from creator.adapter.inbound.api.v1.analytics_management_router import (
     analytics_management_router,
 )
+from creator.adapter.inbound.api.v1.faq_management_router import faq_management_router
 from creator.adapter.inbound.api.v1.portfolio_management_router import (
     portfolio_management_router,
 )
@@ -150,6 +151,7 @@ app.include_router(my_profile_lookup_router)
 app.include_router(profile_update_router)
 app.include_router(portfolio_management_router)
 app.include_router(analytics_management_router)
+app.include_router(faq_management_router)
 app.include_router(profile_lookup_router)
 app.include_router(package_management_router)
 app.include_router(bookkeeper_router)

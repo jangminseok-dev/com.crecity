@@ -32,6 +32,13 @@ export type CreatorProfile = {
   followers_total: number; // 전 채널 팔로워 합(자가입력) — 헤더 배지
 };
 
+export type ProfileFaq = {
+  id: number;
+  question: string;
+  answer: string;
+  created_at: string | null;
+};
+
 export type ProfileAnalytics = {
   platform: "INSTAGRAM" | "YOUTUBE" | "TIKTOK" | "NAVER_BLOG";
   followers_count: number;

@@ -26,6 +26,14 @@ class PortfolioItemNotFoundError(Exception):
     """id에 해당하는 포트폴리오 항목 없음 — 라우터에서 404로 변환."""
 
 
+class FaqNotFoundError(Exception):
+    """id에 해당하는 FAQ 없음(또는 내 프로필 것이 아님) — 라우터에서 404로 변환."""
+
+
+class FaqLimitExceededError(Exception):
+    """프로필당 FAQ 상한 초과 — 라우터에서 409로 변환."""
+
+
 class AnalyticsNotFoundError(Exception):
     """해당 플랫폼의 분석 지표 없음 — 라우터에서 404로 변환."""
 
