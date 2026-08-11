@@ -24,17 +24,18 @@ export default function SiteHeader() {
         <Link href="/" className="mr-5 text-[22px] font-extrabold tracking-[-0.04em]">
           crecity
         </Link>
-        <nav className="flex items-center gap-0.5">
+        {/* 텍스트 메뉴는 sm 이상에서만 — 모바일은 로고·아이콘·아바타 메뉴로 충분 */}
+        <nav className="hidden items-center gap-0.5 sm:flex">
           <Link
             href="/"
-            className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
             크리에이터 찾기
           </Link>
           {status === "authenticated" && (
             <Link
               href="/campaigns"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              className="whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
               캠페인
             </Link>
@@ -89,10 +90,26 @@ export default function SiteHeader() {
                   {user.email.slice(0, 1).toUpperCase()}
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-12 z-50 flex w-52 flex-col rounded-xl border bg-card p-1.5 shadow-raised">
+                  <>
+                    {/* 바깥 클릭으로 닫기 */}
+                    <button
+                      type="button"
+                      aria-hidden
+                      tabIndex={-1}
+                      className="fixed inset-0 z-40 cursor-default"
+                      onClick={() => setMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 top-12 z-50 flex w-52 flex-col rounded-xl border bg-card p-1.5 shadow-raised">
                     <div className="mb-1 border-b px-3 pb-2 pt-2.5">
                       <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                     </div>
+                    <Link
+                      href="/campaigns"
+                      onClick={() => setMenuOpen(false)}
+                      className="rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted sm:hidden"
+                    >
+                      캠페인
+                    </Link>
                     <Link
                       href={
                         user.account_type === "CREATOR" ? "/dashboard/profile" : "/dashboard/orders"
@@ -119,7 +136,8 @@ export default function SiteHeader() {
                     >
                       로그아웃
                     </button>
-                  </div>
+                    </div>
+                  </>
                 )}
               </div>
             </>
