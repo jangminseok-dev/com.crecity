@@ -12,6 +12,7 @@ const GUIDE: { label: string; href?: string }[] = [
   { label: "이용약관", href: "/terms" },
   { label: "개인정보 처리방침", href: "/privacy" },
   { label: "환불 규정", href: "/terms" },
+  { label: "무료 도구 — 단가·참여율 계산기", href: "/tools" },
   { label: "크리에이터 등록 안내" },
   { label: "입점·제휴 문의" },
 ];
