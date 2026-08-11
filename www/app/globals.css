@@ -10,6 +10,8 @@
 
 body {
   font-family: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
+  /* 한국어 본문은 약간 좁게 — 디자인 시스템 tokens/typography.css */
+  letter-spacing: -0.01em;
 }
 
 @theme inline {
@@ -53,34 +55,39 @@ body {
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  /* crecity 디자인 시스템 그림자 — tokens/effects.css */
+  --shadow-card: 0 1px 3px rgba(25, 31, 40, 0.06);
+  --shadow-raised: 0 4px 16px rgba(25, 31, 40, 0.1);
+  --shadow-overlay: 0 12px 40px rgba(25, 31, 40, 0.16);
 }
 
 :root {
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* crecity 디자인 시스템 — 쿨 그레이 뉴트럴 + crecity blue (tokens/colors.css) */
+  --background: #ffffff;
+  --foreground: #191f28;
+  --card: #ffffff;
+  --card-foreground: #191f28;
+  --popover: #ffffff;
+  --popover-foreground: #191f28;
+  --primary: #3556ee;
+  --primary-foreground: #ffffff;
+  --secondary: #f2f4f6;
+  --secondary-foreground: #333d4b;
+  --muted: #f2f4f6;
+  --muted-foreground: #6b7684;
+  --accent: #eef2ff;
+  --accent-foreground: #2743d6;
+  --destructive: #e5484d;
+  --border: #e5e8eb;
+  --input: #e5e8eb;
+  --ring: #88a0ff;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.75rem; /* 디자인 시스템 radius-md 12px */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);

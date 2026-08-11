@@ -1,13 +1,39 @@
+import {
+  Camera,
+  Dumbbell,
+  Home as HomeIcon,
+  Monitor,
+  Plane,
+  Search,
+  Shirt,
+  Sparkles,
+  Star,
+  Utensils,
+  Video,
+} from "lucide-react";
 import Link from "next/link";
+import type { ComponentType } from "react";
 
 import CreatorCard from "@/components/creator-card";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { backendGet } from "@/lib/server/backend-api";
 import type { ProfileListingResponse } from "@/lib/types";
 
 const PAGE_SIZE = 20;
+
+const KEYWORDS = ["숏폼 릴스", "제품 리뷰", "브랜디드 영상", "체험단", "언박싱"];
+
+const CATEGORY_ICONS: Record<string, ComponentType<{ className?: string }>> = {
+  뷰티: Sparkles,
+  패션: Shirt,
+  푸드: Utensils,
+  여행: Plane,
+  테크: Monitor,
+  피트니스: Dumbbell,
+  라이프: HomeIcon,
+  포토: Camera,
+  영상: Video,
+};
 
 type HomeSearchParams = Promise<{ category?: string; q?: string; page?: string }>;
 
@@ -39,99 +65,146 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <section className="rounded-2xl bg-muted/60 px-6 py-12 text-center">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          우리 브랜드에 맞는 크리에이터를 찾아보세요
-        </h1>
-        <p className="mt-3 text-muted-foreground">
-          인스타그램 · 유튜브 · 틱톡 · 네이버 블로그 · UGC — 가격이 공개된 패키지로 바로
-          주문까지
-        </p>
-        {/* 검색 — GET 폼이라 상태 없이 URL로 수렴한다 */}
-        <form action="/" method="get" className="mx-auto mt-6 flex max-w-md gap-2">
-          <Input
-            name="q"
-            defaultValue={q ?? ""}
-            placeholder="크리에이터 이름·소개 검색"
-            className="bg-background"
-          />
-          {category && <input type="hidden" name="category" value={category} />}
-          <Button type="submit">검색</Button>
-        </form>
-      </section>
-
-      {/* 카테고리 필터 칩 */}
-      {categories && categories.length > 0 && (
-        <div className="mt-6 flex flex-wrap items-center gap-2">
-          <Link
-            href={filterHref({ q })}
-            className={buttonVariants({ variant: category ? "outline" : "default", size: "sm" })}
-          >
-            전체
-          </Link>
-          {categories.map((name) => (
-            <Link
-              key={name}
-              href={filterHref({ category: name, q })}
-              className={buttonVariants({
-                variant: category === name ? "default" : "outline",
-                size: "sm",
-              })}
-            >
-              {name}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      <section className="mt-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            {q ? `"${q}" 검색 결과` : "크리에이터"}{" "}
-            {total > 0 && <span className="text-muted-foreground">({total})</span>}
-          </h2>
-          {q && (
-            <Link href={filterHref({ category })}>
-              <Badge variant="outline">검색 해제 ✕</Badge>
-            </Link>
-          )}
-        </div>
-
-        {items.length === 0 ? (
-          <p className="rounded-lg border border-dashed py-16 text-center text-muted-foreground">
-            {q || category ? "조건에 맞는 크리에이터가 없습니다." : "아직 등록된 크리에이터가 없습니다."}
+    <div>
+      {/* 히어로 — 큰 헤드라인 + 필 검색바 + 인기 키워드 칩 */}
+      <section className="border-b border-secondary bg-linear-to-b from-[#f9fafb] to-background">
+        <div className="mx-auto flex max-w-6xl flex-col items-center px-6 pb-11 pt-14 text-center">
+          <h1 className="text-3xl font-extrabold leading-[1.3] tracking-[-0.03em] sm:text-4xl">
+            브랜드에 딱 맞는
+            <br />
+            크리에이터를 찾아보세요
+          </h1>
+          <p className="mt-3 text-[17px] text-muted-foreground">
+            탐색부터 협의·에스크로 결제까지, 캠페인을 한 곳에서 진행해요
           </p>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((profile) => (
-              <CreatorCard key={profile.id} profile={profile} />
+          {/* 검색 — GET 폼이라 상태 없이 URL로 수렴한다 */}
+          <form
+            action="/"
+            method="get"
+            className="mt-7 flex h-15 w-full max-w-[620px] items-center gap-3 rounded-full border-[1.5px] bg-background pl-6 pr-3 shadow-raised"
+          >
+            <Search className="size-5 shrink-0 text-muted-foreground" />
+            <input
+              name="q"
+              defaultValue={q ?? ""}
+              placeholder="어떤 크리에이터가 필요하세요?"
+              className="min-w-0 flex-1 bg-transparent text-[17px] outline-none placeholder:text-muted-foreground/70"
+            />
+            {category && <input type="hidden" name="category" value={category} />}
+            <button
+              type="submit"
+              className="h-11 shrink-0 rounded-full bg-primary px-5.5 text-[15px] font-semibold text-primary-foreground transition-colors hover:bg-accent-foreground"
+            >
+              검색
+            </button>
+          </form>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {KEYWORDS.map((keyword) => (
+              <Link
+                key={keyword}
+                href={`/?q=${encodeURIComponent(keyword)}`}
+                className="inline-flex h-8 items-center rounded-full border bg-background px-3.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {keyword}
+              </Link>
             ))}
           </div>
-        )}
+        </div>
+      </section>
 
-        {lastPage > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1}
-              nativeButton={false}
-              render={<Link href={filterHref({ category, q, page: currentPage - 1 })}>이전</Link>}
-            />
-            <span className="text-sm text-muted-foreground">
-              {currentPage} / {lastPage}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= lastPage}
-              nativeButton={false}
-              render={<Link href={filterHref({ category, q, page: currentPage + 1 })}>다음</Link>}
-            />
+      <div className="mx-auto max-w-6xl px-6 pb-16">
+        {/* 카테고리 아이콘 행 */}
+        {categories && categories.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-x-9 gap-y-5 pt-9">
+            {categories.map((name) => {
+              const Icon = CATEGORY_ICONS[name] ?? Star;
+              const active = category === name;
+              return (
+                <Link
+                  key={name}
+                  href={filterHref({ category: active ? undefined : name, q })}
+                  className="flex flex-col items-center gap-2"
+                >
+                  <span
+                    className={`inline-flex size-[58px] items-center justify-center rounded-full transition-colors ${
+                      active
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-foreground/70"
+                    }`}
+                  >
+                    <Icon className="size-6" />
+                  </span>
+                  <span
+                    className={`text-[13px] ${
+                      active ? "font-bold text-primary" : "font-medium text-foreground/70"
+                    }`}
+                  >
+                    {name}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         )}
-      </section>
+
+        {/* 섹션 헤더 */}
+        <section>
+          <div className="mb-6 mt-14 flex items-end justify-between">
+            <div>
+              <h2 className="text-[22px] font-bold tracking-[-0.02em]">
+                {q ? `"${q}" 검색 결과` : category ? `${category} 크리에이터` : "전체 크리에이터"}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {total > 0 ? `${total}명의 검증된 크리에이터` : "검증된 크리에이터"}
+              </p>
+            </div>
+            {q && (
+              <Link
+                href={filterHref({ category })}
+                className="text-sm font-semibold text-primary hover:underline"
+              >
+                검색 해제 ✕
+              </Link>
+            )}
+          </div>
+
+          {items.length === 0 ? (
+            <p className="rounded-xl border border-dashed py-16 text-center text-muted-foreground">
+              {q || category
+                ? "조건에 맞는 크리에이터가 없습니다."
+                : "아직 등록된 크리에이터가 없습니다."}
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-x-5 gap-y-7 md:grid-cols-3 lg:grid-cols-4">
+              {items.map((profile) => (
+                <CreatorCard key={profile.id} profile={profile} />
+              ))}
+            </div>
+          )}
+
+          {lastPage > 1 && (
+            <div className="mt-10 flex items-center justify-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1}
+                nativeButton={false}
+                render={<Link href={filterHref({ category, q, page: currentPage - 1 })}>이전</Link>}
+              />
+              <span className="text-sm text-muted-foreground">
+                {currentPage} / {lastPage}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= lastPage}
+                nativeButton={false}
+                render={<Link href={filterHref({ category, q, page: currentPage + 1 })}>다음</Link>}
+              />
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
