@@ -26,3 +26,4 @@ class MessageResult:
     body: str
     is_mine: bool  # 요청자 기준
     created_at: datetime | None
+    image_file_name: str | None = None  # 사진 메시지 — URL 변환은 라우터 몫

@@ -16,3 +16,4 @@ class MessageResponseSchema(BaseModel):
     body: str
     is_mine: bool
     created_at: datetime | None
+    image_url: str | None  # 정적 서빙 경로(/uploads/chat/...) — 프론트는 그대로 <img src>

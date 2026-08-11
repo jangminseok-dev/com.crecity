@@ -36,11 +36,15 @@ class ConversationListingInteractor(ConversationListingUseCase):
             user = await self._users.get_user(counterpart_id)
             counterpart_name = user.name if user else "(탈퇴한 회원)"
         last = await self._messages.last_by_conversation(conversation.id)
+        # 사진 전용 메시지(본문 없음)는 미리보기 문구로 대체
+        last_preview = None
+        if last:
+            last_preview = last.body or ("📷 사진" if last.image_file_name else "")
         return ConversationResult(
             id=conversation.id,
             counterpart_name=counterpart_name,
             counterpart_slug=counterpart_slug,
-            last_message=last.body if last else None,
+            last_message=last_preview,
             last_message_at=last.created_at if last else None,
             created_at=conversation.created_at,
         )

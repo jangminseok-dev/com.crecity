@@ -12,10 +12,21 @@ class MessagePgRepository(MessageRepository):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def create(self, conversation_id: int, sender_user_id: int, body: str) -> Message:
+    async def create(
+        self,
+        conversation_id: int,
+        sender_user_id: int,
+        body: str,
+        image_file_name: str | None = None,
+    ) -> Message:
         result = await self._session.execute(
             insert(MessageOrm)
-            .values(conversation_id=conversation_id, sender_user_id=sender_user_id, body=body)
+            .values(
+                conversation_id=conversation_id,
+                sender_user_id=sender_user_id,
+                body=body,
+                image_file_name=image_file_name,
+            )
             .returning(MessageOrm)
         )
         await self._session.commit()

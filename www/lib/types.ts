@@ -86,6 +86,7 @@ export type ChatMessage = {
   body: string;
   is_mine: boolean;
   created_at: string | null;
+  image_url: string | null; // 사진 메시지 — /api/backend 프리픽스 붙여 사용
 };
 
 export type Balance = {

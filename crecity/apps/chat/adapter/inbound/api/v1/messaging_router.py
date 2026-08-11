@@ -23,6 +23,7 @@ def _to_schema(result) -> MessageResponseSchema:
         body=result.body,
         is_mine=result.is_mine,
         created_at=result.created_at,
+        image_url=f"/uploads/chat/{result.image_file_name}" if result.image_file_name else None,
     )
 
 

@@ -21,5 +21,6 @@ class ConversationMapper:
             conversation_id=orm.conversation_id,
             sender_user_id=orm.sender_user_id,
             body=orm.body,
+            image_file_name=orm.image_file_name,
             created_at=orm.created_at,
         )

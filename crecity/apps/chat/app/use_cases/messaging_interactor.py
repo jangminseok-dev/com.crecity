@@ -24,6 +24,7 @@ class MessagingInteractor(MessagingUseCase):
             body=message.body,
             is_mine=message.sender_user_id == requester_user_id,
             created_at=message.created_at,
+            image_file_name=message.image_file_name,
         )
 
     async def _participant_conversation(self, conversation_id: int, user_id: int):

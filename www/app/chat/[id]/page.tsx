@@ -5,13 +5,32 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
-import { Send } from "lucide-react";
+import { ImagePlus, Send } from "lucide-react";
 
 import OfferPanel from "@/components/offer-panel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import type { ChatConversation, ChatMessage } from "@/lib/types";
+
+/** 본문 속 http(s) URL을 클릭 가능한 링크로 렌더링 — React가 이스케이프하므로 별도 새니타이즈 불필요 */
+function renderWithLinks(text: string) {
+  return text.split(/(https?:\/\/[^\s]+)/g).map((part, index) =>
+    part.startsWith("http://") || part.startsWith("https://") ? (
+      <a
+        key={index}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="break-all underline underline-offset-2"
+      >
+        {part}
+      </a>
+    ) : (
+      part
+    ),
+  );
+}
 
 export default function ChatRoomPage() {
   const { id } = useParams<{ id: string }>();
@@ -37,6 +56,17 @@ export default function ChatRoomPage() {
         method: "POST",
         body: JSON.stringify({ body }),
       }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["messages", id] }),
+  });
+  const sendPhoto = useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      return apiFetch<ChatMessage>(`/chat/conversations/${id}/photos`, {
+        method: "POST",
+        body: form,
+      });
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["messages", id] }),
   });
 
@@ -95,13 +125,29 @@ export default function ChatRoomPage() {
               key={message.id}
               className={`flex ${message.is_mine ? "justify-end" : "justify-start"}`}
             >
-              <p
-                className={`max-w-[75%] whitespace-pre-line rounded-2xl px-4 py-2 text-sm ${
-                  message.is_mine ? "bg-primary text-primary-foreground" : "bg-muted"
-                }`}
-              >
-                {message.body}
-              </p>
+              {message.image_url ? (
+                <a
+                  href={`/api/backend${message.image_url}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="max-w-[75%]"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`/api/backend${message.image_url}`}
+                    alt="첨부 사진"
+                    className="max-h-80 rounded-2xl border object-cover"
+                  />
+                </a>
+              ) : (
+                <p
+                  className={`max-w-[75%] whitespace-pre-line rounded-2xl px-4 py-2 text-sm ${
+                    message.is_mine ? "bg-primary text-primary-foreground" : "bg-muted"
+                  }`}
+                >
+                  {renderWithLinks(message.body)}
+                </p>
+              )}
             </div>
           ))
         )}
@@ -109,6 +155,24 @@ export default function ChatRoomPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex gap-2.5 border-t pt-3">
+        <label
+          aria-label="사진 첨부"
+          className={`inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground ${
+            sendPhoto.isPending ? "pointer-events-none opacity-50" : ""
+          }`}
+        >
+          <ImagePlus className="size-5" />
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) sendPhoto.mutate(file);
+              e.target.value = ""; // 같은 파일 재선택 허용
+            }}
+          />
+        </label>
         <input
           name="body"
           placeholder="메시지를 입력하세요"
@@ -125,9 +189,11 @@ export default function ChatRoomPage() {
           <Send className="size-[18px]" />
         </button>
       </form>
-      {send.error && (
+      {(send.error || sendPhoto.error) && (
         <p className="mt-1 text-xs text-destructive">
-          {send.error instanceof ApiError ? send.error.detail : "전송에 실패했습니다."}
+          {[send.error, sendPhoto.error].map((error) =>
+            error instanceof ApiError ? error.detail : error ? "전송에 실패했습니다." : null,
+          )}
         </p>
       )}
     </div>

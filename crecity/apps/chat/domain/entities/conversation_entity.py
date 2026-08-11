@@ -37,4 +37,5 @@ class Message:
     conversation_id: int
     sender_user_id: int
     body: str
+    image_file_name: str | None = None  # 사진 메시지 — 텍스트와 배타적이지 않음
     created_at: datetime | None = None

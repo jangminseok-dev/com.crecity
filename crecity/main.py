@@ -66,6 +66,7 @@ from chat.adapter.inbound.api.v1.courier_router import courier_router
 from chat.adapter.inbound.api.v1.offer_management_router import offer_management_router
 from chat.adapter.outbound.hub.custom_offer_gateway import CustomOfferGateway
 from chat.adapter.inbound.api.v1.messaging_router import messaging_router
+from chat.adapter.inbound.api.v1.photo_messaging_router import photo_messaging_router
 from hub.dependencies.user_directory_provider import register_user_directory_port
 from campaign.adapter.inbound.api.v1.campaign_application_router import (
     campaign_application_router,
@@ -143,6 +144,7 @@ app.include_router(courier_router)
 app.include_router(conversation_opening_router)
 app.include_router(conversation_listing_router)
 app.include_router(messaging_router)
+app.include_router(photo_messaging_router)
 app.include_router(offer_management_router)
 app.include_router(bellman_router)
 app.include_router(notification_listing_router)
