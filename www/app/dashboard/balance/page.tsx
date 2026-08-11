@@ -167,7 +167,8 @@ export default function DashboardBalancePage() {
           <p className="mt-2 text-[32px] font-bold tracking-[-0.02em]">{formatKrw(balanceKrw)}</p>
           {!isCreator && (
             <p className="mt-3 text-sm text-muted-foreground">
-              크레딧으로 새 주문을 결제하는 기능은 준비 중입니다.
+              새 주문 결제 시 &quot;보유 크레딧 사용&quot;을 체크하면 이 금액이 자동으로
+              차감됩니다. 잔액이 결제 총액 이상이면 카드 결제 없이 바로 주문됩니다.
             </p>
           )}
         </CardContent>
