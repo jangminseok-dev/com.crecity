@@ -21,6 +21,8 @@ class LedgerEntryType(StrEnum):
     # 인출(BOUNDARIES §3) — 요청 시 차감, 이체 실패 시 복원
     WITHDRAWAL = "WITHDRAWAL"
     WITHDRAWAL_REVERSAL = "WITHDRAWAL_REVERSAL"
+    # 크레딧 재결제(갭 #5) — 체크아웃에서 브랜드 크레딧 사용분 차감(주문 생성과 원자적)
+    CREDIT_SPENT = "CREDIT_SPENT"
 
 
 # 사용자 잔액으로 합산되는 기입 유형(적립성)
@@ -33,7 +35,7 @@ BALANCE_CREDIT_TYPES = frozenset(
 )
 
 # 잔액에서 빼는 기입 유형(차감성) — 잔액 = 적립 합 − 차감 합
-BALANCE_DEBIT_TYPES = frozenset({LedgerEntryType.WITHDRAWAL})
+BALANCE_DEBIT_TYPES = frozenset({LedgerEntryType.WITHDRAWAL, LedgerEntryType.CREDIT_SPENT})
 
 
 @dataclass(frozen=True, slots=True)

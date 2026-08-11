@@ -30,6 +30,7 @@ async def prepare_checkout(
                 requirements=body.requirements,
                 brand_user_id=user.id,
                 account_type=user.account_type,
+                use_credit=body.use_credit,
             )
         )
     except NotBrandAccountError as error:
@@ -39,6 +40,8 @@ async def prepare_checkout(
     return CheckoutResponseSchema(
         pg_order_id=result.pg_order_id,
         amount_krw=result.amount_krw,
+        credit_applied_krw=result.credit_applied_krw,
+        pg_amount_krw=result.pg_amount_krw,
         order_name=result.order_name,
         client_key=result.client_key,
     )
@@ -59,6 +62,7 @@ async def prepare_offer_checkout(
                 requirements=body.requirements,
                 brand_user_id=user.id,
                 account_type=user.account_type,
+                use_credit=body.use_credit,
             )
         )
     except NotBrandAccountError as error:
@@ -68,6 +72,8 @@ async def prepare_offer_checkout(
     return CheckoutResponseSchema(
         pg_order_id=result.pg_order_id,
         amount_krw=result.amount_krw,
+        credit_applied_krw=result.credit_applied_krw,
+        pg_amount_krw=result.pg_amount_krw,
         order_name=result.order_name,
         client_key=result.client_key,
     )

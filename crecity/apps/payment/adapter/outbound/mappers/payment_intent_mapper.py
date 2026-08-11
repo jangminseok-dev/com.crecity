@@ -15,6 +15,7 @@ class PaymentIntentMapper:
             brand_user_id=orm.brand_user_id,
             requirements=orm.requirements,
             amount_krw=orm.amount_krw,
+            credit_applied_krw=orm.credit_applied_krw,
             status=PaymentIntentStatus(orm.status),
             payment_key=orm.payment_key,
             order_id=orm.order_id,

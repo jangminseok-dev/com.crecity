@@ -24,3 +24,7 @@ class InsufficientBalanceError(Exception):
 
 class WithdrawalNotFoundError(Exception):
     """id에 해당하는 인출 요청 없음 — 라우터에서 404로 변환."""
+
+
+class InsufficientCreditError(Exception):
+    """주문 생성 시점 크레딧 잔액 부족(준비~승인 사이 소진) — 게이트웨이가 None으로 변환해 PG 취소 보정."""

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import func, insert, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from hub.adapter.outbound.pg.outbox_pg_store import enqueue_events
@@ -8,6 +8,7 @@ from hub.app.dtos.outbox_event_dto import OutboxEvent
 from order.adapter.outbound.mappers.order_mapper import OrderMapper
 from order.adapter.outbound.orm.ledger_entry_orm import LedgerEntryOrm
 from order.adapter.outbound.orm.order_orm import OrderOrm
+from order.adapter.outbound.pg.ledger_pg_repository import _SIGNED_AMOUNT
 from order.app.ports.output.order_repository import OrderRepository
 from order.domain.entities.ledger_entry_entity import LedgerEntryDraft
 from order.domain.entities.order_entity import Order, OrderStatus
@@ -34,8 +35,26 @@ class OrderPgRepository(OrderRepository):
             )
 
     async def create(
-        self, order: Order, entries: list[LedgerEntryDraft], events: list[OutboxEvent]
-    ) -> Order:
+        self,
+        order: Order,
+        entries: list[LedgerEntryDraft],
+        events: list[OutboxEvent],
+        credit_spend: LedgerEntryDraft | None = None,
+    ) -> Order | None:
+        if credit_spend is not None:
+            # 사용자 단위 트랜잭션 잠금 — 동시 사용(인출·중복 결제)의 초과 차감을 차단한다
+            await self._session.execute(
+                text("SELECT pg_advisory_xact_lock(:key)").bindparams(key=credit_spend.user_id)
+            )
+            balance = await self._session.execute(
+                select(func.coalesce(func.sum(_SIGNED_AMOUNT), 0)).where(
+                    LedgerEntryOrm.user_id == credit_spend.user_id
+                )
+            )
+            if int(balance.scalar_one()) < credit_spend.amount_krw:
+                await self._session.rollback()
+                return None
+            entries = [*entries, credit_spend]
         result = await self._session.execute(
             insert(OrderOrm)
             .values(

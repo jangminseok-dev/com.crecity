@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 
+from hub.app.ports.output.credit_balance_port import CreditBalancePort
 from hub.app.ports.output.custom_offer_port import CustomOfferPort
 from hub.app.ports.output.package_summary_port import PackageSummaryPort
 from payment.app.dtos.checkout_preparation_dto import (
@@ -20,15 +21,24 @@ class CheckoutPreparationInteractor(CheckoutPreparationUseCase):
         self,
         intents: PaymentIntentRepository,
         packages: PackageSummaryPort,
+        credits: CreditBalancePort,
         brand_fee_percent: int,
         client_key: str,
         offers: CustomOfferPort | None = None,  # 커스텀 오퍼 결제에만 필요
     ) -> None:
         self._intents = intents
         self._packages = packages
+        self._credits = credits
         self._brand_fee_percent = brand_fee_percent
         self._client_key = client_key
         self._offers = offers
+
+    async def _credit_applied_krw(self, use_credit: bool, user_id: int, amount_krw: int) -> int:
+        """크레딧 적용액 = min(잔액, 총액) — 조회 시점 스냅샷이며 실차감은 주문 생성이 재검증한다."""
+        if not use_credit:
+            return 0
+        balance = await self._credits.get_balance_krw(user_id)
+        return min(max(balance, 0), amount_krw)
 
     async def prepare(self, command: CheckoutCommand) -> CheckoutResult:
         if command.account_type != "BRAND":
@@ -39,16 +49,22 @@ class CheckoutPreparationInteractor(CheckoutPreparationUseCase):
 
         # 결제 총액 = 가격 + 브랜드 수수료 — order 도메인과 같은 정수 내림 공식(요율은 core 설정 공유)
         amount_krw = summary.price_krw + summary.price_krw * self._brand_fee_percent // 100
+        credit_applied = await self._credit_applied_krw(
+            command.use_credit, command.brand_user_id, amount_krw
+        )
         intent = await self._intents.create(
             pg_order_id=f"crecity-{uuid.uuid4().hex}",
             package_id=command.package_id,
             brand_user_id=command.brand_user_id,
             requirements=command.requirements,
             amount_krw=amount_krw,
+            credit_applied_krw=credit_applied,
         )
         return CheckoutResult(
             pg_order_id=intent.pg_order_id,
             amount_krw=intent.amount_krw,
+            credit_applied_krw=intent.credit_applied_krw,
+            pg_amount_krw=intent.pg_amount_krw(),
             order_name=summary.title,
             client_key=self._client_key,
         )
@@ -65,6 +81,9 @@ class CheckoutPreparationInteractor(CheckoutPreparationUseCase):
             raise NotBrandAccountError("이 오퍼를 받은 브랜드만 결제할 수 있습니다.")
 
         amount_krw = offer.price_krw + offer.price_krw * self._brand_fee_percent // 100
+        credit_applied = await self._credit_applied_krw(
+            command.use_credit, command.brand_user_id, amount_krw
+        )
         intent = await self._intents.create(
             pg_order_id=f"crecity-{uuid.uuid4().hex}",
             package_id=None,
@@ -72,10 +91,13 @@ class CheckoutPreparationInteractor(CheckoutPreparationUseCase):
             requirements=command.requirements,
             amount_krw=amount_krw,
             offer_id=offer.offer_id,
+            credit_applied_krw=credit_applied,
         )
         return CheckoutResult(
             pg_order_id=intent.pg_order_id,
             amount_krw=intent.amount_krw,
+            credit_applied_krw=intent.credit_applied_krw,
+            pg_amount_krw=intent.pg_amount_krw(),
             order_name=offer.title,
             client_key=self._client_key,
         )

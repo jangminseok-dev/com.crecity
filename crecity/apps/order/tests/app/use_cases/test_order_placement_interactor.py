@@ -4,7 +4,11 @@ import pytest
 
 from hub.app.dtos.package_summary_dto import PackageSummary
 from order.app.dtos.order_placement_dto import OrderPlacementCommand
-from order.app.exceptions import NotBrandAccountError, PackageNotOrderableError
+from order.app.exceptions import (
+    InsufficientCreditError,
+    NotBrandAccountError,
+    PackageNotOrderableError,
+)
 from order.app.use_cases.order_placement_interactor import OrderPlacementInteractor
 from order.domain.entities.ledger_entry_entity import LedgerEntryType
 from order.domain.entities.order_entity import OrderStatus
@@ -21,11 +25,16 @@ class _StubPackageSummaryPort:
 
 
 class _StubOrderRepository:
-    def __init__(self):
-        self.created = []  # (order, entries)
+    def __init__(self, credit_ok=True):
+        self.created = []  # (order, entries, events)
+        self.credit_spends = []  # create에 전달된 크레딧 차감 초안
+        self.credit_ok = credit_ok  # False면 잔액 부족 시뮬레이션(None 반환)
 
-    async def create(self, order, entries, events):
+    async def create(self, order, entries, events, credit_spend=None):
+        if credit_spend is not None and not self.credit_ok:
+            return None
         self.created.append((order, entries, events))
+        self.credit_spends.append(credit_spend)
         from dataclasses import replace
 
         return replace(order, id=1)
@@ -56,12 +65,13 @@ def _interactor(summary=_SUMMARY, orders=None):
     )
 
 
-def _command(package_id=10, account_type="BRAND"):
+def _command(package_id=10, account_type="BRAND", credit_used_krw=0):
     return OrderPlacementCommand(
         package_id=package_id,
         requirements="60초 릴스",
         brand_user_id=BRAND,
         account_type=account_type,
+        credit_used_krw=credit_used_krw,
     )
 
 
@@ -89,6 +99,28 @@ async def test_주문_생성과_함께_에스크로_예치가_기록된다():
     assert entries[0].user_id == BRAND
     assert entries[0].amount_krw == 330000  # 수수료 포함 결제 총액
     assert events[0].event_type == "order.placed"  # Outbox 이벤트 동반
+
+
+async def test_크레딧_사용분은_차감_초안으로_함께_전달된다():
+    orders = _StubOrderRepository()
+    await _interactor(orders=orders).place(_command(credit_used_krw=50000))
+    credit_spend = orders.credit_spends[0]
+    assert credit_spend is not None
+    assert credit_spend.entry_type is LedgerEntryType.CREDIT_SPENT
+    assert credit_spend.user_id == BRAND
+    assert credit_spend.amount_krw == 50000
+
+
+async def test_크레딧을_안_쓰면_차감_초안이_없다():
+    orders = _StubOrderRepository()
+    await _interactor(orders=orders).place(_command())
+    assert orders.credit_spends[0] is None
+
+
+async def test_크레딧_잔액_부족이면_InsufficientCreditError():
+    orders = _StubOrderRepository(credit_ok=False)
+    with pytest.raises(InsufficientCreditError):
+        await _interactor(orders=orders).place(_command(credit_used_krw=999999))
 
 
 async def test_크리에이터_계정이면_NotBrandAccountError():

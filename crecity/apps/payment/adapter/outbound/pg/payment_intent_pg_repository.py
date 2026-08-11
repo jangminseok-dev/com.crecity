@@ -20,6 +20,7 @@ class PaymentIntentPgRepository(PaymentIntentRepository):
         requirements: str,
         amount_krw: int,
         offer_id: int | None = None,
+        credit_applied_krw: int = 0,
     ) -> PaymentIntent:
         result = await self._session.execute(
             insert(PaymentIntentOrm)
@@ -30,6 +31,7 @@ class PaymentIntentPgRepository(PaymentIntentRepository):
                 brand_user_id=brand_user_id,
                 requirements=requirements,
                 amount_krw=amount_krw,
+                credit_applied_krw=credit_applied_krw,
                 status=PaymentIntentStatus.READY.value,
             )
             .returning(PaymentIntentOrm)

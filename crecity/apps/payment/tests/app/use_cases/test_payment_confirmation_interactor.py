@@ -15,10 +15,11 @@ from payment.domain.entities.payment_intent_entity import PaymentIntent, Payment
 BRAND = 100
 
 
-def _intent(status=PaymentIntentStatus.READY, amount_krw=330000):
+def _intent(status=PaymentIntentStatus.READY, amount_krw=330000, credit_applied_krw=0):
     return PaymentIntent(
         id=1, pg_order_id="crecity-abc", package_id=10, brand_user_id=BRAND,
         requirements="60초 릴스", amount_krw=amount_krw, status=status,
+        credit_applied_krw=credit_applied_krw,
     )
 
 
@@ -63,15 +64,20 @@ class _StubOrderPlacementPort:
     def __init__(self, placed: PlacedOrder | None):
         self.placed = placed
         self.calls = []
+        self.credits = []  # 전달된 credit_used_krw
 
-    async def place_paid_order(self, package_id, requirements, brand_user_id, expected_brand_total_krw):
+    async def place_paid_order(
+        self, package_id, requirements, brand_user_id, expected_brand_total_krw,
+        credit_used_krw=0,
+    ):
         self.calls.append((package_id, expected_brand_total_krw))
+        self.credits.append(credit_used_krw)
         return self.placed
 
 
-def _command(amount_krw=330000, requester=BRAND):
+def _command(amount_krw=330000, requester=BRAND, payment_key="pay-key"):
     return ConfirmCommand(
-        payment_key="pay-key", pg_order_id="crecity-abc",
+        payment_key=payment_key, pg_order_id="crecity-abc",
         amount_krw=amount_krw, requester_user_id=requester,
     )
 
@@ -118,6 +124,45 @@ async def test_주문_생성_실패면_결제를_취소_보정한다():
     assert "취소 보정 완료" in intents.failed[0][2]
 
 
+# ── 크레딧 결제 (갭 #5) ───────────────────────────────────────────
+
+
+async def test_부분_크레딧은_PG에_차액만_청구하고_크레딧을_전달한다():
+    intents = _StubIntentRepository(_intent(credit_applied_krw=100000))
+    gateway = _StubGateway()
+    orders = _StubOrderPlacementPort(PlacedOrder(id=7, brand_total_krw=330000))
+    result = await PaymentConfirmationInteractor(intents, gateway, orders).confirm(
+        _command(amount_krw=230000)  # 리다이렉트 amount = PG 청구액
+    )
+    assert result.order_id == 7
+    assert gateway.confirms == [("pay-key", "crecity-abc", 230000)]
+    assert orders.calls == [(10, 330000)]  # 주문 금액 대조는 총액 기준
+    assert orders.credits == [100000]
+
+
+async def test_전액_크레딧은_PG를_거치지_않고_주문을_생성한다():
+    intents = _StubIntentRepository(_intent(credit_applied_krw=330000))
+    gateway = _StubGateway()
+    orders = _StubOrderPlacementPort(PlacedOrder(id=7, brand_total_krw=330000))
+    result = await PaymentConfirmationInteractor(intents, gateway, orders).confirm(
+        _command(amount_krw=0, payment_key="")
+    )
+    assert result.order_id == 7
+    assert gateway.confirms == []  # PG 호출 없음
+    assert orders.credits == [330000]
+    assert intents.confirmed == [(1, "", 7)]
+
+
+async def test_전액_크레딧_주문_생성_실패는_PG_취소_없이_FAILED_기록():
+    intents = _StubIntentRepository(_intent(credit_applied_krw=330000))
+    gateway = _StubGateway()
+    interactor = PaymentConfirmationInteractor(intents, gateway, _StubOrderPlacementPort(None))
+    with pytest.raises(PaymentConfirmError):
+        await interactor.confirm(_command(amount_krw=0, payment_key=""))
+    assert gateway.cancels == []  # 되돌릴 PG 결제가 없다
+    assert "보정 불필요" in intents.failed[0][2]
+
+
 async def test_이미_처리된_결제는_PaymentAlreadyProcessedError():
     intents = _StubIntentRepository(_intent(status=PaymentIntentStatus.CONFIRMED))
     interactor = PaymentConfirmationInteractor(intents, _StubGateway(), _StubOrderPlacementPort(None))
@@ -161,7 +206,8 @@ class _StubOrderPlacementPortWithCustom(_StubOrderPlacementPort):
         self.custom_calls = []
 
     async def place_paid_custom_order(
-        self, offer_id, requirements, brand_user_id, expected_brand_total_krw
+        self, offer_id, requirements, brand_user_id, expected_brand_total_krw,
+        credit_used_krw=0,
     ):
         self.custom_calls.append((offer_id, expected_brand_total_krw))
         return self.placed

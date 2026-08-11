@@ -22,6 +22,8 @@ class PaymentIntentOrm(Base):
     brand_user_id: Mapped[int] = mapped_column(Integer, index=True)
     requirements: Mapped[str] = mapped_column(Text)
     amount_krw: Mapped[int] = mapped_column(BigInteger)
+    # 체크아웃에서 확정한 크레딧 사용분 — PG 결제액 = amount_krw − credit_applied_krw
+    credit_applied_krw: Mapped[int] = mapped_column(BigInteger, server_default="0")
     # PaymentIntentStatus 값
     status: Mapped[str] = mapped_column(String(20), index=True)
     payment_key: Mapped[str | None] = mapped_column(String(200), nullable=True)

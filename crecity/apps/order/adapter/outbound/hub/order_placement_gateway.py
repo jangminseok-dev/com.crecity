@@ -18,7 +18,11 @@ from order.app.dtos.order_placement_dto import (
     CustomOrderPlacementCommand,
     OrderPlacementCommand,
 )
-from order.app.exceptions import NotBrandAccountError, PackageNotOrderableError
+from order.app.exceptions import (
+    InsufficientCreditError,
+    NotBrandAccountError,
+    PackageNotOrderableError,
+)
 from order.app.use_cases.order_placement_interactor import OrderPlacementInteractor
 
 logger = logging.getLogger(__name__)
@@ -36,6 +40,7 @@ class PaidOrderPlacementGateway(OrderPlacementPort):
         requirements: str,
         brand_user_id: int,
         expected_brand_total_krw: int,
+        credit_used_krw: int = 0,
     ) -> PlacedOrder | None:
         packages = get_package_summary_port()
         summary = await packages.get_package_summary(package_id)
@@ -64,9 +69,10 @@ class PaidOrderPlacementGateway(OrderPlacementPort):
                         requirements=requirements,
                         brand_user_id=brand_user_id,
                         account_type="BRAND",  # 결제 시점에 BRAND 검증 완료(payment 몫)
+                        credit_used_krw=credit_used_krw,
                     )
                 )
-        except (NotBrandAccountError, PackageNotOrderableError):
+        except (NotBrandAccountError, PackageNotOrderableError, InsufficientCreditError):
             return None
         return PlacedOrder(id=result.id, brand_total_krw=result.brand_total_krw)
 
@@ -76,6 +82,7 @@ class PaidOrderPlacementGateway(OrderPlacementPort):
         requirements: str,
         brand_user_id: int,
         expected_brand_total_krw: int,
+        credit_used_krw: int = 0,
     ) -> PlacedOrder | None:
         offers = get_custom_offer_port()
         summary = await offers.get_payable_offer(offer_id)
@@ -105,8 +112,9 @@ class PaidOrderPlacementGateway(OrderPlacementPort):
                         requirements=requirements,
                         brand_user_id=brand_user_id,
                         account_type="BRAND",  # 결제 시점에 BRAND 검증 완료(payment 몫)
+                        credit_used_krw=credit_used_krw,
                     )
                 )
-        except (NotBrandAccountError, PackageNotOrderableError):
+        except (NotBrandAccountError, PackageNotOrderableError, InsufficientCreditError):
             return None
         return PlacedOrder(id=result.id, brand_total_krw=result.brand_total_krw)

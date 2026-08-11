@@ -20,8 +20,13 @@ class OrderPlacementPort(ABC):
         requirements: str,
         brand_user_id: int,
         expected_brand_total_krw: int,
+        credit_used_krw: int = 0,
     ) -> PlacedOrder | None:
-        """주문 생성 — 패키지 불가·금액 불일치·생성 실패면 None."""
+        """주문 생성 — 패키지 불가·금액 불일치·크레딧 부족·생성 실패면 None.
+
+        credit_used_krw는 체크아웃에서 확정한 크레딧 사용분 — order가 잔액 재검증 후
+        주문 생성과 원자적으로 차감한다(부족하면 None).
+        """
         ...
 
     @abstractmethod
@@ -31,6 +36,7 @@ class OrderPlacementPort(ABC):
         requirements: str,
         brand_user_id: int,
         expected_brand_total_krw: int,
+        credit_used_krw: int = 0,
     ) -> PlacedOrder | None:
-        """커스텀 오퍼 주문 생성 — 오퍼 불가·금액 불일치·생성 실패면 None."""
+        """커스텀 오퍼 주문 생성 — 오퍼 불가·금액 불일치·크레딧 부족·생성 실패면 None."""
         ...

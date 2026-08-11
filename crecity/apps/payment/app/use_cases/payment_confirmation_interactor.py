@@ -45,20 +45,24 @@ class PaymentConfirmationInteractor(PaymentConfirmationUseCase):
             await self._intents.mark_failed(intent.id, None, "금액 불일치(위변조 의심)")
             raise PaymentAmountMismatchError("결제 금액이 일치하지 않습니다 — 처음부터 다시 시도해 주세요.")
 
-        # 1) PG 승인 (외부 접점 — 실패는 기록 후 통보)
-        try:
-            await self._gateway.confirm(command.payment_key, command.pg_order_id, intent.amount_krw)
-        except PaymentConfirmError as error:
-            await self._intents.mark_failed(intent.id, command.payment_key, f"승인 실패: {error}")
-            raise
+        # 1) PG 승인 (외부 접점 — 실패는 기록 후 통보). 전액 크레딧(PG 결제액 0)이면 생략한다.
+        if intent.pg_amount_krw() > 0:
+            try:
+                await self._gateway.confirm(
+                    command.payment_key, command.pg_order_id, intent.pg_amount_krw()
+                )
+            except PaymentConfirmError as error:
+                await self._intents.mark_failed(intent.id, command.payment_key, f"승인 실패: {error}")
+                raise
 
-        # 2) 주문 생성+예치 (order 내부 원자적 — §3). 실패 시 PG 취소로 보정한다.
+        # 2) 주문 생성+예치+크레딧 차감 (order 내부 원자적 — §3). 실패 시 PG 취소로 보정한다.
         if intent.offer_id is not None:
             placed = await self._orders.place_paid_custom_order(
                 offer_id=intent.offer_id,
                 requirements=intent.requirements,
                 brand_user_id=intent.brand_user_id,
                 expected_brand_total_krw=intent.amount_krw,
+                credit_used_krw=intent.credit_applied_krw,
             )
         else:
             placed = await self._orders.place_paid_order(
@@ -66,15 +70,20 @@ class PaymentConfirmationInteractor(PaymentConfirmationUseCase):
                 requirements=intent.requirements,
                 brand_user_id=intent.brand_user_id,
                 expected_brand_total_krw=intent.amount_krw,
+                credit_used_krw=intent.credit_applied_krw,
             )
         if placed is None:
-            try:
-                await self._gateway.cancel(command.payment_key, "주문 생성 실패 — 자동 환불")
-                reason = "주문 생성 실패 — 결제 취소 보정 완료"
-            except PaymentConfirmError:
-                # 취소까지 실패 — 기록을 남겨 운영 개입으로 수렴시킨다(§3: 재시도 가능한 보정)
-                logger.error("결제 취소 보정 실패: pg_order_id=%s", intent.pg_order_id)
-                reason = "주문 생성 실패 — 결제 취소 보정도 실패(운영 확인 필요)"
+            if intent.pg_amount_krw() > 0:
+                try:
+                    await self._gateway.cancel(command.payment_key, "주문 생성 실패 — 자동 환불")
+                    reason = "주문 생성 실패 — 결제 취소 보정 완료"
+                except PaymentConfirmError:
+                    # 취소까지 실패 — 기록을 남겨 운영 개입으로 수렴시킨다(§3: 재시도 가능한 보정)
+                    logger.error("결제 취소 보정 실패: pg_order_id=%s", intent.pg_order_id)
+                    reason = "주문 생성 실패 — 결제 취소 보정도 실패(운영 확인 필요)"
+            else:
+                # 전액 크레딧은 차감 자체가 주문 생성과 원자적이라 되돌릴 것이 없다
+                reason = "주문 생성 실패 — 전액 크레딧 결제(보정 불필요)"
             await self._intents.mark_failed(intent.id, command.payment_key, reason)
             raise PaymentConfirmError("주문 생성에 실패해 결제를 취소했습니다 — 다시 시도해 주세요.")
 

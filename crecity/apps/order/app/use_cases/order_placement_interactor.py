@@ -10,7 +10,11 @@ from order.app.dtos.order_placement_dto import (
 )
 from order.app.dtos.order_result_dto import OrderResult
 from order.app.events import order_event
-from order.app.exceptions import NotBrandAccountError, PackageNotOrderableError
+from order.app.exceptions import (
+    InsufficientCreditError,
+    NotBrandAccountError,
+    PackageNotOrderableError,
+)
 from order.app.ports.input.order_placement_use_case import OrderPlacementUseCase
 from order.app.ports.output.order_repository import OrderRepository
 from order.domain.entities.ledger_entry_entity import LedgerEntryDraft, LedgerEntryType
@@ -49,6 +53,7 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
             creator_user_id=summary.creator_user_id,
             brand_user_id=command.brand_user_id,
             requirements=command.requirements,
+            credit_used_krw=command.credit_used_krw,
         )
 
     async def place_custom(self, command: CustomOrderPlacementCommand) -> OrderResult:
@@ -68,6 +73,7 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
             creator_user_id=offer.creator_user_id,
             brand_user_id=command.brand_user_id,
             requirements=command.requirements,
+            credit_used_krw=command.credit_used_krw,
         )
 
     async def _place(
@@ -78,6 +84,7 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
         creator_user_id: int,
         brand_user_id: int,
         requirements: str,
+        credit_used_krw: int = 0,
     ) -> OrderResult:
         now = datetime.now(timezone.utc)
         draft = Order(
@@ -98,7 +105,19 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
             user_id=brand_user_id,
             amount_krw=draft.brand_total_krw(),
         )
+        # 크레딧 사용분 — 리포지토리가 advisory lock으로 잔액 재검증 후 주문과 원자적으로 차감
+        credit_spend = (
+            LedgerEntryDraft(
+                entry_type=LedgerEntryType.CREDIT_SPENT,
+                user_id=brand_user_id,
+                amount_krw=credit_used_krw,
+            )
+            if credit_used_krw > 0
+            else None
+        )
         # order_id는 저장 시점에 리포지토리가 payload에 채운다
         placed_event = order_event("order.placed", draft)
-        order = await self._orders.create(draft, [deposit], [placed_event])
+        order = await self._orders.create(draft, [deposit], [placed_event], credit_spend)
+        if order is None:
+            raise InsufficientCreditError("크레딧 잔액이 부족합니다 — 결제를 처음부터 다시 시도해 주세요.")
         return OrderResult.from_order(order)

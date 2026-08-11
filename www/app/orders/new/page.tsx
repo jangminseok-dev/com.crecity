@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import { Suspense, useState } from "react";
@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { PLATFORM_LABELS, formatKrw } from "@/lib/labels";
-import type { CreatorPackage, CustomOffer } from "@/lib/types";
+import type { Balance, CreatorPackage, CustomOffer } from "@/lib/types";
 
 const orderSchema = z.object({
   requirements: z.string().min(10, "요구사항을 10자 이상 구체적으로 적어 주세요."),
@@ -26,11 +26,14 @@ const orderSchema = z.object({
 type CheckoutResponse = {
   pg_order_id: string;
   amount_krw: number;
+  credit_applied_krw: number;
+  pg_amount_krw: number;
   order_name: string;
   client_key: string;
 };
 
 function OrderNewContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { status, user } = useAuthStore();
   const slug = searchParams.get("slug");
@@ -58,6 +61,14 @@ function OrderNewContent() {
     enabled: isOfferMode && status === "authenticated",
   });
   const offer = offers?.find((o) => o.id === offerId);
+
+  // 보유 크레딧(환불 적립 등) — 있으면 결제에 사용할 수 있다
+  const { data: balance } = useQuery({
+    queryKey: ["balance"],
+    queryFn: () => apiFetch<Balance>("/order/balance"),
+    enabled: status === "authenticated" && user?.account_type === "BRAND",
+  });
+  const creditKrw = balance?.balance_krw ?? 0;
 
   if (!isOfferMode && (!slug || !packageId)) {
     return <p className="py-20 text-center text-muted-foreground">잘못된 접근입니다.</p>;
@@ -93,33 +104,56 @@ function OrderNewContent() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const parsed = orderSchema.safeParse(Object.fromEntries(new FormData(e.currentTarget).entries()));
+    const formData = new FormData(e.currentTarget);
+    const parsed = orderSchema.safeParse(Object.fromEntries(formData.entries()));
     if (!parsed.success) {
       setForm({ submitting: false, error: parsed.error.issues[0].message });
       return;
     }
+    const useCredit = formData.get("use_credit") === "on";
     setForm({ submitting: true, error: null });
     try {
-      // 1) 결제 준비 — 서버가 금액을 확정하고 결제창 파라미터를 내려준다
+      // 1) 결제 준비 — 서버가 금액·크레딧 적용액을 확정하고 결제창 파라미터를 내려준다
       const checkout = isOfferMode
         ? await apiFetch<CheckoutResponse>("/payment/checkouts/offer", {
             method: "POST",
-            body: JSON.stringify({ offer_id: offerId, requirements: parsed.data.requirements }),
+            body: JSON.stringify({
+              offer_id: offerId,
+              requirements: parsed.data.requirements,
+              use_credit: useCredit,
+            }),
           })
         : await apiFetch<CheckoutResponse>("/payment/checkouts", {
             method: "POST",
-            body: JSON.stringify({ package_id: pkg!.id, requirements: parsed.data.requirements }),
+            body: JSON.stringify({
+              package_id: pkg!.id,
+              requirements: parsed.data.requirements,
+              use_credit: useCredit,
+            }),
           });
+      // 2) 전액 크레딧(PG 결제액 0)이면 결제창 없이 바로 승인 — 주문 생성으로 직행
+      if (checkout.pg_amount_krw === 0) {
+        const { order_id } = await apiFetch<{ order_id: number }>("/payment/confirm", {
+          method: "POST",
+          body: JSON.stringify({
+            payment_key: "",
+            pg_order_id: checkout.pg_order_id,
+            amount_krw: 0,
+          }),
+        });
+        router.replace(`/dashboard/orders/${order_id}`);
+        return;
+      }
       if (!checkout.client_key) {
         setForm({ submitting: false, error: "결제 설정이 아직 완료되지 않았습니다(토스 키 미설정)." });
         return;
       }
-      // 2) 토스 결제창(SDK v2) — 성공 시 successUrl로 리다이렉트되어 승인 단계로 이어진다
+      // 3) 토스 결제창(SDK v2) — 성공 시 successUrl로 리다이렉트되어 승인 단계로 이어진다
       const tossPayments = await loadTossPayments(checkout.client_key);
       const payment = tossPayments.payment({ customerKey: `crecity-user-${user!.id}` });
       await payment.requestPayment({
         method: "CARD",
-        amount: { currency: "KRW", value: checkout.amount_krw },
+        amount: { currency: "KRW", value: checkout.pg_amount_krw },
         orderId: checkout.pg_order_id,
         orderName: checkout.order_name,
         successUrl: `${window.location.origin}/orders/pay/success`,
@@ -175,6 +209,17 @@ function OrderNewContent() {
             placeholder="원하는 콘텐츠 방향·필수 포함 내용·게시 희망일 등을 구체적으로 적어 주세요. 수정 요청은 이 요구사항 범위 안에서 가능합니다."
           />
         </div>
+        {creditKrw > 0 && (
+          <label className="flex items-center gap-2.5 rounded-xl border px-3.5 py-3 text-sm">
+            <input type="checkbox" name="use_credit" className="size-4 accent-primary" />
+            <span>
+              보유 크레딧 사용 <span className="font-semibold">{formatKrw(creditKrw)}</span>
+              <span className="ml-1 text-[13px] text-muted-foreground">
+                — 결제 금액에서 자동 차감됩니다
+              </span>
+            </span>
+          </label>
+        )}
         <div className="flex items-start gap-2 rounded-xl bg-[#f9fafb] px-3.5 py-3 text-[13px] leading-snug text-muted-foreground">
           <ShieldCheck className="mt-0.5 size-[18px] shrink-0 text-primary" />
           결제하면 플랫폼 수수료가 더해진 총액이 안전거래(에스크로)로 보관되며, 콘텐츠 승인 후

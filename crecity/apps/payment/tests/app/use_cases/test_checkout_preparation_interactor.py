@@ -23,12 +23,13 @@ class _StubIntentRepository:
         self.created = []
 
     async def create(
-        self, pg_order_id, package_id, brand_user_id, requirements, amount_krw, offer_id=None
+        self, pg_order_id, package_id, brand_user_id, requirements, amount_krw,
+        offer_id=None, credit_applied_krw=0,
     ):
         intent = PaymentIntent(
             id=1, pg_order_id=pg_order_id, package_id=package_id, brand_user_id=brand_user_id,
             requirements=requirements, amount_krw=amount_krw, status=PaymentIntentStatus.READY,
-            offer_id=offer_id,
+            offer_id=offer_id, credit_applied_krw=credit_applied_krw,
         )
         self.created.append(intent)
         return intent
@@ -43,19 +44,28 @@ class _StubIntentRepository:
         raise NotImplementedError
 
 
-def _interactor(summary=_SUMMARY, intents=None):
+class _StubCreditBalancePort:
+    def __init__(self, balance_krw=0):
+        self.balance_krw = balance_krw
+
+    async def get_balance_krw(self, user_id):
+        return self.balance_krw
+
+
+def _interactor(summary=_SUMMARY, intents=None, credit_balance=0):
     return CheckoutPreparationInteractor(
         intents=intents if intents is not None else _StubIntentRepository(),
         packages=_StubPackageSummaryPort(summary),
+        credits=_StubCreditBalancePort(credit_balance),
         brand_fee_percent=10,
         client_key="test_ck_dummy",
     )
 
 
-def _command(package_id=10, account_type="BRAND"):
+def _command(package_id=10, account_type="BRAND", use_credit=False):
     return CheckoutCommand(
         package_id=package_id, requirements="60초 릴스", brand_user_id=BRAND,
-        account_type=account_type,
+        account_type=account_type, use_credit=use_credit,
     )
 
 
@@ -66,6 +76,25 @@ async def test_결제_준비는_서버가_금액을_확정한다():
     assert result.order_name == "릴스 1개"
     assert result.pg_order_id.startswith("crecity-")
     assert intents.created[0].amount_krw == 330000  # 의도에 스냅샷
+
+
+async def test_크레딧을_안_쓰면_적용액이_0이다():
+    result = await _interactor(credit_balance=100000).prepare(_command())
+    assert result.credit_applied_krw == 0
+    assert result.pg_amount_krw == 330000
+
+
+async def test_크레딧_사용_시_잔액만큼_결제액이_줄어든다():
+    result = await _interactor(credit_balance=100000).prepare(_command(use_credit=True))
+    assert result.credit_applied_krw == 100000
+    assert result.pg_amount_krw == 230000  # 330,000 − 100,000
+    assert result.amount_krw == 330000  # 총액은 그대로
+
+
+async def test_잔액이_총액_이상이면_전액_크레딧으로_PG_결제액이_0이다():
+    result = await _interactor(credit_balance=990000).prepare(_command(use_credit=True))
+    assert result.credit_applied_krw == 330000  # 총액까지만 적용
+    assert result.pg_amount_krw == 0
 
 
 async def test_크리에이터_계정이면_NotBrandAccountError():
@@ -106,6 +135,7 @@ def _offer_interactor(offer, intents=None):
     return CheckoutPreparationInteractor(
         intents=repo,
         packages=_StubPackageSummaryPort(None),
+        credits=_StubCreditBalancePort(),
         brand_fee_percent=10,
         client_key="test_ck",
         offers=_StubCustomOfferPort(offer),

@@ -30,8 +30,9 @@ class PaymentIntent:
     package_id: int | None  # 커스텀 오퍼 결제는 None
     brand_user_id: int
     requirements: str  # 승인 후 주문 생성에 쓸 페이로드 보관
-    amount_krw: int  # 결제 총액 스냅샷 — confirm 시 반드시 대조
+    amount_krw: int  # 결제 총액 스냅샷(크레딧 포함 전체) — 주문 생성 금액 대조에 쓴다
     status: PaymentIntentStatus
+    credit_applied_krw: int = 0  # 체크아웃에서 확정한 크레딧 사용분 — PG 결제액 = 총액 − 이 값
     offer_id: int | None = None  # 커스텀 오퍼(chat) 논리 참조 — 패키지 결제는 None
     payment_key: str | None = None  # PG 결제 키(승인 후)
     order_id: int | None = None  # 생성된 주문(승인 후)
@@ -44,6 +45,10 @@ class PaymentIntent:
     def is_ready(self) -> bool:
         return self.status is PaymentIntentStatus.READY
 
+    def pg_amount_krw(self) -> int:
+        """PG에 실제 청구할 금액 = 총액 − 크레딧 사용분. 0이면 PG 호출 없이 승인한다."""
+        return self.amount_krw - self.credit_applied_krw
+
     def matches_amount(self, amount_krw: int) -> bool:
-        """리다이렉트 쿼리의 amount와 서버 확정 금액 대조 — 다르면 승인 금지(토스 문서 필수 절차)."""
-        return self.amount_krw == amount_krw
+        """리다이렉트 쿼리의 amount와 서버 확정 PG 결제액 대조 — 다르면 승인 금지(토스 문서 필수 절차)."""
+        return self.pg_amount_krw() == amount_krw

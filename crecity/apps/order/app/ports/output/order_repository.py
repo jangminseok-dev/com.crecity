@@ -17,9 +17,17 @@ class OrderRepository(ABC):
 
     @abstractmethod
     async def create(
-        self, order: Order, entries: list[LedgerEntryDraft], events: list[OutboxEvent]
-    ) -> Order:
-        """주문(+원장 기입+이벤트)을 원자적으로 생성한다 — order.id는 새로 발급된다."""
+        self,
+        order: Order,
+        entries: list[LedgerEntryDraft],
+        events: list[OutboxEvent],
+        credit_spend: LedgerEntryDraft | None = None,
+    ) -> Order | None:
+        """주문(+원장 기입+이벤트)을 원자적으로 생성한다 — order.id는 새로 발급된다.
+
+        credit_spend(크레딧 차감 기입)가 있으면 advisory lock으로 잔액을 재검증한 뒤
+        함께 기입한다 — 잔액 부족이면 아무것도 저장하지 않고 None(호출자가 보정).
+        """
         ...
 
     @abstractmethod
