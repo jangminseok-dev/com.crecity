@@ -294,7 +294,7 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
                 {q ? `"${q}" 검색 결과` : category ? `${category} 크리에이터` : "전체 크리에이터"}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {total > 0 ? `${total}명의 검증된 크리에이터` : "검증된 크리에이터"}
+                {total > 0 ? `${total}명의 크리에이터` : "크리에이터"} · 프로필 심사를 거쳐 등록됩니다
               </p>
             </div>
             {q && (

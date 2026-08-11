@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "apps"))
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from admin.adapter.inbound.api.v1.audit_log_router import audit_log_router
 from admin.adapter.inbound.api.v1.profile_review_router import profile_review_router
 from admin.adapter.inbound.api.v1.steward_router import steward_router
 from auth.adapter.inbound.api.v1.account_deletion_router import account_deletion_router
@@ -179,6 +180,7 @@ app.include_router(withdrawal_request_router)
 app.include_router(withdrawal_settlement_router)
 app.include_router(steward_router)
 app.include_router(profile_review_router)
+app.include_router(audit_log_router)
 app.include_router(paymaster_router)
 app.include_router(checkout_preparation_router)
 app.include_router(payment_confirmation_router)
