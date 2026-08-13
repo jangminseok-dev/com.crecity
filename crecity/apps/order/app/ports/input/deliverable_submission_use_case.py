@@ -27,7 +27,7 @@ class DeliverableSubmissionUseCase(ABC):
 
     @abstractmethod
     async def submit_link(self, command: SubmitDeliverableLinkCommand) -> DeliverableResult:
-        """링크 납품물 등록 (게시된 콘텐츠 URL 등)."""
+        """링크 납품물 등록 (게시된 콘텐츠 URL 등) — 본문(caption)은 광고 표기 검수용 선택 입력."""
         ...
 
     @abstractmethod

@@ -9,6 +9,7 @@ from order.app.dtos.deliverable_submission_dto import DeliverableResult
 
 class DeliverableLinkRequestSchema(BaseModel):
     url: str
+    caption: str | None = None  # 게시물 본문 — 광고 표기 검수용(선택)
 
 
 class DeliverableResponseSchema(BaseModel):
@@ -18,6 +19,8 @@ class DeliverableResponseSchema(BaseModel):
     file_url: str | None  # kind=FILE — /uploads/deliverables/{저장 파일명}
     original_name: str | None
     url: str | None  # kind=LINK
+    caption: str | None
+    ad_disclosure_ok: bool | None  # 광고 표기 검수 — 링크만 판정(파일은 null)
     created_at: datetime | None
 
     @classmethod
@@ -31,5 +34,7 @@ class DeliverableResponseSchema(BaseModel):
             ),
             original_name=result.original_name,
             url=result.url,
+            caption=result.caption,
+            ad_disclosure_ok=result.ad_disclosure_ok,
             created_at=result.created_at,
         )

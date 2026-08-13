@@ -67,7 +67,10 @@ async def submit_deliverable_link(
     try:
         result = await use_case.submit_link(
             SubmitDeliverableLinkCommand(
-                order_id=order_id, actor_user_id=user.id, url=body.url
+                order_id=order_id,
+                actor_user_id=user.id,
+                url=body.url,
+                caption=body.caption,
             )
         )
     except OrderNotFoundError as error:

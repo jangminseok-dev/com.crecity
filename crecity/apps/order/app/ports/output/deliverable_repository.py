@@ -16,6 +16,7 @@ class DeliverableRepository(ABC):
         file_name: str | None,
         original_name: str | None,
         url: str | None,
+        caption: str | None,
     ) -> Deliverable:
         """납품물을 기록한다 — id는 새로 발급된다."""
         ...

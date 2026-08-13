@@ -21,6 +21,8 @@ class DeliverableOrm(Base):
     file_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     original_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    # 게시물 본문(크리에이터가 붙여넣음) — 광고 표기 검수 대상. 판정 결과는 파생값이라 저장하지 않는다.
+    caption: Mapped[str | None] = mapped_column(String(3000), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

@@ -47,7 +47,7 @@ class _StubDeliverableRepository:
     def __init__(self):
         self.items: list[Deliverable] = []
 
-    async def add(self, order_id, kind, file_name, original_name, url):
+    async def add(self, order_id, kind, file_name, original_name, url, caption):
         deliverable = Deliverable(
             id=len(self.items) + 1,
             order_id=order_id,
@@ -55,6 +55,7 @@ class _StubDeliverableRepository:
             file_name=file_name,
             original_name=original_name,
             url=url,
+            caption=caption,
             created_at=_NOW,
         )
         self.items.append(deliverable)
@@ -131,6 +132,46 @@ async def test_링크를_등록하면_기록된다():
     assert result.kind == DeliverableKind.LINK.value
     assert result.url == "https://instagram.com/p/abc"
     assert len(deliverables.items) == 1
+
+
+async def test_본문에_광고_표기가_있으면_검수를_통과한다():
+    interactor, _, _ = _interactor(_order())
+    result = await interactor.submit_link(
+        SubmitDeliverableLinkCommand(
+            order_id=1,
+            actor_user_id=CREATOR,
+            url="https://instagram.com/p/abc",
+            caption="신상 립밤 써봤어요 #광고",
+        )
+    )
+    assert result.caption == "신상 립밤 써봤어요 #광고"
+    assert result.ad_disclosure_ok is True
+
+
+async def test_본문에_광고_표기가_없으면_미확인이다():
+    interactor, _, _ = _interactor(_order())
+    result = await interactor.submit_link(
+        SubmitDeliverableLinkCommand(
+            order_id=1, actor_user_id=CREATOR, url="https://instagram.com/p/abc", caption="써봤어요"
+        )
+    )
+    assert result.ad_disclosure_ok is False
+
+
+async def test_파일_납품물은_광고_표기_검수_대상이_아니다():
+    interactor, _, _ = _interactor(_order())
+    result = await interactor.submit_file(_file_command())
+    assert result.ad_disclosure_ok is None
+
+
+async def test_본문이_너무_길면_ValueError():
+    interactor, _, _ = _interactor(_order())
+    with pytest.raises(ValueError):
+        await interactor.submit_link(
+            SubmitDeliverableLinkCommand(
+                order_id=1, actor_user_id=CREATOR, url="https://a.b", caption="가" * 3001
+            )
+        )
 
 
 async def test_브랜드가_등록하면_NotOrderActorError():

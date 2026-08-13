@@ -84,6 +84,8 @@ export type Deliverable = {
   file_url: string | null;
   original_name: string | null;
   url: string | null;
+  caption: string | null;
+  ad_disclosure_ok: boolean | null; // 광고 표기 검수 — 링크만 판정(파일은 null)
   created_at: string | null;
 };
 

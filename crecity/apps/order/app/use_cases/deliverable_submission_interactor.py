@@ -49,11 +49,12 @@ class DeliverableSubmissionInteractor(DeliverableSubmissionUseCase):
             file_name=file_name,
             original_name=command.original_name[:_ORIGINAL_NAME_MAX] or None,
             url=None,
+            caption=None,
         )
         return DeliverableResult.from_deliverable(deliverable)
 
     async def submit_link(self, command: SubmitDeliverableLinkCommand) -> DeliverableResult:
-        link = DeliverableLink(url=command.url)
+        link = DeliverableLink(url=command.url, caption=command.caption or None)
         order = await self._get(command.order_id)
         order.ensure_can_attach_deliverable(command.actor_user_id)
 
@@ -63,6 +64,7 @@ class DeliverableSubmissionInteractor(DeliverableSubmissionUseCase):
             file_name=None,
             original_name=None,
             url=link.url,
+            caption=link.caption,
         )
         return DeliverableResult.from_deliverable(deliverable)
 

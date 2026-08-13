@@ -16,6 +16,7 @@ def _to_entity(orm: DeliverableOrm) -> Deliverable:
         file_name=orm.file_name,
         original_name=orm.original_name,
         url=orm.url,
+        caption=orm.caption,
         created_at=orm.created_at,
     )
 
@@ -32,6 +33,7 @@ class DeliverablePgRepository(DeliverableRepository):
         file_name: str | None,
         original_name: str | None,
         url: str | None,
+        caption: str | None,
     ) -> Deliverable:
         result = await self._session.execute(
             insert(DeliverableOrm)
@@ -41,6 +43,7 @@ class DeliverablePgRepository(DeliverableRepository):
                 file_name=file_name,
                 original_name=original_name,
                 url=url,
+                caption=caption,
             )
             .returning(DeliverableOrm)
         )

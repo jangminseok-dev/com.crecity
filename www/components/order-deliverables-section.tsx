@@ -46,10 +46,10 @@ export default function OrderDeliverablesSection({
   });
 
   const addLink = useMutation({
-    mutationFn: (url: string) =>
+    mutationFn: (body: { url: string; caption: string | null }) =>
       apiFetch<Deliverable>(`/order/orders/${orderId}/deliverables/links`, {
         method: "POST",
-        body: JSON.stringify({ url }),
+        body: JSON.stringify(body),
       }),
     onSuccess: invalidate,
   });
@@ -57,12 +57,20 @@ export default function OrderDeliverablesSection({
   const handleLinkSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formElement = e.currentTarget;
-    const url = String(new FormData(formElement).get("url") ?? "").trim();
+    const form = new FormData(formElement);
+    const url = String(form.get("url") ?? "").trim();
     if (!url) return;
-    addLink.mutate(url, { onSuccess: () => formElement.reset() });
+    const caption = String(form.get("caption") ?? "").trim();
+    addLink.mutate(
+      { url, caption: caption || null },
+      { onSuccess: () => formElement.reset() },
+    );
   };
 
   const error = errorMessage(uploadFile.error) ?? errorMessage(addLink.error);
+  // 광고 표기 미확인 링크 — 차단하지 않고 경고만 한다(공정위 표시·광고 심사지침).
+  const undisclosed =
+    deliverables?.filter((deliverable) => deliverable.ad_disclosure_ok === false) ?? [];
 
   if (!canUpload && (deliverables?.length ?? 0) === 0) return null;
 
@@ -78,6 +86,15 @@ export default function OrderDeliverablesSection({
           </p>
         </div>
 
+        {undisclosed.length > 0 && (
+          <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
+            ⚠️ 광고 표기가 확인되지 않은 링크 {undisclosed.length}건이 있습니다 —{" "}
+            {canUpload
+              ? "게시물 본문에 “광고·협찬” 등 대가성 표시를 넣어 주세요(표시광고법)."
+              : "승인 전에 게시물에 광고·협찬 표기가 있는지 확인해 주세요."}
+          </p>
+        )}
+
         {(deliverables?.length ?? 0) > 0 && (
           <ul className="grid gap-2">
             {deliverables?.map((deliverable) => (
@@ -92,14 +109,30 @@ export default function OrderDeliverablesSection({
                     📎 {deliverable.original_name ?? "파일"}
                   </a>
                 ) : (
-                  <a
-                    href={deliverable.url ?? "#"}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="break-all underline underline-offset-2"
-                  >
-                    🔗 {deliverable.url}
-                  </a>
+                  <>
+                    <a
+                      href={deliverable.url ?? "#"}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="break-all underline underline-offset-2"
+                    >
+                      🔗 {deliverable.url}
+                    </a>
+                    <span
+                      className={`ml-2 whitespace-nowrap text-xs ${
+                        deliverable.ad_disclosure_ok
+                          ? "text-muted-foreground"
+                          : "text-destructive"
+                      }`}
+                    >
+                      {deliverable.ad_disclosure_ok ? "광고 표기 확인" : "광고 표기 미확인"}
+                    </span>
+                    {deliverable.caption && (
+                      <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
+                        {deliverable.caption}
+                      </p>
+                    )}
+                  </>
                 )}
               </li>
             ))}
@@ -125,16 +158,25 @@ export default function OrderDeliverablesSection({
                 }}
               />
             </label>
-            <form onSubmit={handleLinkSubmit} className="flex gap-2">
-              <input
-                name="url"
-                type="url"
-                placeholder="게시된 콘텐츠 링크 (https://…)"
-                className="h-9 flex-1 rounded-md border border-input bg-transparent px-3 text-sm outline-none transition-colors focus:border-primary"
+            <form onSubmit={handleLinkSubmit} className="grid gap-2">
+              <div className="flex gap-2">
+                <input
+                  name="url"
+                  type="url"
+                  placeholder="게시된 콘텐츠 링크 (https://…)"
+                  className="h-9 flex-1 rounded-md border border-input bg-transparent px-3 text-sm outline-none transition-colors focus:border-primary"
+                />
+                <Button type="submit" variant="outline" disabled={addLink.isPending}>
+                  링크 등록
+                </Button>
+              </div>
+              <textarea
+                name="caption"
+                rows={3}
+                maxLength={3000}
+                placeholder="게시물 본문 붙여넣기 (선택) — “광고·협찬” 표기가 있는지 자동 검수합니다"
+                className="rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus:border-primary"
               />
-              <Button type="submit" variant="outline" disabled={addLink.isPending}>
-                링크 등록
-              </Button>
             </form>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>

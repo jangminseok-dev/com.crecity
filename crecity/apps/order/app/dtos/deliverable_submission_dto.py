@@ -20,6 +20,7 @@ class SubmitDeliverableLinkCommand:
     order_id: int
     actor_user_id: int
     url: str
+    caption: str | None = None  # 게시물 본문 — 광고 표기 검수용(선택)
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,8 @@ class DeliverableResult:
     file_name: str | None
     original_name: str | None
     url: str | None
+    caption: str | None
+    ad_disclosure_ok: bool | None  # 링크 납품물만 판정(파일은 None)
     created_at: datetime | None
 
     @classmethod
@@ -47,5 +50,7 @@ class DeliverableResult:
             file_name=deliverable.file_name,
             original_name=deliverable.original_name,
             url=deliverable.url,
+            caption=deliverable.caption,
+            ad_disclosure_ok=deliverable.ad_disclosure_ok,
             created_at=deliverable.created_at,
         )
