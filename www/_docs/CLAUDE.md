@@ -18,6 +18,9 @@ Next.js 16(App Router) · React 19 · TypeScript 5 · Tailwind 4 · zustand · T
   장치다 — 지우면 dev 서버가 저장소 전체를 감시한다.
 - 검증 수단은 `pnpm run typecheck`뿐(테스트 러너 없음). `npx tsc` 직접 실행 금지 —
   반드시 package.json 스크립트로.
+- 페르소나 랜딩(`/for/[persona]`, 갭 #13)의 콘텐츠 정본은 `lib/personas.ts`다 — 페이지는
+  렌더만 한다. **구현된 기능만 서술하고 성과 수치·고객 사례는 쓰지 않는다**(실적 확보 전
+  허위 표기 방지). 새 페르소나는 배열에 항목을 더하면 sitemap·상호 링크가 따라온다.
 - 공개 페이지(크리에이터 프로필 등)는 SSR을 유지한다 — 프로그래매틱 SEO가 핵심 전략
   (collabstr-analysis §7).
 - **스택 확정(2026-08-10)**: 현 스택 외 라이브러리 추가 금지. UI 착수 시 shadcn/ui,

@@ -22,5 +22,9 @@
   `CreatorPackage`(+`PackagePlatform`). 현재 사용자는 허브 `get_current_user`로 얻는다
   (auth 직접 import 금지). `user_id`는 auth users 논리 참조 — 스포크 경계라 DB FK 없음,
   NULL은 소셜 로그인 도입 전 레거시 행뿐.
+- **정량 vetting(갭 #16)**: `domain/value_objects/vetting_check.py`가 채널 지표로 기준 충족을
+  판정해 심사 게이트웨이가 허브 `ProfileReviewSummary`에 실어 보낸다. 기준값은 도메인이 아니라
+  `core/config`(`VETTING_MIN_FOLLOWERS`·`VETTING_MIN_ENGAGEMENT_PERMILLE`)가 소유하며,
+  **자동 승인·반려는 하지 않는다**(자가입력 지표 — 운영자 판단 보조).
 - 새 ORM 추가 시 `crecity/alembic/env.py`에 import 한 줄 등록 필수(오토젠 대상).
 - (심사는 admin 앱. 키워드 검색·프로필 수정·포트폴리오는 2026-08-10 구축 완료)

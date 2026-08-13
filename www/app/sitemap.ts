@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { PERSONAS } from "@/lib/personas";
 import { backendGet } from "@/lib/server/backend-api";
 import { SITE_URL } from "@/lib/site";
 import type { ProfileListingResponse } from "@/lib/types";
@@ -36,6 +37,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE_URL, changeFrequency: "daily", priority: 1 },
     ...categoryHubs,
     ...profiles,
+    // 페르소나 랜딩(§5) — 카테고리 허브와 함께 상위 인덱싱 대상
+    ...PERSONAS.map((persona) => ({
+      url: `${SITE_URL}/for/${persona.slug}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
     // 무료 도구(§3.9) — 검색 유입용 리드 마그넷
     { url: `${SITE_URL}/tools`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/tools/pricing-calculator`, changeFrequency: "monthly", priority: 0.7 },
