@@ -4,7 +4,7 @@ from admin.app.dtos.withdrawal_settlement_dto import SettlementDecisionCommand
 from admin.app.exceptions import SettlementTargetNotFoundError
 from admin.app.ports.input.withdrawal_settlement_use_case import WithdrawalSettlementUseCase
 from admin.app.ports.output.settlement_record_port import SettlementRecordPort
-from hub.app.dtos.withdrawal_settlement_dto import WithdrawalSummary
+from hub.app.dtos.withdrawal_settlement_dto import AnnualPayoutSummary, WithdrawalSummary
 from hub.app.ports.output.withdrawal_settlement_port import WithdrawalSettlementPort
 
 
@@ -16,6 +16,9 @@ class WithdrawalSettlementInteractor(WithdrawalSettlementUseCase):
 
     async def list_pending(self) -> list[WithdrawalSummary]:
         return await self._withdrawals.list_pending()
+
+    async def annual_summary(self, year: int) -> list[AnnualPayoutSummary]:
+        return await self._withdrawals.annual_summary(year)
 
     async def settle(self, command: SettlementDecisionCommand) -> WithdrawalSummary:
         if command.completed:

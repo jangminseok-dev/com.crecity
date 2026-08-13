@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import AdminAnnualPayouts from "@/components/admin-annual-payouts";
 import AdminAuditLogs from "@/components/admin-audit-logs";
 import AdminDisputes from "@/components/admin-disputes";
 import AdminWithdrawals from "@/components/admin-withdrawals";
@@ -127,7 +128,12 @@ export default function AdminPage() {
         )}
       </div>
 
-      {(user?.permissions.includes("withdrawal.settle") ?? false) && <AdminWithdrawals />}
+      {(user?.permissions.includes("withdrawal.settle") ?? false) && (
+        <>
+          <AdminWithdrawals />
+          <AdminAnnualPayouts />
+        </>
+      )}
       {(user?.permissions.includes("dispute.resolve") ?? false) && <AdminDisputes />}
       <AdminAuditLogs />
     </div>

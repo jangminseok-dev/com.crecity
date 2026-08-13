@@ -3,6 +3,16 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+class AnnualPayoutSummarySchema(BaseModel):
+
+    creator_user_id: int
+    account_holder: str
+    count: int
+    total_amount_krw: int
+    total_tax_krw: int
+    total_payout_krw: int
+
+
 class WithdrawalSummarySchema(BaseModel):
 
     id: int

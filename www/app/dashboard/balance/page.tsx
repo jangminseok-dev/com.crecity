@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import PayoutStatement from "@/components/payout-statement";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -173,7 +174,12 @@ export default function DashboardBalancePage() {
           )}
         </CardContent>
       </Card>
-      {isCreator && <WithdrawalSection balanceKrw={balanceKrw} />}
+      {isCreator && (
+        <>
+          <WithdrawalSection balanceKrw={balanceKrw} />
+          <PayoutStatement />
+        </>
+      )}
     </div>
   );
 }

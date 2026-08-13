@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from hub.app.dtos.withdrawal_settlement_dto import WithdrawalSummary
+from hub.app.dtos.withdrawal_settlement_dto import AnnualPayoutSummary, WithdrawalSummary
 
 
 class WithdrawalSettlementPort(ABC):
@@ -25,4 +25,9 @@ class WithdrawalSettlementPort(ABC):
     @abstractmethod
     async def fail(self, withdrawal_id: int) -> WithdrawalSummary | None:
         """이체 실패(FAILED) + 잔액 복원 기입(원자적) — 없으면 None, 이미 처리됐으면 ValueError."""
+        ...
+
+    @abstractmethod
+    async def annual_summary(self, year: int) -> list[AnnualPayoutSummary]:
+        """연간 크리에이터별 지급 집계(지급명세서 제출 자료) — 지급액 큰 순."""
         ...

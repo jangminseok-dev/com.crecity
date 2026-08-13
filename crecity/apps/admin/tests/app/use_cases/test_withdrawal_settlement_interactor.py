@@ -3,7 +3,7 @@ import pytest
 from admin.app.dtos.withdrawal_settlement_dto import SettlementDecisionCommand
 from admin.app.exceptions import SettlementTargetNotFoundError
 from admin.app.use_cases.withdrawal_settlement_interactor import WithdrawalSettlementInteractor
-from hub.app.dtos.withdrawal_settlement_dto import WithdrawalSummary
+from hub.app.dtos.withdrawal_settlement_dto import AnnualPayoutSummary, WithdrawalSummary
 
 
 def _summary(id=1, status="PAID"):
@@ -37,6 +37,19 @@ class _StubPort:
         self.calls.append(("fail", withdrawal_id))
         return _summary(status="FAILED") if self.found else None
 
+    async def annual_summary(self, year):
+        self.calls.append(("annual_summary", year))
+        return [
+            AnnualPayoutSummary(
+                creator_user_id=7,
+                account_holder="김하늘",
+                count=2,
+                total_amount_krw=300_000,
+                total_tax_krw=9_900,
+                total_payout_krw=290_100,
+            )
+        ]
+
 
 class _StubRecord:
     def __init__(self):
@@ -65,6 +78,13 @@ async def test_실패_결정은_fail을_호출한다():
     result = await WithdrawalSettlementInteractor(port, record).settle(_command(completed=False))
     assert port.calls == [("fail", 1)]
     assert result.status == "FAILED"
+
+
+async def test_연간_집계는_포트를_그대로_통과시킨다():
+    port = _StubPort()
+    summaries = await WithdrawalSettlementInteractor(port, _StubRecord()).annual_summary(2026)
+    assert port.calls == [("annual_summary", 2026)]
+    assert summaries[0].total_tax_krw == 9_900
 
 
 async def test_대상이_없으면_SettlementTargetNotFoundError():

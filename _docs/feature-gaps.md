@@ -8,8 +8,11 @@
 - [x] **1. 크리에이터 인출(pay-out)** — ✅ 2026-08-11 구축. order `withdrawal_request`
   슬라이스(잔액 차감 원자적, advisory lock) + 허브 `WithdrawalSettlementPort` +
   admin 지급완료/실패(복원). 이체 실행은 운영자 수동 — 지급대행 API 연동 시 구현체 교체.
-- [ ] **2. 원천징수 3.3% + 지급명세서** — 🟡 절반: 세액 계산·기록(`WITHDRAWAL_TAX_PERMILLE`)은
-  1번과 함께 구축. **지급명세서 서류 발급·연간 집계는 잔여.**
+- [x] **2. 원천징수 3.3% + 지급명세서** — ✅ 완료. 세액 계산·기록은 2026-08-11,
+  **지급명세서는 2026-08-13**: 크리에이터 연간 명세(`GET /order/withdrawals/statements/{year}`
+  — 합계 3종 + 건별, 잔액 화면에 인쇄 가능한 표) + 운영자 연간 집계
+  (`GET /admin/withdrawals/annual-summary/{year}` — 크리에이터별 합계, 국세청 제출 자료).
+  지급일(settled_at) 기준 PAID만 집계 — **새 테이블 없음**(`AnnualPayout` VO).
 - [x] **3. 납품물 업로드(콘텐츠 제출 실체)** — ✅ 2026-08-11 구축. order
   `deliverable_submission` 슬라이스(파일·링크, append-only) + `submit`은 납품물 ≥1건
   필수(도메인 강제) + 주문 상세 납품물 섹션(크리에이터 업로드·브랜드 열람).

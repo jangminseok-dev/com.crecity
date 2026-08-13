@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from core.database import session_scope
-from hub.app.dtos.withdrawal_settlement_dto import WithdrawalSummary
+from hub.app.dtos.withdrawal_settlement_dto import AnnualPayoutSummary, WithdrawalSummary
 from hub.app.ports.output.withdrawal_settlement_port import WithdrawalSettlementPort
 from order.adapter.outbound.pg.withdrawal_pg_repository import WithdrawalPgRepository
 from order.domain.entities.ledger_entry_entity import LedgerEntryDraft, LedgerEntryType
@@ -10,6 +10,7 @@ from order.domain.entities.withdrawal_entity import (
     Withdrawal,
     WithdrawalStatus,
 )
+from order.domain.value_objects.annual_payout import AnnualPayout
 
 
 def _to_summary(withdrawal: Withdrawal) -> WithdrawalSummary:
@@ -36,6 +37,27 @@ class OrderWithdrawalSettlementGateway(WithdrawalSettlementPort):
                 WithdrawalStatus.REQUESTED
             )
         return [_to_summary(w) for w in pending]
+
+    async def annual_summary(self, year: int) -> list[AnnualPayoutSummary]:
+        async with session_scope() as session:
+            paid = await WithdrawalPgRepository(session).list_paid_in_year(year)
+
+        by_user: dict[int, list[Withdrawal]] = {}
+        for withdrawal in paid:
+            by_user.setdefault(withdrawal.user_id, []).append(withdrawal)
+        summaries = [
+            AnnualPayoutSummary(
+                creator_user_id=user_id,
+                account_holder=items[-1].account_holder,  # 최근 지급의 예금주
+                count=payout.count,
+                total_amount_krw=payout.total_amount_krw,
+                total_tax_krw=payout.total_tax_krw,
+                total_payout_krw=payout.total_payout_krw,
+            )
+            for user_id, items in by_user.items()
+            if (payout := AnnualPayout.of(user_id, items))
+        ]
+        return sorted(summaries, key=lambda s: s.total_amount_krw, reverse=True)
 
     async def complete(self, withdrawal_id: int) -> WithdrawalSummary | None:
         async with session_scope() as session:

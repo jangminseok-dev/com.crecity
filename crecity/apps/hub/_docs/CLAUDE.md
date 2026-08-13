@@ -19,6 +19,7 @@
 | 크레딧 잔액 조회 | `CreditBalancePort` 포트(`dependencies/credit_balance_provider.py`) | order(`OrderCreditBalanceGateway`) — main.py가 `register_credit_balance_port`로 조립 | payment 체크아웃 준비(크레딧 적용액 확정 — 실차감·재검증은 주문 생성 트랜잭션이 수행) |
 | 캠페인 지원 조회·확정 | `CampaignApplicationPort` 포트 + `CampaignApplicationSummary` DTO(`dependencies/campaign_application_provider.py`) | campaign(`CampaignApplicationGateway`) — main.py가 `register_campaign_application_port`로 조립 | payment 지원 수락 결제 준비·order_id 기록 · order 지원 수락 주문 생성(견적·당사자 해석) — 갭 #7 |
 | 주문 금액 변경 | `OrderAdjustmentPort` 포트 + `OrderAdjustmentSummary` DTO(`dependencies/order_adjustment_provider.py`) | order(`OrderAdjustmentGateway`) — main.py가 `register_order_adjustment_port`로 조립 | payment 추가 결제 준비·반영(갭 #31 — 반영 실패 시 None → PG 취소 보정) |
+| 인출 운영 처리 | `WithdrawalSettlementPort` 포트 + `WithdrawalSummary`·`AnnualPayoutSummary` DTO(`dependencies/withdrawal_settlement_provider.py`) | order(`OrderWithdrawalSettlementGateway`) | admin 인출 처리(완료·실패) + 연간 지급 집계(갭 #2) |
 | 분쟁 판정 | `DisputeResolutionPort` 포트 + `DisputeSummary` DTO(`dependencies/dispute_resolution_provider.py`) | order(`OrderDisputeResolutionGateway`) — main.py가 `register_dispute_resolution_port`로 조립 | admin 분쟁 중재(대기 목록·환불/지급/기각 판정 — 갭 #4) |
 | 활성 주문 확인 | `ActiveOrderPort`(`dependencies/active_order_provider.py`) | order(`OrderActiveOrderGateway`) | auth 계정 탈퇴 차단(갭 #33) |
 | 프로필 비활성화 | `ProfileDeactivationPort`(`dependencies/profile_deactivation_provider.py`) | creator(`CreatorProfileDeactivationGateway`) | auth 탈퇴 시 공개 프로필 DELETED 처리 |

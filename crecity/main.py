@@ -58,6 +58,7 @@ from order.adapter.inbound.api.v1.dispute_router import dispute_router
 from order.adapter.inbound.api.v1.order_adjustment_router import order_adjustment_router
 from order.adapter.inbound.api.v1.order_cancellation_router import order_cancellation_router
 from order.adapter.inbound.api.v1.order_lookup_router import order_lookup_router
+from order.adapter.inbound.api.v1.payout_statement_router import payout_statement_router
 from order.adapter.inbound.api.v1.order_progress_router import order_progress_router
 from order.adapter.outbound.hub.creator_popularity_gateway import OrderCreatorPopularityGateway
 from order.adapter.outbound.hub.credit_balance_gateway import OrderCreditBalanceGateway
@@ -183,6 +184,7 @@ app.include_router(dispute_router)
 app.include_router(order_lookup_router)
 app.include_router(balance_lookup_router)
 app.include_router(withdrawal_request_router)
+app.include_router(payout_statement_router)
 app.include_router(withdrawal_settlement_router)
 app.include_router(dispute_resolution_router)
 app.include_router(steward_router)

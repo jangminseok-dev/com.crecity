@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from admin.adapter.inbound.api.schemas.withdrawal_settlement_schema import (
+    AnnualPayoutSummarySchema,
     WithdrawalSummarySchema,
 )
 from admin.app.dtos.withdrawal_settlement_dto import SettlementDecisionCommand
@@ -41,6 +42,28 @@ async def list_pending_withdrawals(
     use_case: WithdrawalSettlementUseCase = Depends(get_withdrawal_settlement_use_case),
 ) -> list[WithdrawalSummarySchema]:
     return [_to_schema(summary) for summary in await use_case.list_pending()]
+
+
+@withdrawal_settlement_router.get(
+    "/withdrawals/annual-summary/{year}", response_model=list[AnnualPayoutSummarySchema]
+)
+async def annual_payout_summary(
+    year: int,
+    user: VerifiedUser = Depends(_settler),
+    use_case: WithdrawalSettlementUseCase = Depends(get_withdrawal_settlement_use_case),
+) -> list[AnnualPayoutSummarySchema]:
+    """연간 크리에이터별 지급 집계 — 국세청 지급명세서 제출 자료(갭 #2)."""
+    return [
+        AnnualPayoutSummarySchema(
+            creator_user_id=summary.creator_user_id,
+            account_holder=summary.account_holder,
+            count=summary.count,
+            total_amount_krw=summary.total_amount_krw,
+            total_tax_krw=summary.total_tax_krw,
+            total_payout_krw=summary.total_payout_krw,
+        )
+        for summary in await use_case.annual_summary(year)
+    ]
 
 
 async def _settle(

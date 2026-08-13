@@ -102,6 +102,20 @@ class WithdrawalPgRepository(WithdrawalRepository):
         )
         return [_to_entity(orm) for orm in result.scalars()]
 
+    async def list_paid_in_year(self, year: int, user_id: int | None = None) -> list[Withdrawal]:
+        conditions = [
+            WithdrawalOrm.status == WithdrawalStatus.PAID.value,
+            func.extract("year", WithdrawalOrm.settled_at) == year,
+        ]
+        if user_id is not None:
+            conditions.append(WithdrawalOrm.user_id == user_id)
+        result = await self._session.execute(
+            select(WithdrawalOrm)
+            .where(*conditions)
+            .order_by(WithdrawalOrm.settled_at, WithdrawalOrm.id)
+        )
+        return [_to_entity(orm) for orm in result.scalars()]
+
     async def save_settlement(
         self, withdrawal: Withdrawal, entries: list[LedgerEntryDraft]
     ) -> Withdrawal:

@@ -44,6 +44,14 @@ class WithdrawalRepository(ABC):
         ...
 
     @abstractmethod
+    async def list_paid_in_year(self, year: int, user_id: int | None = None) -> list[Withdrawal]:
+        """지급 완료(PAID)된 인출 — 지급일(settled_at) 연도 기준, 오래된 순.
+
+        지급명세서(갭 #2)용. user_id를 주면 그 크리에이터 몫만, 없으면 전체(운영 집계).
+        """
+        ...
+
+    @abstractmethod
     async def save_settlement(
         self, withdrawal: Withdrawal, entries: list[LedgerEntryDraft]
     ) -> Withdrawal:
