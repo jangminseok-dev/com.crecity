@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
+from core.config import VETTING_MIN_ENGAGEMENT_PERMILLE, VETTING_MIN_FOLLOWERS
 from core.database import session_scope
+from creator.adapter.outbound.pg.analytics_pg_repository import AnalyticsPgRepository
 from creator.adapter.outbound.pg.creator_profile_pg_repository import CreatorProfilePgRepository
 from creator.domain.entities.creator_profile_entity import CreatorProfile, ProfileStatus
+from creator.domain.value_objects.vetting_check import VettingCheck
 from hub.adapter.outbound.pg.outbox_pg_store import enqueue_events
 from hub.app.dtos.outbox_event_dto import OutboxEvent
 from hub.app.dtos.profile_review_dto import ProfileReviewSummary
@@ -12,8 +17,10 @@ from hub.app.ports.output.profile_review_port import ProfileReviewPort
 _PENDING_LIMIT = 50
 
 
-def _to_summary(profile: CreatorProfile) -> ProfileReviewSummary:
-    return ProfileReviewSummary(
+def _to_summary(
+    profile: CreatorProfile, check: VettingCheck | None = None
+) -> ProfileReviewSummary:
+    summary = ProfileReviewSummary(
         id=profile.id,
         slug=profile.slug,
         name=profile.name,
@@ -22,6 +29,17 @@ def _to_summary(profile: CreatorProfile) -> ProfileReviewSummary:
         primary_category=profile.primary_category,
         status=profile.status.value,
         created_at=profile.created_at,
+    )
+    if check is None:
+        return summary
+    return replace(
+        summary,
+        platform_count=check.platform_count,
+        total_followers=check.total_followers,
+        best_engagement_permille=check.best_engagement_permille,
+        min_followers=check.min_followers,
+        min_engagement_permille=check.min_engagement_permille,
+        vetting_passed=check.passed,
     )
 
 
@@ -33,8 +51,17 @@ class CreatorProfileReviewGateway(ProfileReviewPort):
             profiles = await CreatorProfilePgRepository(session).list_by_status(
                 status=ProfileStatus.PENDING, category=None, limit=_PENDING_LIMIT, offset=0
             )
+            analytics = AnalyticsPgRepository(session)
+            checks = {
+                profile.id: VettingCheck.of(
+                    await analytics.list_by_profile_id(profile.id),
+                    min_followers=VETTING_MIN_FOLLOWERS,
+                    min_engagement_permille=VETTING_MIN_ENGAGEMENT_PERMILLE,
+                )
+                for profile in profiles
+            }
         # list_by_status는 최신순 — 심사는 오래 기다린 순서가 공정하다
-        return [_to_summary(profile) for profile in reversed(profiles)]
+        return [_to_summary(profile, checks[profile.id]) for profile in reversed(profiles)]
 
     async def review_profile(self, profile_id: int, approved: bool) -> ProfileReviewSummary | None:
         status = ProfileStatus.APPROVED if approved else ProfileStatus.REJECTED

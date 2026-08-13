@@ -14,3 +14,10 @@ class ProfileReviewSummary:
     primary_category: str
     status: str
     created_at: datetime | None
+    # 정량 vetting 자동 체크(갭 #16) — 참고선일 뿐, 승인·반려는 운영자가 결정한다
+    platform_count: int = 0
+    total_followers: int = 0
+    best_engagement_permille: int | None = None
+    min_followers: int = 0
+    min_engagement_permille: int = 0
+    vetting_passed: bool = False

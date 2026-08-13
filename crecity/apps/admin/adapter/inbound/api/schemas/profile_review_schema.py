@@ -15,6 +15,13 @@ class ProfileReviewResponseSchema(BaseModel):
     primary_category: str
     status: str
     created_at: datetime | None
+    # 정량 vetting 자동 체크(갭 #16) — 참고선, 승인·반려 결정은 운영자 몫
+    platform_count: int
+    total_followers: int
+    best_engagement_permille: int | None
+    min_followers: int
+    min_engagement_permille: int
+    vetting_passed: bool
 
     @classmethod
     def from_summary(cls, summary: ProfileReviewSummary) -> "ProfileReviewResponseSchema":
@@ -27,4 +34,10 @@ class ProfileReviewResponseSchema(BaseModel):
             primary_category=summary.primary_category,
             status=summary.status,
             created_at=summary.created_at,
+            platform_count=summary.platform_count,
+            total_followers=summary.total_followers,
+            best_engagement_permille=summary.best_engagement_permille,
+            min_followers=summary.min_followers,
+            min_engagement_permille=summary.min_engagement_permille,
+            vetting_passed=summary.vetting_passed,
         )

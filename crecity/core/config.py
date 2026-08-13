@@ -43,5 +43,10 @@ ORDER_RESPONSE_DEADLINE_HOURS = int(_secrets.get("ORDER_RESPONSE_DEADLINE_HOURS"
 # 인기 랭킹에서 수락 만료 1건이 상쇄하는 성사 주문 수(§3.8 — 무응답 페널티)
 RANKING_ACCEPT_EXPIRY_PENALTY = int(_secrets.get("RANKING_ACCEPT_EXPIRY_PENALTY", "2"))
 
+# 프로필 심사 정량 기준(갭 #16) — 자동 체크의 참고선일 뿐 자동 승인·반려는 하지 않는다.
+# 팔로워 1,000(나노 인플루언서 진입선) · 참여율 1.0%(=10‰, 통상 양호 하한).
+VETTING_MIN_FOLLOWERS = int(_secrets.get("VETTING_MIN_FOLLOWERS", "1000"))
+VETTING_MIN_ENGAGEMENT_PERMILLE = int(_secrets.get("VETTING_MIN_ENGAGEMENT_PERMILLE", "10"))
+
 # 업로드 파일 저장 루트 — 로컬 디스크 시작(오브젝트 스토리지 전환 시 어댑터 교체).
 UPLOAD_DIR = _secrets.get("UPLOAD_DIR", "uploads")

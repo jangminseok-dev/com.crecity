@@ -24,7 +24,54 @@ type PendingProfile = {
   primary_category: string;
   status: string;
   created_at: string | null;
+  platform_count: number;
+  total_followers: number;
+  best_engagement_permille: number | null;
+  min_followers: number;
+  min_engagement_permille: number;
+  vetting_passed: boolean;
 };
+
+/** 정량 기준 자동 체크 — 자가입력 지표라 참고선일 뿐, 최종 판단은 스크린샷을 보고 한다. */
+function VettingChecklist({ profile }: { profile: PendingProfile }) {
+  const followersOk = profile.total_followers >= profile.min_followers;
+  const engagementOk =
+    profile.best_engagement_permille !== null &&
+    profile.best_engagement_permille >= profile.min_engagement_permille;
+  const rows = [
+    {
+      ok: profile.platform_count > 0,
+      label: `채널 지표 등록 ${profile.platform_count}개`,
+    },
+    {
+      ok: followersOk,
+      label: `팔로워 합계 ${profile.total_followers.toLocaleString("ko-KR")}명 (기준 ${profile.min_followers.toLocaleString("ko-KR")}명)`,
+    },
+    {
+      ok: engagementOk,
+      label: `참여율 ${
+        profile.best_engagement_permille === null
+          ? "미입력"
+          : `${(profile.best_engagement_permille / 10).toFixed(1)}%`
+      } (기준 ${(profile.min_engagement_permille / 10).toFixed(1)}%)`,
+    },
+  ];
+
+  return (
+    <div className="rounded-md bg-muted p-3">
+      <p className="text-xs font-semibold">
+        정량 기준 {profile.vetting_passed ? "충족" : "미충족"} — 참고용(자가입력 지표)
+      </p>
+      <ul className="mt-2 grid gap-1 text-[13px]">
+        {rows.map((row) => (
+          <li key={row.label} className={row.ok ? "text-muted-foreground" : "text-destructive"}>
+            {row.ok ? "✓" : "✕"} {row.label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export default function AdminPage() {
   const { status, user } = useAuthStore();
@@ -101,6 +148,7 @@ export default function AdminPage() {
                 </div>
                 <p className="text-sm text-muted-foreground">{profile.tagline}</p>
                 <p className="line-clamp-3 whitespace-pre-line text-sm">{profile.bio}</p>
+                <VettingChecklist profile={profile} />
                 <div className="flex gap-2">
                   <Button
                     size="sm"
