@@ -54,6 +54,7 @@ from order.adapter.inbound.api.v1.bookkeeper_router import bookkeeper_router
 from order.adapter.inbound.api.v1.deliverable_submission_router import (
     deliverable_submission_router,
 )
+from order.adapter.inbound.api.v1.dispute_router import dispute_router
 from order.adapter.inbound.api.v1.order_adjustment_router import order_adjustment_router
 from order.adapter.inbound.api.v1.order_cancellation_router import order_cancellation_router
 from order.adapter.inbound.api.v1.order_lookup_router import order_lookup_router
@@ -63,8 +64,10 @@ from order.adapter.outbound.hub.credit_balance_gateway import OrderCreditBalance
 from order.adapter.outbound.hub.active_order_gateway import OrderActiveOrderGateway
 from order.adapter.outbound.hub.order_adjustment_gateway import OrderAdjustmentGateway
 from order.adapter.outbound.hub.order_placement_gateway import PaidOrderPlacementGateway
+from order.adapter.outbound.hub.dispute_resolution_gateway import OrderDisputeResolutionGateway
 from order.adapter.outbound.hub.withdrawal_settlement_gateway import OrderWithdrawalSettlementGateway
 from order.adapter.inbound.api.v1.withdrawal_request_router import withdrawal_request_router
+from admin.adapter.inbound.api.v1.dispute_resolution_router import dispute_resolution_router
 from admin.adapter.inbound.api.v1.withdrawal_settlement_router import withdrawal_settlement_router
 from payment.adapter.inbound.api.v1.checkout_preparation_router import (
     checkout_preparation_router,
@@ -110,6 +113,7 @@ from notification.adapter.inbound.api.v1.notification_listing_router import (
     notification_listing_router,
 )
 from hub.dependencies.creator_popularity_provider import register_creator_popularity_port
+from hub.dependencies.dispute_resolution_provider import register_dispute_resolution_port
 from hub.dependencies.withdrawal_settlement_provider import register_withdrawal_settlement_port
 from hub.dependencies.creator_rating_provider import register_creator_rating_port
 from review.adapter.outbound.hub.creator_rating_gateway import ReviewCreatorRatingGateway
@@ -130,6 +134,7 @@ register_user_directory_port(UserDirectoryGateway())  # auth → 회원 디렉�
 register_creator_rating_port(ReviewCreatorRatingGateway())  # review → 평점 요약(목록 카드)
 register_creator_popularity_port(OrderCreatorPopularityGateway())  # order → 인기 순위(홈 섹션)
 register_withdrawal_settlement_port(OrderWithdrawalSettlementGateway())  # order → 인출 운영 처리
+register_dispute_resolution_port(OrderDisputeResolutionGateway())  # order → 분쟁 판정
 register_credit_balance_port(OrderCreditBalanceGateway())  # order → 크레딧 잔액(체크아웃 적용액 확정)
 register_campaign_application_port(CampaignApplicationGateway())  # campaign → 지원 수락 결제
 register_order_adjustment_port(OrderAdjustmentGateway())  # order → 금액 변경 추가 결제
@@ -174,10 +179,12 @@ app.include_router(order_progress_router)
 app.include_router(order_cancellation_router)
 app.include_router(order_adjustment_router)
 app.include_router(deliverable_submission_router)
+app.include_router(dispute_router)
 app.include_router(order_lookup_router)
 app.include_router(balance_lookup_router)
 app.include_router(withdrawal_request_router)
 app.include_router(withdrawal_settlement_router)
+app.include_router(dispute_resolution_router)
 app.include_router(steward_router)
 app.include_router(profile_review_router)
 app.include_router(audit_log_router)

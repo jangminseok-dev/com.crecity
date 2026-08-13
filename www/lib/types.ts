@@ -89,6 +89,17 @@ export type Deliverable = {
   created_at: string | null;
 };
 
+export type Dispute = {
+  id: number;
+  order_id: number;
+  raised_by_user_id: number;
+  reason: string;
+  status: "OPEN" | "RESOLVED";
+  resolution: "REFUND" | "RELEASE" | "DISMISS" | null;
+  created_at: string | null;
+  resolved_at: string | null;
+};
+
 export type Campaign = {
   id: number;
   brand_user_id: number;

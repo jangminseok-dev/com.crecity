@@ -20,7 +20,7 @@ class OrderStatus(StrEnum):
     IN_REVIEW = "IN_REVIEW"
     COMPLETED = "COMPLETED"
     REFUNDED = "REFUNDED"
-    CANCELLED = "CANCELLED"  # 양측 합의 취소 — IN_PROGRESS·IN_REVIEW에서 요청→상대 동의 시(전액 환불)
+    CANCELLED = "CANCELLED"  # 합의 취소(요청→상대 동의) 또는 분쟁 환불 판정 — 둘 다 전액 환불
 
 
 class InvalidOrderTransitionError(Exception):
@@ -233,15 +233,7 @@ class Order:
         if self.cancel_requested_by is None:
             raise InvalidOrderTransitionError("대기 중인 취소 요청이 없습니다.")
         self._require_counterpart(actor_user_id)
-        cancelled = replace(self, status=OrderStatus.CANCELLED, deadline_at=None)
-        entries = [
-            LedgerEntryDraft(
-                entry_type=LedgerEntryType.BRAND_CREDIT_REFUND,
-                user_id=self.brand_user_id,
-                amount_krw=self.brand_total_krw(),
-            )
-        ]
-        return cancelled, entries
+        return self._cancel_with_refund()
 
     def decline_cancellation(self, actor_user_id: int) -> Order:
         """상대방 거부 → 취소 요청 해제, 주문은 계속 진행된다."""
@@ -251,7 +243,35 @@ class Order:
         self._require_counterpart(actor_user_id)
         return replace(self, cancel_requested_by=None)
 
+    # ── 분쟁 중재 (collabstr §3.8 지원팀 중재 — 갭 #4) ────────────────────
+
+    def ensure_can_raise_dispute(self, actor_user_id: int) -> None:
+        """분쟁 신고 검증 — 진행 중·검토 중 주문의 당사자만."""
+        self._require_participant(actor_user_id)
+        self._require_cancellable("분쟁 신고")
+
+    def resolve_dispute_refund(self) -> tuple[Order, list[LedgerEntryDraft]]:
+        """운영자 판정: 브랜드 전액 환불(크레딧) — 주문은 취소된다."""
+        self._require_cancellable("분쟁 환불 판정")
+        return self._cancel_with_refund()
+
+    def resolve_dispute_release(self) -> tuple[Order, list[LedgerEntryDraft]]:
+        """운영자 판정: 크리에이터 전액 지급 — 구매 확정과 같은 기입."""
+        self._require_cancellable("분쟁 지급 판정")
+        return self._complete()
+
     # ── 전이 결과 (원장 기입과 원자적으로 저장돼야 한다 — BOUNDARIES §1) ──
+
+    def _cancel_with_refund(self) -> tuple[Order, list[LedgerEntryDraft]]:
+        cancelled = replace(self, status=OrderStatus.CANCELLED, deadline_at=None)
+        entries = [
+            LedgerEntryDraft(
+                entry_type=LedgerEntryType.BRAND_CREDIT_REFUND,
+                user_id=self.brand_user_id,
+                amount_krw=self.brand_total_krw(),
+            )
+        ]
+        return cancelled, entries
 
     def _refund(self) -> tuple[Order, list[LedgerEntryDraft]]:
         refunded = replace(self, status=OrderStatus.REFUNDED, deadline_at=None)

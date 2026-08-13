@@ -6,10 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from hub.adapter.outbound.pg.outbox_pg_store import enqueue_events
 from hub.app.dtos.outbox_event_dto import OutboxEvent
 from order.adapter.outbound.mappers.order_mapper import OrderMapper
+from order.adapter.outbound.orm.dispute_orm import DisputeOrm
 from order.adapter.outbound.orm.ledger_entry_orm import LedgerEntryOrm
 from order.adapter.outbound.orm.order_orm import OrderOrm
 from order.adapter.outbound.pg.ledger_pg_repository import _SIGNED_AMOUNT
 from order.app.ports.output.order_repository import OrderRepository
+from order.domain.entities.dispute_entity import DisputeStatus
 from order.domain.entities.ledger_entry_entity import LedgerEntryDraft
 from order.domain.entities.order_entity import Order, OrderStatus
 
@@ -143,9 +145,22 @@ class OrderPgRepository(OrderRepository):
         return [OrderMapper.to_entity(orm) for orm in result.scalars()]
 
     async def find_expired(self, now: datetime, limit: int) -> list[Order]:
+        # 처리 대기 분쟁이 있으면 만료 처리(자동 승인·환불)를 보류한다 — 판정이 우선(갭 #4)
+        open_dispute = (
+            select(DisputeOrm.id)
+            .where(
+                DisputeOrm.order_id == OrderOrm.id,
+                DisputeOrm.status == DisputeStatus.OPEN.value,
+            )
+            .exists()
+        )
         result = await self._session.execute(
             select(OrderOrm)
-            .where(OrderOrm.status.in_(_EXPIRABLE_STATUSES), OrderOrm.deadline_at < now)
+            .where(
+                OrderOrm.status.in_(_EXPIRABLE_STATUSES),
+                OrderOrm.deadline_at < now,
+                ~open_dispute,
+            )
             .order_by(OrderOrm.deadline_at)
             .limit(limit)
         )

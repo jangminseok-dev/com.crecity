@@ -46,6 +46,22 @@ def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
         ]
     if t == "order.cancel_declined":
         return [NotificationDraft(p["requested_by"], t, f"취소 요청이 거부되어 주문이 계속 진행됩니다: {title}", _order_link(p))]
+    if t == "order.dispute_raised":
+        # 수신자 = 신고자의 상대방
+        recipient = (
+            p["creator_user_id"] if p.get("raised_by") == p["brand_user_id"] else p["brand_user_id"]
+        )
+        return [NotificationDraft(recipient, t, f"분쟁이 접수되었습니다 — 운영자가 검토합니다: {title}", _order_link(p))]
+    if t == "order.dispute_resolved":
+        outcome = {
+            "REFUND": "브랜드 전액 환불로 종결되었습니다",
+            "RELEASE": "크리에이터 전액 지급으로 종결되었습니다",
+            "DISMISS": "기각되어 주문이 그대로 진행됩니다",
+        }.get(str(p.get("resolution")), "처리되었습니다")
+        return [
+            NotificationDraft(p["brand_user_id"], t, f"분쟁이 {outcome}: {title}", _order_link(p)),
+            NotificationDraft(p["creator_user_id"], t, f"분쟁이 {outcome}: {title}", _order_link(p)),
+        ]
     if t == "profile.approved":
         return [NotificationDraft(p["creator_user_id"], t, "프로필 심사가 승인되었습니다 — 마켓 목록에 노출됩니다.", "/dashboard/profile")]
     if t == "profile.rejected":

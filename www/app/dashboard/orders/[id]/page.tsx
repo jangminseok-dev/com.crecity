@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import OrderAdjustmentSection from "@/components/order-adjustment-section";
 import OrderDeliverablesSection from "@/components/order-deliverables-section";
+import OrderDisputeSection from "@/components/order-dispute-section";
 import OrderReviewSection from "@/components/order-review-section";
 import OrderStatusBadge from "@/components/order-status-badge";
 import { Button } from "@/components/ui/button";
@@ -208,6 +209,11 @@ export default function OrderDetailPage() {
           canUpload={!isBrand && order.status === "IN_PROGRESS"}
         />
       )}
+
+      <OrderDisputeSection
+        orderId={order.id}
+        canRaise={["IN_PROGRESS", "IN_REVIEW"].includes(order.status)}
+      />
 
       {actions.length > 0 && (
         <div className="grid gap-2">
