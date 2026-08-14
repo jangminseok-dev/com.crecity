@@ -17,6 +17,8 @@ import zlib
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "apps"))
 
+from datetime import datetime, timedelta, timezone  # noqa: E402
+
 from sqlalchemy import insert  # noqa: E402
 
 from core.database import dispose_engine, init_engine, session_scope  # noqa: E402
@@ -36,7 +38,18 @@ from creator.adapter.outbound.pg.portfolio_item_pg_repository import (  # noqa: 
 )
 from creator.domain.entities.creator_package_entity import PackagePlatform  # noqa: E402
 from creator.domain.entities.creator_profile_entity import ProfileStatus  # noqa: E402
+from core.config import (  # noqa: E402
+    ORDER_BRAND_FEE_PERCENT,
+    ORDER_CREATOR_FEE_PERCENT,
+    ORDER_RESPONSE_DEADLINE_HOURS,
+)
+from order.adapter.outbound.orm.ledger_entry_orm import LedgerEntryOrm  # noqa: E402
 from order.adapter.outbound.orm.order_orm import OrderOrm  # noqa: E402
+from order.domain.entities.ledger_entry_entity import (  # noqa: E402
+    LedgerEntryDraft,
+    LedgerEntryType,
+)
+from order.domain.entities.order_entity import Order, OrderStatus  # noqa: E402
 from review.adapter.outbound.orm.review_orm import ReviewOrm  # noqa: E402
 
 # (slug, 이름, 카테고리, 지역, 한 줄 소개, 그라데이션 색 2개, 패키지들, 완료 주문 수, 리뷰 점수들)
@@ -133,6 +146,82 @@ def _png(width: int, height: int, top: tuple, bottom: tuple) -> bytes:
     )
 
 
+async def _place_and_complete_order(
+    session,
+    *,
+    package_id: int,
+    package_title: str,
+    price_krw: int,
+    brand_user_id: int,
+    creator_user_id: int,
+    requirements: str,
+) -> tuple[int, int]:
+    """정상 결제와 같은 흐름으로 완료 주문 하나를 만든다 — (주문 id, 원장 기입 수).
+
+    수수료율은 하드코딩하지 않고 `core.config` 값을 쓴다(운영 설정과 어긋나지 않게).
+    상태 전이·원장 초안은 도메인 `Order`가 만든다 — 여기서 금액을 다시 계산하지 않는다.
+    """
+    now = datetime.now(timezone.utc)
+    draft = Order(
+        id=0,
+        package_id=package_id,
+        package_title=package_title,
+        brand_user_id=brand_user_id,
+        creator_user_id=creator_user_id,
+        amount_krw=price_krw,
+        brand_fee_percent=ORDER_BRAND_FEE_PERCENT,
+        creator_fee_percent=ORDER_CREATOR_FEE_PERCENT,
+        requirements=requirements,
+        status=OrderStatus.PENDING_ACCEPT,
+        deadline_at=now + timedelta(hours=ORDER_RESPONSE_DEADLINE_HOURS),
+    )
+    # 결제 → 예치 → 수락 → 제출 → 승인(적립·수수료 확정)
+    accepted = draft.accept(creator_user_id)
+    submitted = accepted.submit(
+        actor_user_id=creator_user_id,
+        now=now,
+        review_deadline=timedelta(hours=ORDER_RESPONSE_DEADLINE_HOURS),
+        deliverable_count=1,
+    )
+    completed, approval_entries = submitted.approve(brand_user_id)
+
+    order_row = await session.execute(
+        insert(OrderOrm)
+        .values(
+            package_id=completed.package_id,
+            package_title=completed.package_title,
+            brand_user_id=completed.brand_user_id,
+            creator_user_id=completed.creator_user_id,
+            amount_krw=completed.amount_krw,
+            brand_fee_percent=completed.brand_fee_percent,
+            creator_fee_percent=completed.creator_fee_percent,
+            requirements=completed.requirements,
+            status=completed.status.value,
+            revision_limit=completed.revision_limit,
+            revisions_used=completed.revisions_used,
+            usage_rights=completed.usage_rights,
+        )
+        .returning(OrderOrm.id)
+    )
+    order_id = order_row.scalar_one()
+
+    deposit = LedgerEntryDraft(
+        entry_type=LedgerEntryType.ESCROW_DEPOSIT,
+        user_id=brand_user_id,
+        amount_krw=draft.brand_total_krw(),
+    )
+    for entry in [deposit, *approval_entries]:
+        await session.execute(
+            insert(LedgerEntryOrm).values(
+                order_id=order_id,
+                entry_type=entry.entry_type.value,
+                user_id=entry.user_id,
+                amount_krw=entry.amount_krw,
+            )
+        )
+    return order_id, 1 + len(approval_entries)
+
+
 async def main() -> None:
     init_engine()
     storage = LocalPortfolioFileStorage()
@@ -192,26 +281,24 @@ async def main() -> None:
                     file_name = storage.save(content, "png")
                     await portfolio.create(profile_id=profile.id, file_name=file_name)
 
-                # 완료 주문 + 리뷰 — 인기 순위·평점 표시용
+                ledger_rows = 0
+                # 완료 주문 + 리뷰 — 인기 순위·평점 표시용.
+                # **원장까지 남긴다**: 주문 행만 넣으면 운영 대시보드(갭 #55)의 수수료 수입과
+                # 거래 지표(갭 #65·#66)가 실제와 어긋난다. 도메인 전이를 그대로 태워
+                # 예치·적립·수수료 기입을 정상 결제와 같은 모양으로 만든다.
                 for scores in demo["reviews"][: demo["orders"]]:
                     order_seq += 1
                     package = created_packages[0]
-                    order_row = await session.execute(
-                        insert(OrderOrm)
-                        .values(
-                            package_id=package.id,
-                            package_title=package.title,
-                            brand_user_id=brand.id,
-                            creator_user_id=user.id,
-                            amount_krw=package.price_krw,
-                            brand_fee_percent=5,
-                            creator_fee_percent=15,
-                            requirements=f"데모 주문 {order_seq} — 시연용 데이터입니다.",
-                            status="COMPLETED",
-                        )
-                        .returning(OrderOrm.id)
+                    order_id, entries = await _place_and_complete_order(
+                        session,
+                        package_id=package.id,
+                        package_title=package.title,
+                        price_krw=package.price_krw,
+                        brand_user_id=brand.id,
+                        creator_user_id=user.id,
+                        requirements=f"데모 주문 {order_seq} — 시연용 데이터입니다.",
                     )
-                    order_id = order_row.scalar_one()
+                    ledger_rows += entries
                     communication, timeliness, satisfaction = scores
                     await session.execute(
                         insert(ReviewOrm).values(
@@ -225,7 +312,10 @@ async def main() -> None:
                         )
                     )
                 await session.commit()
-                print(f"생성: {demo['slug']} (패키지 {len(created_packages)} · 사진 3 · 주문 {demo['orders']})")
+                print(
+                    f"생성: {demo['slug']} (패키지 {len(created_packages)} · 사진 3 · "
+                    f"주문 {demo['orders']} · 원장 {ledger_rows})"
+                )
     finally:
         await dispose_engine()
 
