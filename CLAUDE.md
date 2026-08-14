@@ -118,6 +118,9 @@ cd www && pnpm run dev
 cd www && pnpm run typecheck
 ```
 
+- **스모크 회귀**(서버를 띄운 뒤): `.venv/bin/python scripts/smoke.py [--frontend]`
+  — 라우터 조립·권한 게이트·응답 필드·DB 정합성을 실제 서버에 대고 확인한다.
+  pytest·typecheck가 못 잡는 영역이다(스텁·타입은 실제 응답을 보지 않는다).
 - **개발용 토큰**(로그인이 필요한 API를 확인할 때):
   `cd crecity && PYTHONPATH=.:apps ../.venv/bin/python scripts/dev_issue_token.py <이메일>`
   (계정 목록은 `--list`). 실제 발급기를 그대로 쓰므로 진짜 토큰과 같다.
