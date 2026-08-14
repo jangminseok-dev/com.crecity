@@ -75,11 +75,17 @@ class DisputePgRepository(DisputeRepository):
         return [_to_entity(orm) for orm in result.scalars()]
 
     async def list_open(self) -> list[Dispute]:
-        result = await self._session.execute(
-            select(DisputeOrm)
-            .where(DisputeOrm.status == DisputeStatus.OPEN.value)
-            .order_by(DisputeOrm.created_at, DisputeOrm.id)
+        return await self.list_by_status(DisputeStatus.OPEN)
+
+    async def list_by_status(self, status: DisputeStatus) -> list[Dispute]:
+        """대기는 오래된 순, 판정 완료는 최근 순(갭 #71 — 최근 판단부터 본다)."""
+        statement = select(DisputeOrm).where(DisputeOrm.status == status.value)
+        statement = (
+            statement.order_by(DisputeOrm.created_at, DisputeOrm.id)
+            if status is DisputeStatus.OPEN
+            else statement.order_by(DisputeOrm.resolved_at.desc(), DisputeOrm.id.desc())
         )
+        result = await self._session.execute(statement)
         return [_to_entity(orm) for orm in result.scalars()]
 
     async def resolve(

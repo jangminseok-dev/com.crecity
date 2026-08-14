@@ -12,6 +12,9 @@
 | campaign_application | `POST·GET /campaign/campaigns/{id}/applications` | 지원(**크리에이터만·프로필 필수 403**, 공고당 1회 409, 마감 공고·마감일 경과 409) · 지원자 열람(**공고 브랜드만 403**) |
 | campaign_deadline_sweep | (HTTP 없음) | 지원 마감일 스캔 — `scripts/campaign_deadline_sweep.py`를 cron이 주기 실행(갭 #27). 마감일 경과 OPEN 공고 → CLOSED |
 
+- **지원자 정렬·필터(갭 #70)**: `ApplicationSort`(oldest·latest·price_asc·price_desc)
+  + `only_open`(미수락만). 캠페인이 소유한 값으로만 정렬한다 — 팔로워·평점은 다른 스포크
+  소유라 DB 정렬이 스포크 경계를 넘는다(갭 #45와 같은 이유).
 - 엔티티: `Campaign`(+`CampaignPlatform`·`CampaignStatus`, `close`·`expire` 전이) ·
   `CampaignApplication`. 플랫폼 enum은 스포크 독립 원칙상 자체 정의(creator enum 미참조).
 - **마감일·타겟팅(갭 #27·#28)**: `deadline_at`(선택)이 지나면 스윕이 CLOSED로 전이하고,

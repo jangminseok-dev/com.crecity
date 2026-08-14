@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from admin.domain.entities.report_entity import Report, ReportTargetType
+from admin.domain.entities.report_entity import Report, ReportStatus, ReportTargetType
 
 
 class ReportRepository(ABC):
@@ -28,8 +28,8 @@ class ReportRepository(ABC):
         ...
 
     @abstractmethod
-    async def list_open(self, limit: int) -> list[Report]:
-        """처리 대기 신고 — 오래된 순(먼저 들어온 것부터 본다)."""
+    async def list_by_status(self, status: ReportStatus, limit: int) -> list[Report]:
+        """상태별 신고 — 대기는 오래된 순(먼저 들어온 것부터), 처리 완료는 최근 순(갭 #71)."""
         ...
 
     @abstractmethod

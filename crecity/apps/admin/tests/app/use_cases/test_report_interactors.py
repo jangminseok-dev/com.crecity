@@ -33,6 +33,8 @@ class _StubReports:
         self.has_open = has_open
         self.created: list[dict] = []
         self.resolved: list[dict] = []
+        self.list_calls: list[ReportStatus] = []
+        self.all_reports: list[Report] = [existing] if existing else []
 
     async def create(self, reporter_user_id, target_type, target_id, reason) -> Report:
         self.created.append(
@@ -51,8 +53,9 @@ class _StubReports:
     async def exists_open_by_reporter(self, reporter_user_id, target_type, target_id) -> bool:
         return self.has_open
 
-    async def list_open(self, limit: int) -> list[Report]:
-        return [_report()] if self.existing is None else [self.existing]
+    async def list_by_status(self, status, limit: int) -> list[Report]:
+        self.list_calls.append(status)
+        return [report for report in self.all_reports if report.status is status]
 
     async def resolve(self, report_id: int, resolver_user_id: int, note: str):
         self.resolved.append({"id": report_id, "by": resolver_user_id, "note": note})
@@ -139,3 +142,18 @@ async def test_없는_신고를_처리하면_404_예외():
         await ReportReviewInteractor(reports=_StubReports(), record=_StubRecord()).resolve(
             ReportResolveCommand(report_id=404, resolver_user_id=RESOLVER, note="")
         )
+
+
+async def test_처리_완료_이력을_따로_조회한다():
+    # 갭 #71 — 지난 판정을 다시 볼 수 없으면 운영 인수인계가 어렵다
+    resolved = _report(report_id=2, status=ReportStatus.RESOLVED)
+    reports = _StubReports()
+    reports.all_reports = [_report(report_id=1), resolved]
+    interactor = ReportReviewInteractor(reports=reports, record=_StubRecord())
+
+    open_list = await interactor.list_reports()
+    done_list = await interactor.list_reports(resolved=True)
+
+    assert [r.id for r in open_list] == [1]
+    assert [r.id for r in done_list] == [2]
+    assert reports.list_calls == [ReportStatus.OPEN, ReportStatus.RESOLVED]

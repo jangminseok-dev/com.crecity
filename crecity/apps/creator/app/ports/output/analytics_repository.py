@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from creator.domain.entities.profile_analytics_entity import ProfileAnalytics
+from creator.domain.value_objects.audience_breakdown import AudienceShare
 
 
 class AnalyticsRepository(ABC):
@@ -16,7 +17,12 @@ class AnalyticsRepository(ABC):
         followers_count: int,
         engagement_permille: int | None,
         screenshot_file_name: str,
-    ) -> ProfileAnalytics: ...
+        top_audience_region: str | None = None,
+        audience: list[AudienceShare] | None = None,
+    ) -> ProfileAnalytics:
+        """채널 지표 저장 — 오디언스 비율(갭 #67)은 **매번 통째로 교체**한다
+        (부분 갱신은 합계 검증을 무력화한다)."""
+        ...
 
     @abstractmethod
     async def list_by_profile_id(self, profile_id: int) -> list[ProfileAnalytics]:

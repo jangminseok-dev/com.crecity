@@ -11,6 +11,7 @@ from order.app.events import order_event
 from order.domain.entities.dispute_entity import (
     Dispute,
     DisputeResolution,
+    DisputeStatus,
     InvalidDisputeStateError,
 )
 from order.domain.entities.ledger_entry_entity import LedgerEntryDraft
@@ -50,8 +51,14 @@ class OrderDisputeResolutionGateway(DisputeResolutionPort):
     """허브 DisputeResolutionPort 계약의 order 구현 — main.py가 조립한다."""
 
     async def list_open(self) -> list[DisputeSummary]:
+        return await self._list(DisputeStatus.OPEN)
+
+    async def list_resolved(self) -> list[DisputeSummary]:
+        return await self._list(DisputeStatus.RESOLVED)
+
+    async def _list(self, status: DisputeStatus) -> list[DisputeSummary]:
         async with session_scope() as session:
-            disputes = await DisputePgRepository(session).list_open()
+            disputes = await DisputePgRepository(session).list_by_status(status)
             orders = OrderPgRepository(session)
             summaries = []
             for dispute in disputes:

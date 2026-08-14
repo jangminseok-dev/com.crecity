@@ -31,6 +31,11 @@ class OrderResponseSchema(BaseModel):
     # 조회 요청자 기준 거래 상대(갭 #63)
     counterpart_name: str | None = None
     counterpart_slug: str | None = None
+    # 상대의 거래 이력(갭 #65·#66) — 이력이 없으면 null
+    counterpart_completed_orders: int | None = None
+    counterpart_cancelled_orders: int | None = None
+    counterpart_accept_expired_orders: int | None = None
+    counterpart_total_revisions: int | None = None
 
     @classmethod
     def from_result(cls, result: OrderResult) -> OrderResponseSchema:
@@ -55,4 +60,8 @@ class OrderResponseSchema(BaseModel):
             created_at=result.created_at,
             counterpart_name=result.counterpart_name,
             counterpart_slug=result.counterpart_slug,
+            counterpart_completed_orders=result.counterpart_completed_orders,
+            counterpart_cancelled_orders=result.counterpart_cancelled_orders,
+            counterpart_accept_expired_orders=result.counterpart_accept_expired_orders,
+            counterpart_total_revisions=result.counterpart_total_revisions,
         )

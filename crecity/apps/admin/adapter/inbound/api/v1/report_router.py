@@ -55,7 +55,17 @@ async def list_open_reports(
     _actor=Depends(_handler),
     use_case: ReportReviewUseCase = Depends(get_report_review_use_case),
 ) -> list[ReportResponseSchema]:
-    results = await use_case.list_open()
+    results = await use_case.list_reports()
+    return [ReportResponseSchema.from_result(result) for result in results]
+
+
+@report_router.get("/reports/resolved", response_model=list[ReportResponseSchema])
+async def list_resolved_reports(
+    _actor=Depends(_handler),
+    use_case: ReportReviewUseCase = Depends(get_report_review_use_case),
+) -> list[ReportResponseSchema]:
+    """처리 완료 이력(갭 #71) — 최근 판단부터. 운영 인수인계·재발 확인용."""
+    results = await use_case.list_reports(resolved=True)
     return [ReportResponseSchema.from_result(result) for result in results]
 
 

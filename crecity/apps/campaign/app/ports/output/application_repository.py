@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from campaign.domain.entities.campaign_entity import CampaignApplication
+from campaign.domain.value_objects.application_sort import ApplicationSort
 
 
 class ApplicationRepository(ABC):
@@ -17,8 +18,13 @@ class ApplicationRepository(ABC):
     async def exists(self, campaign_id: int, creator_user_id: int) -> bool: ...
 
     @abstractmethod
-    async def list_by_campaign(self, campaign_id: int) -> list[CampaignApplication]:
-        """공고의 지원서 — 오래된 순(먼저 지원한 순)."""
+    async def list_by_campaign(
+        self,
+        campaign_id: int,
+        sort: ApplicationSort = ApplicationSort.OLDEST,
+        only_open: bool = False,
+    ) -> list[CampaignApplication]:
+        """공고의 지원서 — 기본은 오래된 순. only_open이면 아직 수락되지 않은 것만(갭 #70)."""
         ...
 
     @abstractmethod

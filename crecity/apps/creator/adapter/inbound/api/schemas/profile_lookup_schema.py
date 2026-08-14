@@ -16,3 +16,7 @@ class ProfileLookupResponseSchema(BaseModel):
     created_at: datetime | None
     followers_total: int = 0  # 전 채널 팔로워 합(자가입력) — 헤더 배지
     accepting_orders: bool = True  # 주문 수신 여부(갭 #64)
+    # 거래 실적(갭 #66) — 이력이 없으면 null
+    completed_orders: int | None = None
+    accepted_orders: int | None = None
+    received_orders: int | None = None

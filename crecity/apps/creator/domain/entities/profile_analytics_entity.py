@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 
+from creator.domain.value_objects.audience_breakdown import AudienceShare
+
 # 분석 지표를 받는 채널 — 패키지 플랫폼에서 채널이 아닌 UGC를 제외한 목록(§9.2)
 ANALYTICS_PLATFORMS: tuple[str, ...] = ("INSTAGRAM", "YOUTUBE", "TIKTOK", "NAVER_BLOG")
 
@@ -21,3 +23,6 @@ class ProfileAnalytics:
     engagement_permille: int | None  # 미입력 허용
     screenshot_file_name: str  # 자가입력 증빙 스크린샷(필수)
     updated_at: datetime | None = None
+    # 오디언스(§2.1-6, 갭 #67) — 지역은 단일 값, 연령·성별 비율은 별도 행
+    top_audience_region: str | None = None
+    audience: tuple[AudienceShare, ...] = ()

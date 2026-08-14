@@ -11,6 +11,19 @@ import { useAuthStore } from "@/lib/auth-store";
 import { PLATFORM_LABELS, formatFollowers } from "@/lib/labels";
 import type { ProfileAnalytics } from "@/lib/types";
 
+/* 백엔드 audience_breakdown.py의 고정 구간 — 표시용 라벨 */
+const AUDIENCE_ORDER = ["AGE", "GENDER"] as const;
+const AUDIENCE_LABELS: Record<string, string> = {
+  "10s": "10대",
+  "20s": "20대",
+  "30s": "30대",
+  "40s": "40대",
+  "50s+": "50대+",
+  FEMALE: "여성",
+  MALE: "남성",
+  OTHER: "기타",
+};
+
 /** 프로필 Analytics 섹션 — 비로그인은 가입 게이트(§9.2), 로그인 시 채널별 지표 표. */
 export default function CreatorAnalyticsSection({ slug }: { slug: string }) {
   const status = useAuthStore((s) => s.status);
@@ -51,7 +64,8 @@ export default function CreatorAnalyticsSection({ slug }: { slug: string }) {
   return (
     <div className="grid gap-2.5">
       {analytics.map((row) => (
-        <div key={row.platform} className="flex items-center gap-4 rounded-xl border px-4 py-3.5">
+        <div key={row.platform} className="rounded-xl border px-4 py-3.5">
+          <div className="flex items-center gap-4">
           <p className="w-32 shrink-0 text-sm font-semibold">{PLATFORM_LABELS[row.platform]}</p>
           <div className="flex flex-1 flex-wrap items-baseline gap-x-6 gap-y-1">
             <p className="text-sm">
@@ -75,6 +89,34 @@ export default function CreatorAnalyticsSection({ slug }: { slug: string }) {
             <BadgeCheck className="size-4 text-primary" />
             스크린샷 인증
           </a>
+          </div>
+          {/* 오디언스(§2.1-6, 갭 #67) — 입력한 구간만 보여준다 */}
+          {(row.top_audience_region || row.audience.length > 0) && (
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t pt-3 text-[13px]">
+              <span className="text-muted-foreground">오디언스</span>
+              {row.top_audience_region && (
+                <span>
+                  주 지역 <span className="font-semibold">{row.top_audience_region}</span>
+                </span>
+              )}
+              {AUDIENCE_ORDER.map((dimension) => {
+                const shares = row.audience
+                  .filter((item) => item.dimension === dimension)
+                  .sort((a, b) => b.share_permille - a.share_permille);
+                if (shares.length === 0) return null;
+                return (
+                  <span key={dimension}>
+                    {shares
+                      .map(
+                        (item) =>
+                          `${AUDIENCE_LABELS[item.bucket] ?? item.bucket} ${(item.share_permille / 10).toFixed(0)}%`,
+                      )
+                      .join(" · ")}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
       ))}
       <p className="text-xs text-muted-foreground">

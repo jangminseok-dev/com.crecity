@@ -10,6 +10,11 @@ class DisputeResolutionUseCase(ABC):
     """분쟁 중재 — 대기 목록 조회와 판정(감사 기록 포함)."""
 
     @abstractmethod
+    async def list_resolved(self) -> list[DisputeSummary]:
+        """판정 완료 이력(갭 #71)."""
+        ...
+
+    @abstractmethod
     async def list_open(self) -> list[DisputeSummary]: ...
 
     @abstractmethod

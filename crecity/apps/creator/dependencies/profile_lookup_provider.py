@@ -8,6 +8,7 @@ from creator.adapter.outbound.pg.analytics_pg_repository import AnalyticsPgRepos
 from creator.adapter.outbound.pg.creator_profile_pg_repository import CreatorProfilePgRepository
 from creator.app.ports.input.profile_lookup_use_case import ProfileLookupUseCase
 from creator.app.use_cases.profile_lookup_interactor import ProfileLookupInteractor
+from hub.dependencies.creator_trade_stats_provider import get_creator_trade_stats_port
 
 
 def get_profile_lookup_use_case(
@@ -16,4 +17,5 @@ def get_profile_lookup_use_case(
     return ProfileLookupInteractor(
         repository=CreatorProfilePgRepository(session=db),
         analytics=AnalyticsPgRepository(session=db),
+        trade_stats=get_creator_trade_stats_port(),
     )

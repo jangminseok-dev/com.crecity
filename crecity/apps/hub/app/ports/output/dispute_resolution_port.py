@@ -13,6 +13,11 @@ class DisputeResolutionPort(ABC):
     """
 
     @abstractmethod
+    async def list_resolved(self) -> list[DisputeSummary]:
+        """판정이 끝난 분쟁 이력(갭 #71) — 최근 판정 순."""
+        ...
+
+    @abstractmethod
     async def list_open(self) -> list[DisputeSummary]:
         """처리 대기 분쟁 — 오래된 순."""
         ...

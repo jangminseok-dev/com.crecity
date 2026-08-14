@@ -12,6 +12,7 @@ from creator.app.ports.output.analytics_repository import AnalyticsRepository
 from creator.app.ports.output.creator_profile_repository import CreatorProfileRepository
 from creator.domain.entities.creator_profile_entity import CreatorProfile
 from creator.domain.entities.profile_analytics_entity import ANALYTICS_PLATFORMS
+from creator.domain.value_objects.audience_breakdown import validate_breakdown
 from creator.domain.value_objects.image_file import ImageFile
 
 _MAX_ENGAGEMENT_PERMILLE = 1000  # 100.0%
@@ -46,6 +47,8 @@ class AnalyticsManagementInteractor(AnalyticsManagementUseCase):
         ):
             raise ValueError("참여율은 0~100% 범위여야 합니다.")
         screenshot = ImageFile(content=command.content, content_type=command.content_type)
+        # 오디언스 비율 검증(갭 #67) — 같은 축의 합이 100%를 넘으면 입력을 잘못 본 것이다
+        audience = validate_breakdown(list(command.audience))
 
         profile = await self._my_profile(command.requester_user_id)
         file_name = self._storage.save(screenshot.content, screenshot.extension)
@@ -55,6 +58,8 @@ class AnalyticsManagementInteractor(AnalyticsManagementUseCase):
             followers_count=command.followers_count,
             engagement_permille=command.engagement_permille,
             screenshot_file_name=file_name,
+            top_audience_region=(command.top_audience_region or None),
+            audience=audience,
         )
         return AnalyticsResult.from_entity(analytics)
 

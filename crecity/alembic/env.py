@@ -33,6 +33,7 @@ import creator.adapter.outbound.orm.portfolio_item_orm  # noqa: E402, F401
 import creator.adapter.outbound.orm.profile_analytics_orm  # noqa: E402, F401
 import creator.adapter.outbound.orm.profile_faq_orm  # noqa: E402, F401
 import creator.adapter.outbound.orm.profile_view_orm  # noqa: E402, F401
+import creator.adapter.outbound.orm.audience_breakdown_orm  # noqa: E402, F401
 import auth.adapter.outbound.orm.user_orm  # noqa: E402, F401
 import auth.adapter.outbound.orm.social_identity_orm  # noqa: E402, F401
 import auth.adapter.outbound.orm.role_orm  # noqa: E402, F401

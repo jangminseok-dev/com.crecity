@@ -10,6 +10,7 @@ from order.adapter.outbound.orm.dispute_orm import DisputeOrm
 from order.adapter.outbound.orm.ledger_entry_orm import LedgerEntryOrm
 from order.adapter.outbound.orm.order_orm import OrderOrm
 from order.adapter.outbound.pg.ledger_pg_repository import _SIGNED_AMOUNT
+from order.app.dtos.party_stats_dto import PartyTradeStats
 from order.app.ports.output.order_repository import OrderRepository
 from order.domain.entities.dispute_entity import DisputeStatus
 from order.domain.entities.ledger_entry_entity import LedgerEntryDraft
@@ -143,6 +144,30 @@ class OrderPgRepository(OrderRepository):
             .order_by(OrderOrm.created_at.desc(), OrderOrm.id.desc())
         )
         return [OrderMapper.to_entity(orm) for orm in result.scalars()]
+
+    async def get_party_stats(self, user_id: int, as_brand: bool) -> PartyTradeStats:
+        """상태별 건수와 수정 횟수 합을 한 번에 센다 — 화면마다 다시 훑지 않게."""
+        party_column = OrderOrm.brand_user_id if as_brand else OrderOrm.creator_user_id
+        row = (
+            await self._session.execute(
+                select(
+                    func.count(),
+                    func.count().filter(OrderOrm.status == OrderStatus.COMPLETED.value),
+                    func.count().filter(OrderOrm.status == OrderStatus.CANCELLED.value),
+                    func.count().filter(OrderOrm.status == OrderStatus.REFUNDED.value),
+                    func.count().filter(OrderOrm.accept_expired.is_(True)),
+                    func.coalesce(func.sum(OrderOrm.revisions_used), 0),
+                ).where(party_column == user_id)
+            )
+        ).one()
+        return PartyTradeStats(
+            total_orders=int(row[0]),
+            completed_orders=int(row[1]),
+            cancelled_orders=int(row[2]),
+            refunded_orders=int(row[3]),
+            accept_expired_orders=int(row[4]),
+            total_revisions=int(row[5]),
+        )
 
     async def find_expired(self, now: datetime, limit: int) -> list[Order]:
         # 처리 대기 분쟁이 있으면 만료 처리(자동 승인·환불)를 보류한다 — 판정이 우선(갭 #4)

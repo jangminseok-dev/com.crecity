@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from campaign.adapter.inbound.api.schemas.campaign_application_schema import (
     ApplicationResponseSchema,
@@ -19,6 +19,7 @@ from campaign.domain.entities.campaign_entity import (
     InvalidCampaignStateError,
     NotCampaignOwnerError,
 )
+from campaign.domain.value_objects.application_sort import ApplicationSort
 from hub.app.dtos.verified_user_dto import VerifiedUser
 from hub.dependencies.current_user_provider import get_current_user
 
@@ -76,12 +77,19 @@ async def apply_to_campaign(
 )
 async def list_applications(
     campaign_id: int,
+    sort: ApplicationSort = Query(ApplicationSort.OLDEST, description="지원자 정렬(갭 #70)"),
+    only_open: bool = Query(False, description="아직 수락하지 않은 지원만"),
     user: VerifiedUser = Depends(get_current_user),
     use_case: CampaignApplicationUseCase = Depends(get_campaign_application_use_case),
 ) -> list[ApplicationResponseSchema]:
     try:
         results = await use_case.list_applications(
-            ApplicationsQuery(campaign_id=campaign_id, requester_user_id=user.id)
+            ApplicationsQuery(
+                campaign_id=campaign_id,
+                requester_user_id=user.id,
+                sort=sort,
+                only_open=only_open,
+            )
         )
     except CampaignNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error))

@@ -113,6 +113,14 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
                 {profile.location ? ` · ${profile.location}` : ""}
               </p>
               <p className="mt-1 text-[15px] text-muted-foreground">{profile.tagline}</p>
+              {/* 거래 실적(갭 #66) — 이력이 없으면 그리지 않는다(신규를 깎지 않기 위해) */}
+              {profile.received_orders !== null && profile.received_orders > 0 && (
+                <p className="mt-2 text-[13px] text-muted-foreground">
+                  완료 거래 {profile.completed_orders}건
+                  {profile.accepted_orders !== null &&
+                    ` · 받은 주문 ${profile.received_orders}건 중 ${profile.accepted_orders}건 수락`}
+                </p>
+              )}
               {reviews && reviews.total > 0 && reviews.average_overall !== null && (
                 <p className="mt-2.5 inline-flex items-center gap-1 text-[15px] font-semibold">
                   <Star className="size-4 fill-foreground text-foreground" />

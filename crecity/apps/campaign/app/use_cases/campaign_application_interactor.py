@@ -75,5 +75,7 @@ class CampaignApplicationInteractor(CampaignApplicationUseCase):
             raise CampaignNotFoundError(f"공고를 찾을 수 없습니다: {query.campaign_id}")
         if campaign.brand_user_id != query.requester_user_id:
             raise NotCampaignOwnerError("공고를 올린 브랜드만 지원자를 볼 수 있습니다.")
-        applications = await self._applications.list_by_campaign(query.campaign_id)
+        applications = await self._applications.list_by_campaign(
+            query.campaign_id, sort=query.sort, only_open=query.only_open
+        )
         return [await self._to_result(application) for application in applications]

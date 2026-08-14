@@ -19,6 +19,18 @@ const ANALYTICS_PLATFORMS: ProfileAnalytics["platform"][] = [
 ];
 
 /** 대시보드 채널 지표 관리 — 자가입력 + 스크린샷 인증(§9.2), 플랫폼당 1건(재제출=갱신). */
+/* 오디언스 구간(§2.1-6) — 백엔드 `audience_breakdown.py`의 고정 목록과 1:1 */
+const AUDIENCE_FIELDS = [
+  { dimension: "AGE", bucket: "10s", field: "age_10s", label: "10대" },
+  { dimension: "AGE", bucket: "20s", field: "age_20s", label: "20대" },
+  { dimension: "AGE", bucket: "30s", field: "age_30s", label: "30대" },
+  { dimension: "AGE", bucket: "40s", field: "age_40s", label: "40대" },
+  { dimension: "AGE", bucket: "50s+", field: "age_50s", label: "50대+" },
+  { dimension: "GENDER", bucket: "FEMALE", field: "gender_female", label: "여성" },
+  { dimension: "GENDER", bucket: "MALE", field: "gender_male", label: "남성" },
+  { dimension: "GENDER", bucket: "OTHER", field: "gender_other", label: "기타" },
+] as const;
+
 export default function AnalyticsManager() {
   const queryClient = useQueryClient();
   // 단일 객체 상태 — 오류 메시지 (입력값은 FormData 패턴)
@@ -60,6 +72,16 @@ export default function AnalyticsManager() {
     if (engagementPercent) {
       form.append("engagement_permille", String(Math.round(Number(engagementPercent) * 10)));
     }
+    // 오디언스(갭 #67) — 입력한 구간만 보낸다. 비율은 %로 받아 ‰로 바꾼다
+    const shares = AUDIENCE_FIELDS.flatMap(({ dimension, bucket, field }) => {
+      const percent = String(raw.get(field) ?? "").trim();
+      if (!percent) return [];
+      return [{ dimension, bucket, share_permille: Math.round(Number(percent) * 10) }];
+    });
+    if (shares.length > 0) form.append("audience", JSON.stringify(shares));
+    const region = String(raw.get("top_audience_region") ?? "").trim();
+    if (region) form.append("top_audience_region", region);
+
     const file = raw.get("file");
     if (!(file instanceof File) || file.size === 0) {
       setUi({ error: "인증 스크린샷을 첨부해 주세요." });
@@ -156,6 +178,47 @@ export default function AnalyticsManager() {
               />
             </div>
           </div>
+          {/* 오디언스(§2.1-6, 갭 #67) — 전부 채울 필요 없이 아는 구간만 */}
+          <details className="rounded-lg border p-3">
+            <summary className="cursor-pointer text-sm font-medium">
+              오디언스 정보 (선택) — 브랜드가 타겟 적합성을 판단합니다
+            </summary>
+            <div className="mt-3 grid gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="analytics-region">주 오디언스 지역</Label>
+                <input
+                  id="analytics-region"
+                  name="top_audience_region"
+                  maxLength={50}
+                  placeholder="예: 서울"
+                  className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus:border-primary"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                아는 구간만 % 로 적으세요. 같은 항목(연령·성별)의 합이 100%를 넘으면 등록되지
+                않습니다.
+              </p>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {AUDIENCE_FIELDS.map((item) => (
+                  <div key={item.field} className="grid gap-1">
+                    <Label htmlFor={`analytics-${item.field}`} className="text-xs">
+                      {item.label}
+                    </Label>
+                    <input
+                      id={`analytics-${item.field}`}
+                      name={item.field}
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.1}
+                      placeholder="%"
+                      className="h-9 rounded-lg border border-input bg-transparent px-2 text-sm outline-none focus:border-primary"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </details>
           {ui.error && <p className="text-sm text-destructive">{ui.error}</p>}
           <Button type="submit" disabled={submit.isPending} className="justify-self-start">
             {submit.isPending ? "등록 중…" : "지표 등록·갱신"}

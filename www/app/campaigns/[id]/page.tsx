@@ -90,24 +90,65 @@ function ApplyForm({ campaignId }: { campaignId: number }) {
   );
 }
 
+/* 지원자 정렬(갭 #70) — 캠페인이 소유한 값(지원 시각·견적)으로만 정렬한다 */
+const APPLICATION_SORTS = [
+  { value: "oldest", label: "먼저 지원한 순" },
+  { value: "latest", label: "최근 지원 순" },
+  { value: "price_asc", label: "견적 낮은순" },
+  { value: "price_desc", label: "견적 높은순" },
+] as const;
+
 function ApplicationList({ campaignId }: { campaignId: number }) {
+  // 단일 객체 상태 — 정렬·필터
+  const [view, setView] = useState<{ sort: string; onlyOpen: boolean }>({
+    sort: "oldest",
+    onlyOpen: false,
+  });
   const { data: applications, isPending } = useQuery({
-    queryKey: ["campaignApplications", campaignId],
+    queryKey: ["campaignApplications", campaignId, view],
     queryFn: () =>
-      apiFetch<CampaignApplication[]>(`/campaign/campaigns/${campaignId}/applications`),
+      apiFetch<CampaignApplication[]>(
+        `/campaign/campaigns/${campaignId}/applications?sort=${view.sort}${
+          view.onlyOpen ? "&only_open=true" : ""
+        }`,
+      ),
   });
 
   if (isPending) return <Skeleton className="h-32 w-full" />;
-  if (!applications || applications.length === 0) {
-    return (
-      <p className="rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground">
-        아직 지원자가 없습니다.
-      </p>
-    );
-  }
+  if (!applications) return null;
   return (
     <div className="grid gap-3">
-      <h3 className="font-semibold">지원자 ({applications.length})</h3>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-semibold">지원자 ({applications.length})</h3>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={view.onlyOpen}
+              onChange={(event) =>
+                setView((prev) => ({ ...prev, onlyOpen: event.target.checked }))
+              }
+            />
+            미수락만
+          </label>
+          <select
+            value={view.sort}
+            onChange={(event) => setView((prev) => ({ ...prev, sort: event.target.value }))}
+            className="h-9 rounded-lg border border-input bg-transparent px-2.5 text-[13px]"
+          >
+            {APPLICATION_SORTS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      {applications.length === 0 && (
+        <p className="rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground">
+          {view.onlyOpen ? "아직 수락하지 않은 지원이 없습니다." : "아직 지원자가 없습니다."}
+        </p>
+      )}
       {applications.map((application) => (
         <Card key={application.id}>
           <CardContent className="grid gap-2 p-4">

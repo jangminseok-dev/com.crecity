@@ -5,6 +5,18 @@ from campaign.adapter.outbound.mappers.campaign_mapper import CampaignMapper
 from campaign.adapter.outbound.orm.campaign_orm import CampaignApplicationOrm
 from campaign.app.ports.output.application_repository import ApplicationRepository
 from campaign.domain.entities.campaign_entity import CampaignApplication
+from campaign.domain.value_objects.application_sort import ApplicationSort
+
+
+def _order_by(sort: ApplicationSort) -> list:
+    """정렬 절 — 동점이면 id로 갈라 순서가 흔들리지 않게 한다."""
+    if sort is ApplicationSort.LATEST:
+        return [CampaignApplicationOrm.created_at.desc(), CampaignApplicationOrm.id.desc()]
+    if sort is ApplicationSort.PRICE_ASC:
+        return [CampaignApplicationOrm.proposed_price_krw.asc(), CampaignApplicationOrm.id.asc()]
+    if sort is ApplicationSort.PRICE_DESC:
+        return [CampaignApplicationOrm.proposed_price_krw.desc(), CampaignApplicationOrm.id.asc()]
+    return [CampaignApplicationOrm.created_at.asc(), CampaignApplicationOrm.id.asc()]
 
 
 class ApplicationPgRepository(ApplicationRepository):
@@ -39,12 +51,19 @@ class ApplicationPgRepository(ApplicationRepository):
         )
         return bool(result.scalar())
 
-    async def list_by_campaign(self, campaign_id: int) -> list[CampaignApplication]:
-        result = await self._session.execute(
-            select(CampaignApplicationOrm)
-            .where(CampaignApplicationOrm.campaign_id == campaign_id)
-            .order_by(CampaignApplicationOrm.created_at, CampaignApplicationOrm.id)
+    async def list_by_campaign(
+        self,
+        campaign_id: int,
+        sort: ApplicationSort = ApplicationSort.OLDEST,
+        only_open: bool = False,
+    ) -> list[CampaignApplication]:
+        statement = select(CampaignApplicationOrm).where(
+            CampaignApplicationOrm.campaign_id == campaign_id
         )
+        if only_open:
+            # 이미 수락(결제)된 지원은 더 볼 일이 없다
+            statement = statement.where(CampaignApplicationOrm.order_id.is_(None))
+        result = await self._session.execute(statement.order_by(*_order_by(sort)))
         return [CampaignMapper.application_to_entity(orm) for orm in result.scalars()]
 
     async def find_by_id(self, application_id: int) -> CampaignApplication | None:

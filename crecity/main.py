@@ -77,6 +77,7 @@ from order.adapter.inbound.api.v1.order_lookup_router import order_lookup_router
 from order.adapter.inbound.api.v1.payout_statement_router import payout_statement_router
 from order.adapter.inbound.api.v1.order_progress_router import order_progress_router
 from order.adapter.outbound.hub.creator_popularity_gateway import OrderCreatorPopularityGateway
+from order.adapter.outbound.hub.creator_trade_stats_gateway import OrderCreatorTradeStatsGateway
 from order.adapter.outbound.hub.credit_balance_gateway import OrderCreditBalanceGateway
 from order.adapter.outbound.hub.active_order_gateway import OrderActiveOrderGateway
 from order.adapter.outbound.hub.order_adjustment_gateway import OrderAdjustmentGateway
@@ -130,6 +131,7 @@ from notification.adapter.inbound.api.v1.notification_listing_router import (
     notification_listing_router,
 )
 from hub.dependencies.creator_popularity_provider import register_creator_popularity_port
+from hub.dependencies.creator_trade_stats_provider import register_creator_trade_stats_port
 from hub.dependencies.dispute_resolution_provider import register_dispute_resolution_port
 from hub.dependencies.withdrawal_settlement_provider import register_withdrawal_settlement_port
 from hub.dependencies.creator_rating_provider import register_creator_rating_port
@@ -151,6 +153,7 @@ register_creator_ref_port(CreatorRefGateway())  # creator → 크리에이터 �
 register_user_directory_port(UserDirectoryGateway())  # auth → 회원 디렉토리(채팅 상대 표시)
 register_creator_rating_port(ReviewCreatorRatingGateway())  # review → 평점 요약(목록 카드)
 register_creator_popularity_port(OrderCreatorPopularityGateway())  # order → 인기 순위(홈 섹션)
+register_creator_trade_stats_port(OrderCreatorTradeStatsGateway())  # order → 크리에이터 거래 실적
 register_withdrawal_settlement_port(OrderWithdrawalSettlementGateway())  # order → 인출 운영 처리
 register_dispute_resolution_port(OrderDisputeResolutionGateway())  # order → 분쟁 판정
 register_credit_balance_port(OrderCreditBalanceGateway())  # order → 크레딧 잔액(체크아웃 적용액 확정)

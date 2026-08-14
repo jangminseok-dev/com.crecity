@@ -32,9 +32,12 @@ export default function AdminReports() {
   // 단일 값 상태 — 처리 실패 메시지
   const [error, setError] = useState<string | null>(null);
 
+  // 처리 완료 이력(갭 #71) — 지난 판단을 다시 볼 수 없으면 인수인계가 어렵다
+  const [showResolved, setShowResolved] = useState(false);
   const { data: reports } = useQuery({
-    queryKey: ["openReports"],
-    queryFn: () => apiFetch<Report[]>("/admin/reports/open"),
+    queryKey: ["reports", showResolved],
+    queryFn: () =>
+      apiFetch<Report[]>(showResolved ? "/admin/reports/resolved" : "/admin/reports/open"),
   });
 
   const resolve = useMutation({
@@ -45,7 +48,7 @@ export default function AdminReports() {
       }),
     onSuccess: async () => {
       setError(null);
-      await queryClient.invalidateQueries({ queryKey: ["openReports"] });
+      await queryClient.invalidateQueries({ queryKey: ["reports"] });
     },
     onError: (err) =>
       setError(err instanceof ApiError ? err.detail : "신고 처리에 실패했습니다."),
@@ -60,11 +63,30 @@ export default function AdminReports() {
         주문 안의 다툼은 분쟁 중재에서, 그 밖의 어뷰징은 여기서 처리합니다. 조치 내용을 메모로
         남기고 닫습니다.
       </p>
+      <div className="mt-3 flex gap-1.5">
+        {[
+          { label: "처리 대기", resolved: false },
+          { label: "처리 완료", resolved: true },
+        ].map((tab) => (
+          <button
+            key={tab.label}
+            type="button"
+            onClick={() => setShowResolved(tab.resolved)}
+            className={`inline-flex h-8 items-center rounded-full px-3.5 text-[13px] transition-colors ${
+              showResolved === tab.resolved
+                ? "bg-secondary font-semibold text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
       {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
       {!reports || reports.length === 0 ? (
         <p className="mt-4 rounded-xl border border-dashed py-10 text-center text-sm text-muted-foreground">
-          처리 대기 중인 신고가 없습니다.
+          {showResolved ? "처리한 신고가 없습니다." : "처리 대기 중인 신고가 없습니다."}
         </p>
       ) : (
         <div className="mt-4 grid gap-3">
@@ -89,6 +111,12 @@ export default function AdminReports() {
                   )}
                 </div>
                 <p className="mt-2 whitespace-pre-line text-sm">{report.reason}</p>
+                {showResolved ? (
+                  <p className="mt-3 rounded-lg bg-secondary px-3 py-2 text-[13px]">
+                    처리 결과: {report.resolution_note || "(메모 없음)"}
+                    {report.resolved_at && ` · ${report.resolved_at.slice(0, 10)}`}
+                  </p>
+                ) : (
                 <form
                   className="mt-3 flex flex-wrap gap-2"
                   onSubmit={(event) => {
@@ -108,6 +136,7 @@ export default function AdminReports() {
                     처리 완료
                   </Button>
                 </form>
+                )}
               </CardContent>
             </Card>
           ))}

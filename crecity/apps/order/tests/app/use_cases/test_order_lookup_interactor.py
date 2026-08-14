@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import pytest
 
 from order.app.dtos.order_lookup_dto import MyOrdersQuery, OrderDetailQuery
+from order.app.dtos.party_stats_dto import PartyTradeStats
 from order.app.exceptions import NotOrderParticipantError, OrderNotFoundError
 from order.app.use_cases.order_lookup_interactor import OrderLookupInteractor
 from hub.app.dtos.creator_ref_dto import CreatorRef
@@ -29,9 +30,14 @@ def _order(id=1):
     )
 
 
+_NO_HISTORY = PartyTradeStats(0, 0, 0, 0, 0, 0)
+
+
 class _StubOrderRepository:
-    def __init__(self, orders: list[Order]):
+    def __init__(self, orders: list[Order], stats: PartyTradeStats | None = None):
         self.orders = orders
+        self.stats = stats or _NO_HISTORY
+        self.stats_calls: list[tuple[int, bool]] = []
 
     async def create(self, order, entries, events):
         raise NotImplementedError
@@ -44,6 +50,10 @@ class _StubOrderRepository:
 
     async def list_by_participant(self, user_id):
         return [o for o in self.orders if user_id in (o.brand_user_id, o.creator_user_id)]
+
+    async def get_party_stats(self, user_id, as_brand):
+        self.stats_calls.append((user_id, as_brand))
+        return self.stats
 
     async def find_expired(self, now, limit):
         raise NotImplementedError
@@ -142,3 +152,41 @@ async def test_상대를_못_찾아도_주문은_그대로_보인다():
     )
     assert result.id == 1
     assert result.counterpart_name is None
+
+
+async def test_상대의_거래_이력을_함께_내려준다():
+    # 크리에이터가 볼 때 상대(브랜드)의 이력 — 수락 판단 근거(갭 #65)
+    stats = PartyTradeStats(
+        total_orders=12,
+        completed_orders=9,
+        cancelled_orders=1,
+        refunded_orders=2,
+        accept_expired_orders=0,
+        total_revisions=14,
+    )
+    repository = _StubOrderRepository([_order()], stats=stats)
+    result = await _interactor(repository).get_order(
+        OrderDetailQuery(order_id=1, requester_user_id=CREATOR)
+    )
+    assert result.counterpart_completed_orders == 9
+    assert result.counterpart_cancelled_orders == 1
+    assert result.counterpart_total_revisions == 14
+    # 상대가 브랜드이므로 브랜드 기준으로 집계해야 한다
+    assert repository.stats_calls == [(BRAND, True)]
+
+
+async def test_거래_이력이_없으면_지표를_비운다():
+    # 0건인데 "완료 0건"을 보여주면 신규 상대를 부당하게 나쁘게 보이게 한다
+    result = await _interactor(_StubOrderRepository([_order()])).get_order(
+        OrderDetailQuery(order_id=1, requester_user_id=CREATOR)
+    )
+    assert result.counterpart_completed_orders is None
+    assert result.counterpart_total_revisions is None
+
+
+async def test_브랜드가_볼_때는_크리에이터_기준으로_집계한다():
+    repository = _StubOrderRepository([_order()], stats=PartyTradeStats(3, 3, 0, 0, 0, 2))
+    await _interactor(repository).get_order(
+        OrderDetailQuery(order_id=1, requester_user_id=BRAND)
+    )
+    assert repository.stats_calls == [(CREATOR, False)]

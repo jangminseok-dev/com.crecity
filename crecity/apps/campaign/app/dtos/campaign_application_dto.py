@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+
+from campaign.domain.value_objects.application_sort import ApplicationSort
 from datetime import datetime
 
 
@@ -14,9 +16,12 @@ class ApplyCommand:
 
 @dataclass(frozen=True)
 class ApplicationsQuery:
+    """지원자 조회 — 정렬·필터는 갭 #70."""
 
     campaign_id: int
     requester_user_id: int  # 공고 브랜드만 열람
+    sort: ApplicationSort = ApplicationSort.OLDEST
+    only_open: bool = False  # 아직 수락하지 않은 지원만
 
 
 @dataclass(frozen=True)

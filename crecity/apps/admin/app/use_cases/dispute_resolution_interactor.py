@@ -23,6 +23,10 @@ class DisputeResolutionInteractor(DisputeResolutionUseCase):
     async def list_open(self) -> list[DisputeSummary]:
         return await self._disputes.list_open()
 
+    async def list_resolved(self) -> list[DisputeSummary]:
+        # 판정 이력은 읽기만 한다 — 되돌리기는 없다(감사 기록과 같은 성격)
+        return await self._disputes.list_resolved()
+
     async def resolve(self, command: DisputeDecisionCommand) -> DisputeSummary:
         result = await self._disputes.resolve(
             command.dispute_id, command.resolution, command.operator_id

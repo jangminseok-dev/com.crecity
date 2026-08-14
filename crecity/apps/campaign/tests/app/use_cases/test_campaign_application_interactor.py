@@ -61,7 +61,7 @@ class _StubApplicationRepository:
             for a in self.applications
         )
 
-    async def list_by_campaign(self, campaign_id):
+    async def list_by_campaign(self, campaign_id, sort=None, only_open=False):
         return [a for a in self.applications if a.campaign_id == campaign_id]
 
 

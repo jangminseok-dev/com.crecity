@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 from hub.app.dtos.outbox_event_dto import OutboxEvent
+from order.app.dtos.party_stats_dto import PartyTradeStats
 from order.domain.entities.ledger_entry_entity import LedgerEntryDraft
 from order.domain.entities.order_entity import Order
 
@@ -56,6 +57,11 @@ class OrderRepository(ABC):
     @abstractmethod
     async def list_by_participant(self, user_id: int) -> list[Order]:
         """브랜드 또는 크리에이터로 참여한 주문 — 최신순."""
+        ...
+
+    @abstractmethod
+    async def get_party_stats(self, user_id: int, as_brand: bool) -> PartyTradeStats:
+        """당사자 거래 이력 집계(갭 #65·#66) — as_brand면 브랜드로 참여한 주문 기준."""
         ...
 
     @abstractmethod

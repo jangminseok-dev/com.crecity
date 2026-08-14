@@ -31,6 +31,11 @@ class OrderResult:
     # 조회 요청자 기준 거래 상대(갭 #63) — 붙이지 않은 슬라이스에서는 None
     counterpart_name: str | None = None
     counterpart_slug: str | None = None  # 상대가 크리에이터일 때만
+    # 상대의 거래 이력(갭 #65·#66) — 수락·승인 판단 근거. 이력이 없으면 None
+    counterpart_completed_orders: int | None = None
+    counterpart_cancelled_orders: int | None = None
+    counterpart_accept_expired_orders: int | None = None
+    counterpart_total_revisions: int | None = None
 
     @classmethod
     def from_order(cls, order: Order) -> OrderResult:

@@ -50,23 +50,44 @@ class OrderLookupInteractor(OrderLookupUseCase):
         creator_ids = {o.creator_user_id for o in orders if o.brand_user_id == viewer_user_id}
         brand_ids = {o.brand_user_id for o in orders if o.creator_user_id == viewer_user_id}
 
-        creator_list, brand_list = await asyncio.gather(
+        creator_list, brand_list, stats_list = await asyncio.gather(
             asyncio.gather(*(self._creators.get_creator_by_user_id(i) for i in creator_ids)),
             asyncio.gather(*(self._users.get_user(i) for i in brand_ids)),
+            # 상대의 거래 이력(갭 #65·#66) — 브랜드 상대는 브랜드로서, 크리에이터 상대는
+            # 크리에이터로서 쌓은 이력을 본다
+            asyncio.gather(
+                *(self._orders.get_party_stats(i, as_brand=False) for i in creator_ids),
+                *(self._orders.get_party_stats(i, as_brand=True) for i in brand_ids),
+            ),
         )
         creators = {ref.creator_user_id: ref for ref in creator_list if ref is not None}
         brands = {ref.user_id: ref for ref in brand_list if ref is not None}
+        stats = dict(zip([*creator_ids, *brand_ids], stats_list))
+
+        def with_stats(result: OrderResult, counterpart_id: int) -> OrderResult:
+            party = stats.get(counterpart_id)
+            if party is None or not party.has_history:
+                return result
+            return replace(
+                result,
+                counterpart_completed_orders=party.completed_orders,
+                counterpart_cancelled_orders=party.cancelled_orders,
+                counterpart_accept_expired_orders=party.accept_expired_orders,
+                counterpart_total_revisions=party.total_revisions,
+            )
 
         def to_result(order: Order) -> OrderResult:
             result = OrderResult.from_order(order)
             if order.brand_user_id == viewer_user_id:
                 creator = creators.get(order.creator_user_id)
-                if creator is None:
-                    return result
-                return replace(
-                    result, counterpart_name=creator.name, counterpart_slug=creator.slug
-                )
+                if creator is not None:
+                    result = replace(
+                        result, counterpart_name=creator.name, counterpart_slug=creator.slug
+                    )
+                return with_stats(result, order.creator_user_id)
             brand = brands.get(order.brand_user_id)
-            return result if brand is None else replace(result, counterpart_name=brand.name)
+            if brand is not None:
+                result = replace(result, counterpart_name=brand.name)
+            return with_stats(result, order.brand_user_id)
 
         return [to_result(order) for order in orders]

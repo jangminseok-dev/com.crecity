@@ -137,6 +137,37 @@ export default function OrderDetailPage() {
           </div>
           <Separator />
           <div>
+            <p className="text-sm text-muted-foreground">
+              {isBrand ? "크리에이터" : "브랜드"}
+            </p>
+            <p className="mt-1 text-sm font-semibold">
+              {order.counterpart_slug ? (
+                <Link href={`/creators/${order.counterpart_slug}`} className="hover:underline">
+                  {order.counterpart_name ?? "확인할 수 없음"}
+                </Link>
+              ) : (
+                (order.counterpart_name ?? "확인할 수 없음")
+              )}
+            </p>
+            {/* 상대의 거래 이력(갭 #65·#66) — 이력이 없으면 아예 그리지 않는다 */}
+            {order.counterpart_completed_orders !== null && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                완료 거래 {order.counterpart_completed_orders}건
+                {order.counterpart_cancelled_orders !== null &&
+                  order.counterpart_cancelled_orders > 0 &&
+                  ` · 합의 취소 ${order.counterpart_cancelled_orders}건`}
+                {!isBrand &&
+                  order.counterpart_total_revisions !== null &&
+                  ` · 수정 요청 누적 ${order.counterpart_total_revisions}회`}
+                {isBrand &&
+                  order.counterpart_accept_expired_orders !== null &&
+                  order.counterpart_accept_expired_orders > 0 &&
+                  ` · 무응답 만료 ${order.counterpart_accept_expired_orders}건`}
+              </p>
+            )}
+          </div>
+          <Separator />
+          <div>
             <p className="text-sm text-muted-foreground">요구사항</p>
             <p className="mt-1 whitespace-pre-line text-sm">{order.requirements}</p>
           </div>

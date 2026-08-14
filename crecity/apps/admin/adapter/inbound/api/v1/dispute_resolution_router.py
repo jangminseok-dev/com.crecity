@@ -40,6 +40,15 @@ async def list_open_disputes(
     return [_to_schema(summary) for summary in await use_case.list_open()]
 
 
+@dispute_resolution_router.get("/disputes/resolved", response_model=list[DisputeSummarySchema])
+async def list_resolved_disputes(
+    user: VerifiedUser = Depends(_arbiter),
+    use_case: DisputeResolutionUseCase = Depends(get_dispute_resolution_use_case),
+) -> list[DisputeSummarySchema]:
+    """판정 완료 이력(갭 #71) — 최근 판정부터. 운영 인수인계·재발 확인용."""
+    return [_to_schema(summary) for summary in await use_case.list_resolved()]
+
+
 async def _resolve(
     dispute_id: int,
     resolution: str,

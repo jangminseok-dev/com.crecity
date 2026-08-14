@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from admin.app.dtos.report_dto import ReportResolveCommand, ReportResult
 from admin.app.exceptions import ReportTargetNotFoundError
+from admin.domain.entities.report_entity import ReportStatus
 from admin.app.ports.input.report_review_use_case import ReportReviewUseCase
 from admin.app.ports.output.report_repository import ReportRepository
 from admin.app.ports.output.report_record_port import ReportRecordPort
@@ -16,8 +17,10 @@ class ReportReviewInteractor(ReportReviewUseCase):
         self._reports = reports
         self._record = record
 
-    async def list_open(self) -> list[ReportResult]:
-        return [to_result(report) for report in await self._reports.list_open(_LIST_LIMIT)]
+    async def list_reports(self, resolved: bool = False) -> list[ReportResult]:
+        status = ReportStatus.RESOLVED if resolved else ReportStatus.OPEN
+        reports = await self._reports.list_by_status(status, _LIST_LIMIT)
+        return [to_result(report) for report in reports]
 
     async def resolve(self, command: ReportResolveCommand) -> ReportResult:
         report = await self._reports.find_by_id(command.report_id)

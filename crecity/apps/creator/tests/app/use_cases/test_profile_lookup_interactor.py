@@ -3,6 +3,7 @@ import pytest
 from creator.app.dtos.profile_lookup_dto import ProfileLookupQuery
 from creator.app.exceptions import ProfileNotFoundError
 from creator.app.use_cases.profile_lookup_interactor import ProfileLookupInteractor
+from hub.app.dtos.creator_trade_stats_dto import CreatorTradeStats
 from creator.domain.entities.creator_profile_entity import CreatorProfile, ProfileStatus
 
 
@@ -37,11 +38,27 @@ class _StubAnalyticsRepository:
         raise NotImplementedError
 
 
-def _interactor(profile=None):
-    return ProfileLookupInteractor(_StubRepository(profile=profile), _StubAnalyticsRepository())
+class _StubTradeStats:
+    """허브 CreatorTradeStatsPort 스텁 — 기본은 '이력 없음'."""
+
+    def __init__(self, stats: CreatorTradeStats | None = None):
+        self.stats = stats or CreatorTradeStats(0, 0, 0, 0)
+        self.calls: list[int] = []
+
+    async def get_creator_stats(self, creator_user_id: int) -> CreatorTradeStats:
+        self.calls.append(creator_user_id)
+        return self.stats
 
 
-def _profile(status=ProfileStatus.APPROVED):
+def _interactor(profile=None, stats=None):
+    return ProfileLookupInteractor(
+        repository=_StubRepository(profile=profile),
+        analytics=_StubAnalyticsRepository(),
+        trade_stats=_StubTradeStats(stats),
+    )
+
+
+def _profile(status=ProfileStatus.APPROVED, user_id=None):
     return CreatorProfile(
         id=1,
         slug="kim-beauty",
@@ -51,6 +68,7 @@ def _profile(status=ProfileStatus.APPROVED):
         location="서울",
         primary_category="뷰티",
         status=status,
+        user_id=user_id,
     )
 
 
@@ -71,3 +89,24 @@ async def test_거절된_프로필도_직접_조회는_된다():
 async def test_없는_슬러그면_ProfileNotFoundError():
     with pytest.raises(ProfileNotFoundError):
         await _interactor(None).lookup(ProfileLookupQuery(slug="no-one"))
+
+
+async def test_거래_실적을_함께_내려준다():
+    stats = CreatorTradeStats(
+        completed_orders=7, accepted_orders=8, received_orders=10, accept_expired_orders=1
+    )
+    result = await _interactor(_profile(user_id=101), stats=stats).lookup(
+        ProfileLookupQuery(slug="kim-beauty")
+    )
+    assert result.completed_orders == 7
+    assert result.accepted_orders == 8
+    assert result.received_orders == 10
+
+
+async def test_받은_주문이_없으면_실적을_비운다():
+    # "완료 0건"을 보여주면 신규 크리에이터가 부당하게 나빠 보인다
+    result = await _interactor(_profile(user_id=101)).lookup(
+        ProfileLookupQuery(slug="kim-beauty")
+    )
+    assert result.completed_orders is None
+    assert result.received_orders is None

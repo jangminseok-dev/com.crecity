@@ -31,6 +31,10 @@ export type CreatorProfile = {
   created_at: string | null;
   followers_total: number; // 전 채널 팔로워 합(자가입력) — 헤더 배지
   accepting_orders: boolean; // 주문 수신 여부(갭 #64)
+  // 거래 실적(갭 #66) — 받은 주문이 없으면 null
+  completed_orders: number | null;
+  accepted_orders: number | null;
+  received_orders: number | null;
 };
 
 export type ProfileFaq = {
@@ -46,6 +50,9 @@ export type ProfileAnalytics = {
   engagement_permille: number | null; // 참여율 ×10 (3.5% → 35)
   screenshot_url: string;
   updated_at: string | null;
+  // 오디언스(§2.1-6, 갭 #67)
+  top_audience_region: string | null;
+  audience: { dimension: string; bucket: string; share_permille: number }[];
 };
 
 export type Order = {
@@ -67,6 +74,13 @@ export type Order = {
   revisions_used: number;
   usage_rights: string;
   created_at: string | null;
+  // 거래 상대(갭 #63)와 상대의 거래 이력(갭 #65)
+  counterpart_name: string | null;
+  counterpart_slug: string | null;
+  counterpart_completed_orders: number | null;
+  counterpart_cancelled_orders: number | null;
+  counterpart_accept_expired_orders: number | null;
+  counterpart_total_revisions: number | null;
 };
 
 export type OrderAdjustment = {

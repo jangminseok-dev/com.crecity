@@ -70,13 +70,15 @@ class ReportPgRepository(ReportRepository):
         )
         return bool(result.scalar())
 
-    async def list_open(self, limit: int) -> list[Report]:
-        result = await self._session.execute(
-            select(AdminReportOrm)
-            .where(AdminReportOrm.status == ReportStatus.OPEN.value)
-            .order_by(AdminReportOrm.created_at.asc(), AdminReportOrm.id.asc())
-            .limit(limit)
+    async def list_by_status(self, status: ReportStatus, limit: int) -> list[Report]:
+        statement = select(AdminReportOrm).where(AdminReportOrm.status == status.value)
+        # 대기는 오래 기다린 것부터, 처리 완료는 최근 판단부터 보는 게 자연스럽다
+        statement = (
+            statement.order_by(AdminReportOrm.created_at.asc(), AdminReportOrm.id.asc())
+            if status is ReportStatus.OPEN
+            else statement.order_by(AdminReportOrm.resolved_at.desc(), AdminReportOrm.id.desc())
         )
+        result = await self._session.execute(statement.limit(limit))
         return [_to_entity(orm) for orm in result.scalars()]
 
     async def resolve(self, report_id: int, resolver_user_id: int, note: str) -> Report | None:
