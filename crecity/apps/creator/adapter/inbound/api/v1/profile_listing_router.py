@@ -8,6 +8,7 @@ from creator.app.dtos.profile_listing_dto import ProfileListingQuery
 from creator.app.ports.input.profile_listing_use_case import ProfileListingUseCase
 from creator.dependencies.profile_listing_provider import get_profile_listing_use_case
 from creator.domain.entities.creator_package_entity import PackagePlatform
+from creator.domain.value_objects.profile_sort import ProfileSort
 
 profile_listing_router = APIRouter(prefix="/creator", tags=["creator"])
 
@@ -27,6 +28,7 @@ async def list_profiles(
     price_min: int | None = Query(None, ge=0, description="패키지 가격 하한(원)"),
     price_max: int | None = Query(None, ge=0, description="패키지 가격 상한(원)"),
     location: str | None = Query(None, max_length=100, description="활동 지역 부분 일치"),
+    sort: ProfileSort = Query(ProfileSort.LATEST, description="정렬 기준(최신·가격 오름/내림)"),
     limit: int = Query(20, ge=1, le=50),
     offset: int = Query(0, ge=0),
     use_case: ProfileListingUseCase = Depends(get_profile_listing_use_case),
@@ -41,6 +43,7 @@ async def list_profiles(
             price_min=price_min,
             price_max=price_max,
             location=location,
+            sort=sort,
         )
     )
     return ProfileListingResponseSchema(

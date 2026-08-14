@@ -12,7 +12,7 @@ class OrderStatus(StrEnum):
 
     PENDING_ACCEPT ──수락──▶ IN_PROGRESS ──제출──▶ IN_REVIEW ──승인/72h──▶ COMPLETED
           │                                     │
-          ├─ 거절/72h 만료 ─▶ REFUNDED           └─ 수정 요청 ─▶ IN_PROGRESS (무제한)
+          ├─ 거절/72h 만료 ─▶ REFUNDED           └─ 수정 요청 ─▶ IN_PROGRESS (revision_limit까지)
     """
 
     PENDING_ACCEPT = "PENDING_ACCEPT"

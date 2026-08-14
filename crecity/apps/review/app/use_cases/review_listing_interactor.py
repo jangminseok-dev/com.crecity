@@ -39,6 +39,13 @@ class ReviewListingInteractor(ReviewListingUseCase):
                 comment=None if locked else review.comment,
                 is_locked=locked,
                 created_at=review.created_at,
+                reply=None if locked or not review.reply else review.reply,
+                replied_at=None if locked else review.replied_at,
+                can_reply=(
+                    query.viewer_user_id is not None
+                    and query.viewer_user_id == review.creator_user_id
+                    and not review.reply
+                ),
             )
 
         return CreatorReviewsResult(

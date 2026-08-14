@@ -24,7 +24,7 @@
 ```
 PENDING_ACCEPT ──수락──▶ IN_PROGRESS ──제출──▶ IN_REVIEW ──승인/72h──▶ COMPLETED
       │                                     │
-      ├─ 거절/72h 만료 ─▶ REFUNDED           └─ 수정 요청 ─▶ IN_PROGRESS (무제한)
+      ├─ 거절/72h 만료 ─▶ REFUNDED           └─ 수정 요청 ─▶ IN_PROGRESS (revision_limit까지)
 
 IN_PROGRESS·IN_REVIEW ──취소 요청→상대 동의──▶ CANCELLED (브랜드 전액 크레딧 환불)
                         └─ 상대 거부 ─▶ 요청 해제(주문 계속)

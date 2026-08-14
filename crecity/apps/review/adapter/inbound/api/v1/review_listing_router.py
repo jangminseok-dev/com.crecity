@@ -22,7 +22,11 @@ async def list_creator_reviews(
 ) -> CreatorReviewsResponseSchema:
     try:
         result = await use_case.list_for_creator(
-            CreatorReviewsQuery(slug=slug, viewer_logged_in=viewer is not None)
+            CreatorReviewsQuery(
+                slug=slug,
+                viewer_logged_in=viewer is not None,
+                viewer_user_id=viewer.id if viewer else None,
+            )
         )
     except CreatorNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error))
@@ -42,6 +46,9 @@ async def list_creator_reviews(
                 comment=item.comment,
                 is_locked=item.is_locked,
                 created_at=item.created_at,
+                reply=item.reply,
+                replied_at=item.replied_at,
+                can_reply=item.can_reply,
             )
             for item in result.items
         ],

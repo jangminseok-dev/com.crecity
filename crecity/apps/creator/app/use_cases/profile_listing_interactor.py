@@ -38,6 +38,7 @@ class ProfileListingInteractor(ProfileListingUseCase):
             price_min=query.price_min,
             price_max=query.price_max,
             location=query.location,
+            sort=query.sort,
         )
         total = await self._repository.count_by_status(
             status=ProfileStatus.APPROVED,

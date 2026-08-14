@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+from creator.domain.value_objects.profile_sort import ProfileSort
+
 
 @dataclass(frozen=True)
 class ProfileListingQuery:
@@ -14,6 +16,7 @@ class ProfileListingQuery:
     price_min: int | None = None
     price_max: int | None = None
     location: str | None = None
+    sort: ProfileSort = ProfileSort.LATEST  # 정렬 기준(§3.1, 갭 #45)
 
 
 @dataclass(frozen=True)

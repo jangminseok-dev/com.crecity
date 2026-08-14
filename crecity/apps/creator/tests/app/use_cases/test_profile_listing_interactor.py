@@ -1,6 +1,7 @@
 from creator.app.dtos.profile_listing_dto import ProfileListingQuery
 from creator.app.use_cases.profile_listing_interactor import ProfileListingInteractor
 from creator.domain.entities.creator_profile_entity import CreatorProfile, ProfileStatus
+from creator.domain.value_objects.profile_sort import ProfileSort
 from hub.app.dtos.creator_rating_dto import CreatorRatingSummary
 
 
@@ -22,11 +23,12 @@ class _StubRepository:
     async def list_by_status(
         self, status, category, limit, offset, q=None,
         platform=None, price_min=None, price_max=None, location=None,
+        sort=ProfileSort.LATEST,
     ):
         self.list_calls.append(
             {"status": status, "category": category, "limit": limit, "offset": offset, "q": q,
              "platform": platform, "price_min": price_min, "price_max": price_max,
-             "location": location}
+             "location": location, "sort": sort}
         )
         return self.profiles
 
@@ -108,7 +110,7 @@ async def test_승인된_프로필만_조회하도록_위임한다():
     _NO_FILTERS = {"platform": None, "price_min": None, "price_max": None, "location": None}
     assert repository.list_calls == [
         {"status": ProfileStatus.APPROVED, "category": None, "limit": 20, "offset": 0, "q": None,
-         **_NO_FILTERS}
+         **_NO_FILTERS, "sort": ProfileSort.LATEST}
     ]
     assert repository.count_calls == [
         {"status": ProfileStatus.APPROVED, "category": None, "q": None, **_NO_FILTERS}
@@ -142,6 +144,19 @@ async def test_검색_필터_확장이_목록과_총계에_동일하게_전달�
         assert call["price_min"] == 100000
         assert call["price_max"] == 500000
         assert call["location"] == "서울"
+
+
+async def test_정렬_기준을_목록_조회에_전달한다():
+    repository = _StubRepository(profiles=[_profile()])
+    interactor = _interactor(repository=repository)
+    await interactor.list_profiles(
+        ProfileListingQuery(
+            category=None, q=None, limit=20, offset=0, sort=ProfileSort.PRICE_ASC
+        )
+    )
+    assert repository.list_calls[0]["sort"] is ProfileSort.PRICE_ASC
+    # 총계는 정렬과 무관 — 같은 필터 조건만 본다
+    assert "sort" not in repository.count_calls[0]
 
 
 async def test_결과가_없으면_빈_목록과_total_0을_반환한다():

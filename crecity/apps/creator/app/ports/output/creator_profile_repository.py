@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from creator.domain.entities.creator_profile_entity import CreatorProfile, ProfileStatus
+from creator.domain.value_objects.profile_sort import ProfileSort
 
 
 class CreatorProfileRepository(ABC):
@@ -47,8 +48,9 @@ class CreatorProfileRepository(ABC):
         price_min: int | None = None,
         price_max: int | None = None,
         location: str | None = None,
+        sort: ProfileSort = ProfileSort.LATEST,
     ) -> list[CreatorProfile]:
-        """상태로 필터한 프로필을 최신 등록순으로 조회한다(§3.1 검색 필터).
+        """상태로 필터한 프로필을 sort 기준으로 조회한다(§3.1 검색 필터·정렬).
 
         q는 이름·한 줄 소개 부분 일치, location은 부분 일치.
         platform·price_min/max는 "해당 조건의 패키지가 하나라도 있는 프로필"(EXISTS).

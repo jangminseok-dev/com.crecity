@@ -49,6 +49,7 @@ import chat.adapter.outbound.orm.custom_offer_orm  # noqa: E402, F401
 import hub.adapter.outbound.orm.outbox_event_orm  # noqa: E402, F401
 import notification.adapter.outbound.orm.notification_orm  # noqa: E402, F401
 import admin.adapter.outbound.orm.audit_log_orm  # noqa: E402, F401
+import admin.adapter.outbound.orm.report_orm  # noqa: E402, F401
 
 target_metadata = Base.metadata
 

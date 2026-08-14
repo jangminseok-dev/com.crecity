@@ -8,6 +8,9 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from admin.adapter.inbound.api.v1.audit_log_router import audit_log_router
+from admin.adapter.inbound.api.v1.dashboard_metrics_router import dashboard_metrics_router
+from admin.adapter.inbound.api.v1.order_search_router import order_search_router
+from admin.adapter.inbound.api.v1.report_router import report_router
 from admin.adapter.inbound.api.v1.profile_review_router import profile_review_router
 from admin.adapter.inbound.api.v1.steward_router import steward_router
 from auth.adapter.inbound.api.v1.account_deletion_router import account_deletion_router
@@ -43,11 +46,21 @@ from creator.adapter.inbound.api.v1.profile_router import profile_router
 from creator.adapter.inbound.api.v1.profile_update_router import profile_update_router
 from auth.dependencies.access_token_verifier_provider import build_access_token_verifier
 from creator.adapter.outbound.hub.package_summary_gateway import CreatorPackageSummaryGateway
+from auth.adapter.outbound.hub.account_metrics_gateway import AuthAccountMetricsGateway
+from creator.adapter.outbound.hub.profile_metrics_gateway import CreatorProfileMetricsGateway
 from creator.adapter.outbound.hub.profile_review_gateway import CreatorProfileReviewGateway
+from order.adapter.outbound.hub.order_metrics_gateway import OrderMetricsGateway
+from order.adapter.outbound.hub.order_search_gateway import OrderSearchGateway
 from hub.adapter.inbound.api.v1.dispatcher_router import dispatcher_router
 from hub.dependencies.current_user_provider import register_access_token_verifier
 from hub.dependencies.custom_offer_provider import register_custom_offer_port
 from hub.dependencies.package_summary_provider import register_package_summary_port
+from hub.dependencies.platform_metrics_provider import (
+    register_account_metrics_port,
+    register_order_metrics_port,
+    register_profile_metrics_port,
+)
+from hub.dependencies.order_search_provider import register_order_search_port
 from hub.dependencies.profile_review_provider import register_profile_review_port
 from order.adapter.inbound.api.v1.balance_lookup_router import balance_lookup_router
 from order.adapter.inbound.api.v1.bookkeeper_router import bookkeeper_router
@@ -120,6 +133,7 @@ from hub.dependencies.creator_rating_provider import register_creator_rating_por
 from review.adapter.outbound.hub.creator_rating_gateway import ReviewCreatorRatingGateway
 from review.adapter.inbound.api.v1.appraiser_router import appraiser_router
 from review.adapter.inbound.api.v1.review_listing_router import review_listing_router
+from review.adapter.inbound.api.v1.review_reply_router import review_reply_router
 from review.adapter.inbound.api.v1.review_submission_router import review_submission_router
 
 # 스타 토폴로지 조립 지점 — 스포크 구현체를 허브 계약에 등록한다
@@ -141,6 +155,10 @@ register_campaign_application_port(CampaignApplicationGateway())  # campaign →
 register_order_adjustment_port(OrderAdjustmentGateway())  # order → 금액 변경 추가 결제
 register_active_order_port(OrderActiveOrderGateway())  # order → 활성 주문(탈퇴 차단)
 register_profile_deactivation_port(CreatorProfileDeactivationGateway())  # creator → 탈퇴 시 프로필 비활성화
+register_account_metrics_port(AuthAccountMetricsGateway())  # auth → 가입 집계(운영 대시보드)
+register_profile_metrics_port(CreatorProfileMetricsGateway())  # creator → 심사 현황 집계
+register_order_metrics_port(OrderMetricsGateway())  # order → 거래·정산 집계
+register_order_search_port(OrderSearchGateway())  # order → 운영 주문 검색(문의 대응)
 
 
 @asynccontextmanager
@@ -189,12 +207,16 @@ app.include_router(withdrawal_settlement_router)
 app.include_router(dispute_resolution_router)
 app.include_router(steward_router)
 app.include_router(profile_review_router)
+app.include_router(dashboard_metrics_router)
+app.include_router(order_search_router)
+app.include_router(report_router)
 app.include_router(audit_log_router)
 app.include_router(paymaster_router)
 app.include_router(checkout_preparation_router)
 app.include_router(payment_confirmation_router)
 app.include_router(appraiser_router)
 app.include_router(review_submission_router)
+app.include_router(review_reply_router)
 app.include_router(review_listing_router)
 app.include_router(herald_router)
 app.include_router(campaign_posting_router)

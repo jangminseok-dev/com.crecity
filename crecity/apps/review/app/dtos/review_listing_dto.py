@@ -7,6 +7,7 @@ class CreatorReviewsQuery:
 
     slug: str
     viewer_logged_in: bool  # 블러 정책 — 비로그인은 리뷰 원문 잠금(collabstr §2.3)
+    viewer_user_id: int | None = None  # 답글 자격 판정용(갭 #53) — 비로그인은 None
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,10 @@ class ReviewListItem:
     comment: str | None  # 비로그인이면 None(잠김)
     is_locked: bool
     created_at: datetime | None
+    # 크리에이터 답글(갭 #53) — 원문이 잠기면 답글도 함께 잠근다
+    reply: str | None = None
+    replied_at: datetime | None = None
+    can_reply: bool = False  # 보는 사람이 이 리뷰의 대상 크리에이터이고 아직 답글이 없을 때만
 
 
 @dataclass(frozen=True)

@@ -17,4 +17,6 @@ class ReviewMapper:
             satisfaction_score=orm.satisfaction_score,
             comment=orm.comment,
             created_at=orm.created_at,
+            reply=orm.reply,
+            replied_at=orm.replied_at,
         )

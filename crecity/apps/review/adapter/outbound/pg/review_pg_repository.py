@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select
+from sqlalchemy import func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from review.adapter.outbound.mappers.review_mapper import ReviewMapper
@@ -37,6 +37,22 @@ class ReviewPgRepository(ReviewRepository):
         )
         await self._session.commit()
         return ReviewMapper.to_entity(result.scalar_one())
+
+    async def find_by_id(self, review_id: int) -> Review | None:
+        result = await self._session.execute(select(ReviewOrm).where(ReviewOrm.id == review_id))
+        orm = result.scalar_one_or_none()
+        return ReviewMapper.to_entity(orm) if orm is not None else None
+
+    async def save_reply(self, review_id: int, reply: str) -> Review | None:
+        result = await self._session.execute(
+            update(ReviewOrm)
+            .where(ReviewOrm.id == review_id)
+            .values(reply=reply, replied_at=func.now())
+            .returning(ReviewOrm)
+        )
+        orm = result.scalar_one_or_none()
+        await self._session.commit()
+        return ReviewMapper.to_entity(orm) if orm is not None else None
 
     async def find_by_order_id(self, order_id: int) -> Review | None:
         result = await self._session.execute(

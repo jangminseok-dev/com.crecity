@@ -23,3 +23,8 @@ class ReviewOrm(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+    # 크리에이터 답글(갭 #53) — 리뷰에 1:1 종속이라 별도 테이블을 두지 않는다. 없으면 빈 문자열
+    reply: Mapped[str] = mapped_column(Text, server_default="")
+    replied_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )

@@ -1,4 +1,4 @@
-from sqlalchemy import exists, func, insert, select, update
+from sqlalchemy import exists, func, insert, nulls_last, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from creator.adapter.outbound.mappers.creator_profile_mapper import CreatorProfileMapper
@@ -6,6 +6,7 @@ from creator.adapter.outbound.orm.creator_package_orm import CreatorPackageOrm
 from creator.adapter.outbound.orm.creator_profile_orm import CreatorProfileOrm
 from creator.app.ports.output.creator_profile_repository import CreatorProfileRepository
 from creator.domain.entities.creator_profile_entity import CreatorProfile, ProfileStatus
+from creator.domain.value_objects.profile_sort import ProfileSort
 
 
 def _listing_conditions(
@@ -40,6 +41,19 @@ def _listing_conditions(
             packages = packages.where(CreatorPackageOrm.price_krw <= price_max)
         conditions.append(packages.exists())
     return conditions
+
+
+def _listing_order_by(sort: ProfileSort) -> list:
+    """정렬 절(§3.1, 갭 #45) — 가격은 최저 패키지 가격, 패키지 없는 프로필(NULL)은 항상 뒤로."""
+    if sort in (ProfileSort.PRICE_ASC, ProfileSort.PRICE_DESC):
+        min_price = (
+            select(func.min(CreatorPackageOrm.price_krw))
+            .where(CreatorPackageOrm.profile_id == CreatorProfileOrm.id)
+            .scalar_subquery()
+        )
+        direction = min_price.asc() if sort is ProfileSort.PRICE_ASC else min_price.desc()
+        return [nulls_last(direction), CreatorProfileOrm.id.desc()]
+    return [CreatorProfileOrm.created_at.desc(), CreatorProfileOrm.id.desc()]
 
 
 class CreatorProfilePgRepository(CreatorProfileRepository):
@@ -113,16 +127,13 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         price_min: int | None = None,
         price_max: int | None = None,
         location: str | None = None,
+        sort: ProfileSort = ProfileSort.LATEST,
     ) -> list[CreatorProfile]:
         stmt = select(CreatorProfileOrm).where(
             CreatorProfileOrm.status == status.value,
             *_listing_conditions(category, q, platform, price_min, price_max, location),
         )
-        stmt = (
-            stmt.order_by(CreatorProfileOrm.created_at.desc(), CreatorProfileOrm.id.desc())
-            .limit(limit)
-            .offset(offset)
-        )
+        stmt = stmt.order_by(*_listing_order_by(sort)).limit(limit).offset(offset)
         result = await self._session.execute(stmt)
         return [CreatorProfileMapper.to_entity(orm) for orm in result.scalars()]
 
