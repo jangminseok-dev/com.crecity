@@ -21,6 +21,10 @@ class CreatorPackageSummaryGateway(PackageSummaryPort):
             profile = await CreatorProfilePgRepository(session).find_by_id(package.profile_id)
         if profile is None or profile.user_id is None:
             return None  # 소유 계정 없는 레거시 프로필 — 적립 대상이 없어 주문 불가
+        if not profile.accepting_orders:
+            # 주문 수신을 끈 크리에이터(갭 #64) — None을 돌려 기존 '주문 불가' 경로를
+            # 그대로 태운다(payment·order 코드를 건드리지 않는다)
+            return None
         return PackageSummary(
             package_id=package.id,
             title=package.title,

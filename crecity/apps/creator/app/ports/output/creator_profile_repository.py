@@ -89,6 +89,13 @@ class CreatorProfileRepository(ABC):
         ...
 
     @abstractmethod
+    async def set_accepting_orders(
+        self, user_id: int, accepting: bool
+    ) -> CreatorProfile | None:
+        """주문 수신 여부 전환(갭 #64) — 소유자 기준, 프로필 없으면 None."""
+        ...
+
+    @abstractmethod
     async def update_profile(
         self,
         user_id: int,

@@ -30,5 +30,6 @@ class ProfileLookupInteractor(ProfileLookupUseCase):
             location=profile.location,
             primary_category=profile.primary_category,
             status=profile.status.value,
+            accepting_orders=profile.accepting_orders,
             created_at=profile.created_at,
         )

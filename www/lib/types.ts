@@ -30,6 +30,7 @@ export type CreatorProfile = {
   status: "PENDING" | "APPROVED" | "REJECTED";
   created_at: string | null;
   followers_total: number; // 전 채널 팔로워 합(자가입력) — 헤더 배지
+  accepting_orders: boolean; // 주문 수신 여부(갭 #64)
 };
 
 export type ProfileFaq = {

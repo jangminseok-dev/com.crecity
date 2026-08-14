@@ -30,6 +30,7 @@ class CreatorProfile:
     location: str | None
     primary_category: str  # 니치 카테고리 — 다중 카테고리는 M:N 필요 시점에 정규화
     status: ProfileStatus
+    accepting_orders: bool = True  # 주문 수신 여부(갭 #64) — 심사 상태와 별개
     # 소유 계정(auth users 논리 참조) — None은 소셜 로그인 도입 전 레거시 행뿐
     user_id: int | None = None
     created_at: datetime | None = None

@@ -18,7 +18,9 @@ def _listing_conditions(
     location: str | None,
 ) -> list:
     """목록·카운트가 공유하는 검색 필터(§3.1) — 목록과 총계가 항상 같은 조건을 본다."""
-    conditions = []
+    # 주문을 받지 않는 프로필은 목록에서 뺀다(갭 #64) — 골라도 살 수 없으면 헛수고다.
+    # 프로필 페이지 직접 조회는 그대로 열어 둔다(SEO·공유 링크 유지)
+    conditions = [CreatorProfileOrm.accepting_orders.is_(True)]
     if category is not None:
         conditions.append(CreatorProfileOrm.primary_category == category)
     if q:
@@ -165,6 +167,17 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
             update(CreatorProfileOrm)
             .where(CreatorProfileOrm.id == profile_id)
             .values(status=status.value)
+            .returning(CreatorProfileOrm)
+        )
+        orm = result.scalar_one_or_none()
+        await self._session.commit()
+        return CreatorProfileMapper.to_entity(orm) if orm is not None else None
+
+    async def set_accepting_orders(self, user_id: int, accepting: bool):
+        result = await self._session.execute(
+            update(CreatorProfileOrm)
+            .where(CreatorProfileOrm.user_id == user_id)
+            .values(accepting_orders=accepting)
             .returning(CreatorProfileOrm)
         )
         orm = result.scalar_one_or_none()

@@ -2,13 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { backendGet } from "@/lib/server/backend-api";
 
 /**
  * 이용 방법 안내(§2.1-11 "How does it work?", 갭 #47).
  *
- * **지금 구현된 규칙만 적는다.** 수수료율처럼 설정(`ORDER_*_FEE_PERCENT`)으로 바뀌는 값은
- * 숫자로 박지 않고 "결제 화면에서 확인"으로 넘긴다 — 페르소나 랜딩(갭 #13)과 같은 방침.
+ * **지금 구현된 규칙만 적는다.** 수수료율처럼 설정으로 바뀌는 값은 하드코딩하지 않고
+ * 백엔드 정책 API(갭 #62)에서 읽는다 — 설정이 바뀌면 이 페이지도 따라간다.
  */
+
+type FeePolicy = {
+  brand_fee_percent: number;
+  creator_fee_percent: number;
+  withdrawal_tax_permille: number;
+  response_deadline_hours: number;
+};
 
 const CTA_CLASS =
   "inline-flex h-10 items-center justify-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent-foreground";
@@ -74,11 +82,14 @@ const CREATOR_STEPS: { title: string; body: string }[] = [
   },
 ];
 
-const FAQS: { question: string; answer: string }[] = [
+function buildFaqs(policy: FeePolicy | null): { question: string; answer: string }[] {
+  const fee = policy
+    ? `브랜드는 상품 금액에 중개 수수료 ${policy.brand_fee_percent}%가 더해진 금액을 결제하고, 크리에이터는 상품 금액에서 중개 수수료 ${policy.creator_fee_percent}%를 뺀 금액을 받습니다(인출 시 사업소득 원천징수 ${(policy.withdrawal_tax_permille / 10).toFixed(1)}% 별도). 주문할 때의 요율이 그 주문에 그대로 남으므로 이후 요율이 바뀌어도 진행 중인 주문에는 영향이 없습니다.`
+    : "브랜드는 결제할 때 수수료가 더해진 총액을 내고, 크리에이터는 수수료를 뺀 금액을 받습니다. 정확한 금액은 결제 화면과 주문 상세에서 확인할 수 있습니다.";
+  return [
   {
     question: "수수료는 얼마인가요?",
-    answer:
-      "브랜드는 결제할 때 수수료가 더해진 총액을 내고, 크리에이터는 수수료를 뺀 금액을 받습니다. 정확한 금액은 결제 화면과 주문 상세에서 확인할 수 있습니다. 주문할 때의 요율이 그 주문에 그대로 남으므로, 이후 요율이 바뀌어도 진행 중인 주문에는 영향이 없습니다.",
+    answer: fee,
   },
   {
     question: "결제한 돈은 언제 크리에이터에게 넘어가나요?",
@@ -103,9 +114,10 @@ const FAQS: { question: string; answer: string }[] = [
   {
     question: "크리에이터는 세금을 어떻게 처리하나요?",
     answer:
-      "인출할 때 사업소득 원천징수 3.3%를 떼고 지급합니다. 인출 건별 세액과 실지급액이 기록되고, 연간 지급명세서를 직접 조회·인쇄할 수 있습니다.",
+      "인출할 때 사업소득 원천징수를 떼고 지급합니다. 인출 건별 세액과 실지급액이 기록되고, 연간 지급명세서를 직접 조회·인쇄할 수 있습니다.",
   },
-];
+  ];
+}
 
 function StepList({ steps }: { steps: { title: string; body: string }[] }) {
   return (
@@ -125,7 +137,10 @@ function StepList({ steps }: { steps: { title: string; body: string }[] }) {
   );
 }
 
-export default function HowItWorksPage() {
+export default async function HowItWorksPage() {
+  const policy = await backendGet<FeePolicy>("/order/fee-policy");
+  const faqs = buildFaqs(policy);
+
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 pt-10 sm:px-6">
       <nav className="text-sm text-muted-foreground">
@@ -173,7 +188,7 @@ export default function HowItWorksPage() {
       <section className="mt-12">
         <h2 className="text-xl font-bold tracking-[-0.02em]">자주 묻는 질문</h2>
         <div className="mt-4 grid gap-3">
-          {FAQS.map((faq) => (
+          {faqs.map((faq) => (
             <Card key={faq.question}>
               <CardContent className="p-5">
                 <h3 className="text-[15px] font-semibold">{faq.question}</h3>

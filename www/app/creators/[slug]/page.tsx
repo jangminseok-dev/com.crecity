@@ -104,6 +104,9 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
                   </Badge>
                 )}
                 {profile.status !== "APPROVED" && <Badge variant="outline">심사 대기 중</Badge>}
+                {!profile.accepting_orders && (
+                  <Badge variant="outline">지금은 주문을 받지 않아요</Badge>
+                )}
               </div>
               <p className="mt-2 text-[15px] text-muted-foreground">
                 {profile.primary_category}
@@ -189,6 +192,7 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
         </div>
 
         <PackagePicker
+          acceptingOrders={profile.accepting_orders}
           slug={profile.slug}
           packages={packages ?? []}
           shortlistItem={{

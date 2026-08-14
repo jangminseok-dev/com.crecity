@@ -28,6 +28,7 @@ from creator.adapter.inbound.api.v1.package_management_router import (
 from creator.adapter.inbound.api.v1.my_profile_lookup_router import my_profile_lookup_router
 from creator.adapter.inbound.api.v1.popular_profiles_router import popular_profiles_router
 from creator.adapter.inbound.api.v1.profile_listing_router import profile_listing_router
+from creator.adapter.inbound.api.v1.order_acceptance_router import order_acceptance_router
 from creator.adapter.inbound.api.v1.profile_view_router import profile_view_router
 from creator.adapter.inbound.api.v1.profile_lookup_router import profile_lookup_router
 from creator.adapter.inbound.api.v1.profile_registration_router import (
@@ -64,6 +65,7 @@ from hub.dependencies.platform_metrics_provider import (
 from hub.dependencies.order_search_provider import register_order_search_port
 from hub.dependencies.profile_review_provider import register_profile_review_port
 from order.adapter.inbound.api.v1.balance_lookup_router import balance_lookup_router
+from order.adapter.inbound.api.v1.fee_policy_router import fee_policy_router
 from order.adapter.inbound.api.v1.bookkeeper_router import bookkeeper_router
 from order.adapter.inbound.api.v1.deliverable_submission_router import (
     deliverable_submission_router,
@@ -187,6 +189,7 @@ app.include_router(profile_router)
 app.include_router(profile_registration_router)
 app.include_router(profile_listing_router)
 app.include_router(profile_view_router)
+app.include_router(order_acceptance_router)
 app.include_router(popular_profiles_router)
 app.include_router(my_profile_lookup_router)
 app.include_router(profile_update_router)
@@ -203,6 +206,7 @@ app.include_router(deliverable_submission_router)
 app.include_router(dispute_router)
 app.include_router(order_lookup_router)
 app.include_router(balance_lookup_router)
+app.include_router(fee_policy_router)
 app.include_router(withdrawal_request_router)
 app.include_router(payout_statement_router)
 app.include_router(withdrawal_settlement_router)

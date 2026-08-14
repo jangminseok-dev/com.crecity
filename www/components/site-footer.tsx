@@ -1,42 +1,36 @@
 import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
-const SUPPORT = [
-  "평일 09:00–18:00 (주말·공휴일 휴무)",
-  "1:1 문의 — 24시간 접수",
-  "브랜드·크리에이터 분쟁 중재 센터",
-];
-const COMPANY = ["회사소개", "채용정보", "공지사항", "블로그"];
-// href가 있는 항목만 실제 페이지 — 나머지는 준비 중 표기
-const GUIDE: { label: string; href?: string }[] = [
+/* 실제로 동작하는 경로만 싣는다(갭 #61) — 없는 연락처·부서를 적어두면 그 자체가 허위 안내다.
+   전화 상담·채용·공지 같은 창구는 실제로 생길 때 추가한다. */
+const SUPPORT: { label: string; href: string }[] = [
+  { label: "자주 묻는 질문", href: "/faq" },
   { label: "이용 방법", href: "/how-it-works" },
+  { label: "주문 분쟁 중재 — 주문 상세에서 신고", href: "/how-it-works" },
+];
+const GUIDE: { label: string; href: string }[] = [
   { label: "이용약관", href: "/terms" },
   { label: "개인정보 처리방침", href: "/privacy" },
   { label: "환불 규정", href: "/terms" },
-  { label: "무료 도구 — 단가·참여율 계산기", href: "/tools" },
+  { label: "무료 도구 — 계산기·템플릿", href: "/tools" },
   { label: "마케팅팀을 위한 안내", href: "/for/marketing-teams" },
   { label: "창업가를 위한 안내", href: "/for/founders" },
   { label: "크리에이터 등록 안내", href: "/for/creators" },
-  { label: "입점·제휴 문의" },
 ];
 
 export default function SiteFooter() {
   return (
     <footer className="mt-20 border-t bg-[#f9fafb]">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.2fr_1fr_1fr_1.4fr]">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1fr_1fr_1.4fr]">
         <div>
-          <h4 className="mb-3.5 text-[15px] font-bold">고객센터 1600-0000</h4>
+          <h4 className="mb-3.5 text-[15px] font-bold">도움말</h4>
           <ul className="flex flex-col gap-2.5 text-[13px] text-muted-foreground">
             {SUPPORT.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h4 className="mb-3.5 text-[15px] font-bold">크리시티</h4>
-          <ul className="flex flex-col gap-2.5 text-[13px] text-muted-foreground">
-            {COMPANY.map((item) => (
-              <li key={item}>{item}</li>
+              <li key={item.label}>
+                <Link href={item.href} className="transition-colors hover:text-foreground">
+                  {item.label}
+                </Link>
+              </li>
             ))}
           </ul>
         </div>
@@ -48,13 +42,9 @@ export default function SiteFooter() {
                 key={item.label}
                 className={item.label === "개인정보 처리방침" ? "font-semibold text-foreground/70" : undefined}
               >
-                {item.href ? (
-                  <Link href={item.href} className="transition-colors hover:text-foreground">
-                    {item.label}
-                  </Link>
-                ) : (
-                  item.label
-                )}
+                <Link href={item.href} className="transition-colors hover:text-foreground">
+                  {item.label}
+                </Link>
               </li>
             ))}
           </ul>

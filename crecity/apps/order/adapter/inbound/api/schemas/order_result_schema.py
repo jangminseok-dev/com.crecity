@@ -28,6 +28,9 @@ class OrderResponseSchema(BaseModel):
     revisions_used: int
     usage_rights: str
     created_at: datetime | None
+    # 조회 요청자 기준 거래 상대(갭 #63)
+    counterpart_name: str | None = None
+    counterpart_slug: str | None = None
 
     @classmethod
     def from_result(cls, result: OrderResult) -> OrderResponseSchema:
@@ -50,4 +53,6 @@ class OrderResponseSchema(BaseModel):
             revisions_used=result.revisions_used,
             usage_rights=result.usage_rights,
             created_at=result.created_at,
+            counterpart_name=result.counterpart_name,
+            counterpart_slug=result.counterpart_slug,
         )

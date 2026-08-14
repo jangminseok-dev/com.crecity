@@ -8,6 +8,7 @@ import { z } from "zod";
 import AnalyticsManager from "@/components/analytics-manager";
 import FaqManager from "@/components/faq-manager";
 import OnboardingChecklist from "@/components/onboarding-checklist";
+import OrderAcceptanceToggle from "@/components/order-acceptance-toggle";
 import PortfolioManager from "@/components/portfolio-manager";
 import ProfileViewStats from "@/components/profile-view-stats";
 import { Badge } from "@/components/ui/badge";
@@ -265,6 +266,7 @@ export default function DashboardProfilePage() {
       ) : (
         <ProfileView profile={profile} onEdit={() => setEditing(true)} />
       )}
+      <OrderAcceptanceToggle accepting={profile.accepting_orders} />
       <ProfileViewStats />
       <OnboardingChecklist slug={profile.slug} />
       <PortfolioManager slug={profile.slug} />

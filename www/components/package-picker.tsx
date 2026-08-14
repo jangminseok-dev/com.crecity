@@ -16,10 +16,13 @@ export default function PackagePicker({
   slug,
   packages,
   shortlistItem,
+  acceptingOrders = true,
 }: {
   slug: string;
   packages: CreatorPackage[];
   shortlistItem: ShortlistItem;
+  /** 주문 수신 중단(갭 #64)이면 구매·장바구니를 막는다 — 서버도 거부하지만 먼저 알린다 */
+  acceptingOrders?: boolean;
 }) {
   // 단일 객체 상태 — 선택 패키지 + 플랫폼 탭(null=전체) + 카트 하이드레이션 완료 여부
   const [ui, setUi] = useState<{
@@ -114,7 +117,13 @@ export default function PackagePicker({
             </span>
           </div>
 
-          {selectedId && (
+          {!acceptingOrders && (
+            <p className="rounded-lg border border-dashed px-3 py-3 text-center text-[13px] leading-relaxed text-muted-foreground">
+              이 크리에이터는 지금 새 주문을 받지 않습니다. 찜해 두면 나중에 다시 확인할 수
+              있어요.
+            </p>
+          )}
+          {acceptingOrders && selectedId && (
             <Link
               href={`/orders/new?slug=${slug}&package=${selectedId}`}
               className="inline-flex h-[52px] w-full items-center justify-center rounded-xl bg-primary text-[17px] font-semibold text-primary-foreground transition-colors hover:bg-accent-foreground"
@@ -122,7 +131,7 @@ export default function PackagePicker({
               패키지 구매
             </Link>
           )}
-          {selectedPkg &&
+          {acceptingOrders && selectedPkg &&
             (inCart ? (
               <Link
                 href="/cart"

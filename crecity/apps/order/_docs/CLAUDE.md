@@ -13,7 +13,8 @@
 | order_cancellation | `POST /order/orders/{id}/cancel-request·cancel-consent·cancel-decline` | 양측 합의 취소 — 요청은 IN_PROGRESS·IN_REVIEW의 당사자 누구나(중복 409), 동의·거부는 **상대방만**(403). 동의 시 CANCELLED + 브랜드 전액 크레딧 환불(단일 트랜잭션). `orders.cancel_requested_by`가 대기 상태 표현 |
 | order_adjustment | `POST·GET /order/orders/{id}/adjustments` · `POST /order/adjustments/{id}/decline` | 진행 중 금액 변경(§3.8·§6, 갭 #31) — 요청은 **IN_PROGRESS·IN_REVIEW의 크리에이터만**(대기 중 중복 409), 거절은 브랜드만. **수락은 추가 결제**(payment `/checkouts/adjustment` → 허브 `OrderAdjustmentPort`로 주문 증액+증가분 예치 단일 트랜잭션). 감액은 미지원(합의 취소로) |
 | dispute | `POST·GET /order/orders/{id}/disputes` | 분쟁 신고·이력(§3.8 지원팀 중재, 갭 #4) — 신고는 **IN_PROGRESS·IN_REVIEW의 당사자**(사유 10~2000자, 대기 중 분쟁이 있으면 409), 열람은 당사자만. **판정은 admin**(허브 `DisputeResolutionPort`) — 환불(CANCELLED+전액 크레딧)·지급(COMPLETED+적립)·기각(주문 유지). 대기 분쟁이 있으면 `find_expired`가 그 주문을 건너뛴다(자동 승인 보류) |
-| order_lookup | `GET /order/orders` · `GET /order/orders/{id}` | 내 주문 목록(최신순)·상세 — **당사자만(403)** |
+| order_lookup | `GET /order/orders` · `GET /order/orders/{id}` | 내 주문 목록(최신순)·상세 — **당사자만(403)**. 응답에 **조회자 기준 거래 상대**(`counterpart_name`·`counterpart_slug`, 갭 #63)를 붙인다 — 허브 `CreatorRefPort`·`UserDirectoryPort` 경유, 상대 id를 모아 한 번씩만 조회(N+1 회피). 참조가 끊겨도 조회는 성공 |
+| fee_policy | `GET /order/fee-policy` | **공개** 수수료·마감 정책(갭 #62) — 요율·원천징수 퍼밀·응답 마감을 그대로 내려준다. 화면이 숫자를 하드코딩하지 않게 하는 것이 목적(설정이 바뀌면 화면도 따라온다). I/O가 없어 유스케이스는 `def` |
 | balance_lookup | `GET /order/balance` | 내 잔액 = 적립성 기입 합 − 차감성 기입 합 |
 | withdrawal_request | `POST/GET /order/withdrawals` | 크리에이터 적립금 인출 — 요청 시 잔액 재검증+차감 기입(WITHDRAWAL)을 advisory lock 단일 트랜잭션으로(과인출 차단), 원천징수 3.3% 세액·실지급액 스냅샷. 운영 처리(완료/실패·복원)는 허브 `WithdrawalSettlementPort`(order 구현 게이트웨이)로 admin이 수행 |
 | payout_statement | `GET /order/withdrawals/statements/{year}` | 연간 지급명세서(갭 #2) — **항상 본인 기준**(남의 명세 조회 불가). 지급 완료(PAID)된 인출을 지급일(`settled_at`) 연도로 집계 + 건별 내역. 새 테이블 없음(집계는 `AnnualPayout` VO). 운영자용 크리에이터별 집계는 admin `GET /admin/withdrawals/annual-summary/{year}` |

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy import Boolean, DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database import Base
@@ -22,6 +22,9 @@ class CreatorProfileOrm(Base):
     primary_category: Mapped[str] = mapped_column(String(50), index=True)
     # ProfileStatus 값 — 목록 노출 필터(APPROVED)에 쓰인다
     status: Mapped[str] = mapped_column(String(20), index=True)
+    # 주문 수신 여부(갭 #64) — 심사 상태와 직교하다. 휴가·마감 중 72h 무응답
+    # 랭킹 페널티(갭 #32)를 피하려면 스스로 닫을 수 있어야 한다
+    accepting_orders: Mapped[bool] = mapped_column(Boolean, server_default="true")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
