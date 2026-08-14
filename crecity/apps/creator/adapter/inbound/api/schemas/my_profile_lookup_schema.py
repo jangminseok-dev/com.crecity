@@ -13,4 +13,5 @@ class MyProfileResponseSchema(BaseModel):
     location: str | None
     primary_category: str
     status: str
+    accepting_orders: bool = True  # 주문 수신 여부(갭 #64)
     created_at: datetime | None

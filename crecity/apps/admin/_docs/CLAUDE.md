@@ -19,6 +19,7 @@
 | withdrawal_settlement | `GET /admin/withdrawals/pending` · `GET /admin/withdrawals/annual-summary/{year}` · `POST /admin/withdrawals/{id}/complete·fail` | `withdrawal.settle` | 인출 운영 처리 + **연간 지급 집계**(갭 #2 — 지급명세서 제출 자료, 크리에이터별 합계·지급액 큰 순). — 운영자가 은행 이체 후 완료(PAID)/실패(FAILED·잔액 복원) 확정. 상태 소유자는 order — 허브 `WithdrawalSettlementPort` 경유. 처리자·결정은 감사 로그에 영속 기록 |
 
 - 운영자 계정: `scripts/auth_grant_role.py <이메일> admin` — 화면·API로 역할 부여 불가.
+  운영 화면을 API로 확인할 때는 `scripts/dev_issue_token.py <이메일>`로 토큰을 얻는다.
 - **감사 로그(갭 #36)**: `admin_audit_logs`(append-only) — 다섯 record 포트를 공용
   `PgAuditRecordAdapter`가 구현하며 `subject`로 종류를 구분한다. 기록 실패는 로그만
   남기고 통과시킨다(감사 기록이 심사·인출 처리·분쟁 판정·신고 처리를 되돌리지 않는다).

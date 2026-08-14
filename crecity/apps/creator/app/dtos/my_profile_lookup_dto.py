@@ -20,3 +20,4 @@ class MyProfileResult:
     primary_category: str
     status: str
     created_at: datetime | None
+    accepting_orders: bool = True  # 주문 수신 여부(갭 #64) — 대시보드 토글이 읽는다

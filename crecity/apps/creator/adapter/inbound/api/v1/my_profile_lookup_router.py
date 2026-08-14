@@ -29,5 +29,6 @@ async def get_my_profile(
         location=result.location,
         primary_category=result.primary_category,
         status=result.status,
+        accepting_orders=result.accepting_orders,
         created_at=result.created_at,
     )

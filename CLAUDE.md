@@ -118,6 +118,10 @@ cd www && pnpm run dev
 cd www && pnpm run typecheck
 ```
 
+- **개발용 토큰**(로그인이 필요한 API를 확인할 때):
+  `cd crecity && PYTHONPATH=.:apps ../.venv/bin/python scripts/dev_issue_token.py <이메일>`
+  (계정 목록은 `--list`). 실제 발급기를 그대로 쓰므로 진짜 토큰과 같다.
+  **로컬 DB가 아니면 실행을 거부한다**(`--force`로만 넘긴다).
 - 마이그레이션: `cd crecity && PYTHONPATH=apps ../.venv/bin/alembic upgrade head`
   (새 ORM은 `alembic/env.py`에 import 등록 → `revision --autogenerate` → `upgrade head`).
 
