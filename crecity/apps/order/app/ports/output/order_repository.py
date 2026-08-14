@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from hub.app.dtos.outbox_event_dto import OutboxEvent
 from order.app.dtos.party_stats_dto import PartyTradeStats
@@ -62,6 +62,24 @@ class OrderRepository(ABC):
     @abstractmethod
     async def get_party_stats(self, user_id: int, as_brand: bool) -> PartyTradeStats:
         """당사자 거래 이력 집계(갭 #65·#66) — as_brand면 브랜드로 참여한 주문 기준."""
+        ...
+
+    @abstractmethod
+    async def find_deadline_warning_targets(
+        self, now: datetime, threshold: timedelta, limit: int
+    ) -> list[Order]:
+        """마감이 임계 안으로 들어왔고 아직 알리지 않은 주문(갭 #76)."""
+        ...
+
+    @abstractmethod
+    async def record_deadline_warnings(
+        self, order_ids: list[int], now: datetime, events: list[OutboxEvent]
+    ) -> None:
+        """임박 표식과 알림 이벤트를 **한 트랜잭션으로** 남긴다.
+
+        따로 커밋하면 표식만 남고 알림이 안 가거나(영영 못 받음), 알림만 가고 표식이
+        없어 매 주기 중복 발송된다.
+        """
         ...
 
     @abstractmethod

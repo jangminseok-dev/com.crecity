@@ -19,6 +19,7 @@ class OrderMapper:
             requirements=orm.requirements,
             status=OrderStatus(orm.status),
             deadline_at=orm.deadline_at,
+            deadline_warned_at=orm.deadline_warned_at,
             cancel_requested_by=orm.cancel_requested_by,
             accept_expired=orm.accept_expired,
             revision_limit=orm.revision_limit,

@@ -19,7 +19,7 @@
 | balance_lookup | `GET /order/balance` | 내 잔액 = 적립성 기입 합 − 차감성 기입 합 |
 | withdrawal_request | `POST/GET /order/withdrawals` | 크리에이터 적립금 인출 — 요청 시 잔액 재검증+차감 기입(WITHDRAWAL)을 advisory lock 단일 트랜잭션으로(과인출 차단), 원천징수 3.3% 세액·실지급액 스냅샷. 운영 처리(완료/실패·복원)는 허브 `WithdrawalSettlementPort`(order 구현 게이트웨이)로 admin이 수행 |
 | payout_statement | `GET /order/withdrawals/statements/{year}` | 연간 지급명세서(갭 #2) — **항상 본인 기준**(남의 명세 조회 불가). 지급 완료(PAID)된 인출을 지급일(`settled_at`) 연도로 집계 + 건별 내역. 새 테이블 없음(집계는 `AnnualPayout` VO). 운영자용 크리에이터별 집계는 admin `GET /admin/withdrawals/annual-summary/{year}` |
-| deadline_sweep | (HTTP 없음) | 72h 만료 스캔 — `scripts/order_deadline_sweep.py`를 cron이 주기 실행. 수락 만료→환불, 검토 만료→자동 승인 |
+| deadline_sweep | (HTTP 없음) | 72h 만료 스캔 — `scripts/order_deadline_sweep.py`를 cron이 주기 실행. 수락 만료→환불, 검토 만료→자동 승인. **만료 전 임박 알림**(갭 #76)도 같은 스캔이 보낸다 — `ORDER_DEADLINE_WARNING_HOURS`(12h) 안으로 들어오면 움직여야 하는 쪽에 1회. 중복은 `deadline_warned_at` 표식으로 막고 **표식+이벤트를 단일 트랜잭션**으로 남긴다(`record_deadline_warnings`). 제출로 마감이 재설정되면 표식도 비워진다 |
 
 ## 도메인 규칙 (BOUNDARIES §4 · collabstr §3.8)
 

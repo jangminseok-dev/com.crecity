@@ -27,6 +27,11 @@ class OrderOrm(Base):
     # OrderStatus 값 — 만료 스캔 필터(status + deadline_at)에 쓰인다
     status: Mapped[str] = mapped_column(String(20), index=True)
     deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # 마감 임박 알림을 보낸 시각(갭 #76) — 스윕이 5분마다 돌아도 한 번만 보내기 위한 표식.
+    # 마감이 새로 잡히면(제출 등) 다시 null이 되어 새 마감 기준으로 한 번 더 나간다
+    deadline_warned_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     # 양측 합의 취소의 요청자(auth users 논리 참조) — 상대 동의·거부 대기 중이면 non-NULL
     cancel_requested_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # 72h 내 미수락 환불 표식 — 인기 랭킹 페널티 집계에 쓰인다(§3.8)

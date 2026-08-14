@@ -58,6 +58,8 @@ class Order:
     revisions_used: int = 0
     usage_rights: str = ""  # 2차 활용 범위
     created_at: datetime | None = None
+    # 마감 임박 알림을 보낸 시각(갭 #76) — 중복 발송 방지 표식. 마감이 새로 잡히면 비운다
+    deadline_warned_at: datetime | None = None
 
     def revisions_left(self) -> int:
         return max(0, self.revision_limit - self.revisions_used)
@@ -125,7 +127,13 @@ class Order:
         self._require_status(OrderStatus.IN_PROGRESS, "제출")
         if deliverable_count <= 0:
             raise InvalidOrderTransitionError("납품물(파일 또는 링크)을 먼저 등록해야 제출할 수 있습니다.")
-        return replace(self, status=OrderStatus.IN_REVIEW, deadline_at=now + review_deadline)
+        # 마감이 새로 잡히므로 임박 알림 표식도 비운다 — 검토 마감에도 한 번 더 알린다(갭 #76)
+        return replace(
+            self,
+            status=OrderStatus.IN_REVIEW,
+            deadline_at=now + review_deadline,
+            deadline_warned_at=None,
+        )
 
     def ensure_can_attach_deliverable(self, actor_user_id: int) -> None:
         """납품물 등록 검증 — 작업 중(IN_PROGRESS)인 주문의 크리에이터만."""
@@ -152,6 +160,25 @@ class Order:
         self._require_brand(actor_user_id)
         self._require_status(OrderStatus.IN_REVIEW, "승인")
         return self._complete()
+
+    def needs_deadline_warning(self, now: datetime, threshold: timedelta) -> bool:
+        """마감 임박 알림 대상인지 — 아직 안 지났고, 임계 안으로 들어왔고, 한 번도 안 보냈을 때.
+
+        무응답 만료는 랭킹 페널티(갭 #32)로 이어지므로 지나기 전에 한 번 알린다.
+        """
+        if self.deadline_at is None or self.deadline_warned_at is not None:
+            return False
+        if self.status not in (OrderStatus.PENDING_ACCEPT, OrderStatus.IN_REVIEW):
+            return False
+        return now < self.deadline_at <= now + threshold
+
+    def deadline_warning_recipient(self) -> int:
+        """마감 때문에 움직여야 하는 쪽 — 수락 대기는 크리에이터, 검토 대기는 브랜드."""
+        return (
+            self.creator_user_id
+            if self.status is OrderStatus.PENDING_ACCEPT
+            else self.brand_user_id
+        )
 
     def expire(self, now: datetime) -> tuple[Order, list[LedgerEntryDraft]] | None:
         """마감시각 경과 처리(주기 스캔 전용) — 대상 아니면 None.

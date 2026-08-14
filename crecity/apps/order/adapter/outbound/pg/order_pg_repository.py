@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import func, insert, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -168,6 +168,36 @@ class OrderPgRepository(OrderRepository):
             accept_expired_orders=int(row[4]),
             total_revisions=int(row[5]),
         )
+
+    async def find_deadline_warning_targets(
+        self, now: datetime, threshold: timedelta, limit: int
+    ) -> list[Order]:
+        result = await self._session.execute(
+            select(OrderOrm)
+            .where(
+                OrderOrm.status.in_(
+                    (OrderStatus.PENDING_ACCEPT.value, OrderStatus.IN_REVIEW.value)
+                ),
+                OrderOrm.deadline_warned_at.is_(None),
+                OrderOrm.deadline_at.is_not(None),
+                OrderOrm.deadline_at > now,
+                OrderOrm.deadline_at <= now + threshold,
+            )
+            .order_by(OrderOrm.deadline_at.asc())
+            .limit(limit)
+        )
+        return [OrderMapper.to_entity(orm) for orm in result.scalars()]
+
+    async def record_deadline_warnings(
+        self, order_ids: list[int], now: datetime, events: list[OutboxEvent]
+    ) -> None:
+        if not order_ids:
+            return
+        await self._session.execute(
+            update(OrderOrm).where(OrderOrm.id.in_(order_ids)).values(deadline_warned_at=now)
+        )
+        enqueue_events(self._session, events)  # 커밋은 아래에서 함께(단일 트랜잭션)
+        await self._session.commit()
 
     async def find_expired(self, now: datetime, limit: int) -> list[Order]:
         # 처리 대기 분쟁이 있으면 만료 처리(자동 승인·환불)를 보류한다 — 판정이 우선(갭 #4)

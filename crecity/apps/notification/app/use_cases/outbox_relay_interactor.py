@@ -27,6 +27,19 @@ def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
         return [NotificationDraft(p["brand_user_id"], t, f"주문이 거절·환불되었습니다(크레딧 적립): {title}", _order_link(p))]
     if t == "order.submitted":
         return [NotificationDraft(p["brand_user_id"], t, f"콘텐츠가 제출되었습니다 — 72시간 내 검토해 주세요: {title}", _order_link(p))]
+    if t == "order.deadline_soon":
+        # 마감 때문에 움직여야 하는 쪽만 받는다(수락 대기=크리에이터, 검토 대기=브랜드)
+        hours = p.get("hours_left")
+        remain = f"{hours}시간" if isinstance(hours, int) else "곧"
+        action = "수락 여부를 결정" if p.get("order_status") == "PENDING_ACCEPT" else "검토"
+        return [
+            NotificationDraft(
+                p["recipient_user_id"],
+                t,
+                f"마감까지 {remain} 남았습니다 — {action}해 주세요: {title}",
+                _order_link(p),
+            )
+        ]
     if t == "order.revision_requested":
         return [NotificationDraft(p["creator_user_id"], t, f"수정 요청이 도착했습니다: {title}", _order_link(p))]
     if t == "order.completed":

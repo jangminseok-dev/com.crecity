@@ -12,3 +12,4 @@ class SweepOutcome:
 class SweepResult:
 
     outcomes: list[SweepOutcome]
+    warned_order_ids: list[int] | None = None  # 마감 임박을 알린 주문(갭 #76)

@@ -40,6 +40,9 @@ WITHDRAWAL_TAX_PERMILLE = int(_secrets.get("WITHDRAWAL_TAX_PERMILLE", "33"))
 
 # 응답 마감(시간) — 수락 대기·검토 공통 72h(collabstr §3.8), 만료는 주기 스캔이 전이.
 ORDER_RESPONSE_DEADLINE_HOURS = int(_secrets.get("ORDER_RESPONSE_DEADLINE_HOURS", "72"))
+# 마감 임박 알림을 보내는 시점(갭 #76) — 남은 시간이 이 값 이하로 떨어지면 한 번 알린다.
+# 무응답 만료는 랭킹 페널티로 이어지므로 지나기 전에 손 쓸 틈을 준다.
+ORDER_DEADLINE_WARNING_HOURS = int(_secrets.get("ORDER_DEADLINE_WARNING_HOURS", "12"))
 # 인기 랭킹에서 수락 만료 1건이 상쇄하는 성사 주문 수(§3.8 — 무응답 페널티)
 RANKING_ACCEPT_EXPIRY_PENALTY = int(_secrets.get("RANKING_ACCEPT_EXPIRY_PENALTY", "2"))
 
