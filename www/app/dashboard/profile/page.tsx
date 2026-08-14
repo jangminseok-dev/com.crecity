@@ -9,6 +9,7 @@ import AnalyticsManager from "@/components/analytics-manager";
 import FaqManager from "@/components/faq-manager";
 import OnboardingChecklist from "@/components/onboarding-checklist";
 import PortfolioManager from "@/components/portfolio-manager";
+import ProfileViewStats from "@/components/profile-view-stats";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -264,6 +265,7 @@ export default function DashboardProfilePage() {
       ) : (
         <ProfileView profile={profile} onEdit={() => setEditing(true)} />
       )}
+      <ProfileViewStats />
       <OnboardingChecklist slug={profile.slug} />
       <PortfolioManager slug={profile.slug} />
       <AnalyticsManager />

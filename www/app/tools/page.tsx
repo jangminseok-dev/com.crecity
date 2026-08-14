@@ -1,4 +1,4 @@
-import { Calculator, ClipboardList, TrendingUp } from "lucide-react";
+import { Calculator, ClipboardList, FileText, TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -27,6 +27,12 @@ const TOOLS = [
     icon: ClipboardList,
     title: "캠페인 브리프 템플릿",
     desc: "항목만 채우면 크리에이터에게 그대로 전달할 수 있는 요청서가 완성돼요",
+  },
+  {
+    href: "/tools/contract-template",
+    icon: FileText,
+    title: "협업 계약서 템플릿",
+    desc: "2차 활용 범위·수정 횟수·광고 표기까지, 빠뜨리기 쉬운 조항을 정리했어요",
   },
 ];
 

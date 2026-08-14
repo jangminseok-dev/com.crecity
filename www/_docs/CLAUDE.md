@@ -26,6 +26,8 @@ Next.js 16(App Router) · React 19 · TypeScript 5 · Tailwind 4 · zustand · T
 - 홈 검색 필터의 **URL 표현 정본은 `lib/search-filters.ts`**(가격대 `"하한-상한"` 파싱,
   홈 href, 백엔드 쿼리 조립) — 홈과 빈 결과 안내(갭 #48)가 함께 쓴다. 새 필터를 더하면
   여기부터 고친다.
+- 전역 404는 `app/not-found.tsx`, 에러 경계는 `app/error.tsx` — **Next 16의 error 경계는
+  `reset`이 아니라 `retry` prop을 받는다**(구버전 예제를 그대로 쓰면 타입 오류).
 - **인쇄용 화면**(계약 조건 확인서 갭 #52, 지급명세서)은 `globals.css`의 `@media print`가
   헤더·푸터와 `.no-print` 요소를 지운다 — 조작 버튼에는 `no-print` 클래스를 준다.
 - **정책을 설명하는 공개 페이지**(`/how-it-works` 갭 #47, 페르소나 랜딩, `/terms`)는

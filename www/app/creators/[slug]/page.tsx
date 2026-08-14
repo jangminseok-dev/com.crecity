@@ -8,6 +8,7 @@ import CreatorReviews from "@/components/creator-reviews";
 import PackagePicker from "@/components/package-picker";
 import PortfolioGallery from "@/components/portfolio-gallery";
 import ProfileFaqAccordion from "@/components/profile-faq";
+import ProfileViewTracker from "@/components/profile-view-tracker";
 import ReportButton from "@/components/report-button";
 import { Badge } from "@/components/ui/badge";
 import { PLATFORM_LABELS, formatFollowers } from "@/lib/labels";
@@ -64,6 +65,7 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-7 sm:px-6">
+      <ProfileViewTracker slug={profile.slug} />
       <Link
         href="/"
         className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
