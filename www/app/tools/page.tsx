@@ -1,4 +1,4 @@
-import { Calculator, TrendingUp } from "lucide-react";
+import { Calculator, ClipboardList, TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -21,6 +21,12 @@ const TOOLS = [
     icon: TrendingUp,
     title: "참여율 계산기",
     desc: "팔로워·좋아요·댓글로 계정의 참여율을 확인하고 벤치마크와 비교해요",
+  },
+  {
+    href: "/tools/campaign-brief",
+    icon: ClipboardList,
+    title: "캠페인 브리프 템플릿",
+    desc: "항목만 채우면 크리에이터에게 그대로 전달할 수 있는 요청서가 완성돼요",
   },
 ];
 

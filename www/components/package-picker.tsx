@@ -106,7 +106,12 @@ export default function PackagePicker({
 
           <div className="flex items-start gap-2 rounded-lg bg-[#f9fafb] px-3 py-2.5 text-xs leading-snug text-muted-foreground">
             <ShieldCheck className="size-4 shrink-0 text-primary" />
-            결제 금액은 콘텐츠 승인 전까지 크리시티가 안전하게 보관해요
+            <span>
+              결제 금액은 콘텐츠 승인 전까지 크리시티가 안전하게 보관해요{" "}
+              <Link href="/how-it-works" className="font-medium text-primary hover:underline">
+                이용 방법 보기
+              </Link>
+            </span>
           </div>
 
           {selectedId && (

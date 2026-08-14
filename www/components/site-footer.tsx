@@ -9,6 +9,7 @@ const SUPPORT = [
 const COMPANY = ["회사소개", "채용정보", "공지사항", "블로그"];
 // href가 있는 항목만 실제 페이지 — 나머지는 준비 중 표기
 const GUIDE: { label: string; href?: string }[] = [
+  { label: "이용 방법", href: "/how-it-works" },
   { label: "이용약관", href: "/terms" },
   { label: "개인정보 처리방침", href: "/privacy" },
   { label: "환불 규정", href: "/terms" },

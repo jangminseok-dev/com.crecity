@@ -8,6 +8,7 @@ import { useEffect, useRef } from "react";
 import { ImagePlus, Send } from "lucide-react";
 
 import OfferPanel from "@/components/offer-panel";
+import ReportButton from "@/components/report-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -115,6 +116,10 @@ export default function ChatRoomPage() {
             프로필 보기
           </Link>
         )}
+        {/* 대화방 신고(갭 #54) — 주문 밖 어뷰징 창구 */}
+        <span className="ml-auto">
+          <ReportButton targetType="CONVERSATION" targetId={Number(id)} label="대화 신고" />
+        </span>
       </div>
 
       {status === "authenticated" && (

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
 
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
+import { BRIEF_SKELETON } from "@/lib/campaign-brief";
 import { CREATOR_CATEGORIES, PLATFORM_LABELS, formatKrw } from "@/lib/labels";
 import type { Campaign } from "@/lib/types";
 
@@ -34,6 +35,8 @@ export default function DashboardCampaignsPage() {
     submitting: false,
     error: null,
   });
+  // 브리프 골격을 넣을 대상 — 상태가 아니라 DOM 참조라 FormData 패턴을 깨지 않는다
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: campaigns, isPending } = useQuery({
     queryKey: ["myCampaigns"],
@@ -131,10 +134,28 @@ export default function DashboardCampaignsPage() {
               </div>
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="description">상세 내용</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="description">상세 내용</Label>
+                {/* 무엇을 적어야 할지 모르는 경우가 흔해 골격을 넣어 준다(갭 #49) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const field = descriptionRef.current;
+                    if (!field) return;
+                    if (field.value.trim() && !confirm("입력한 내용을 브리프 형식으로 바꿀까요?"))
+                      return;
+                    field.value = BRIEF_SKELETON;
+                    field.focus();
+                  }}
+                  className="text-[13px] font-medium text-primary hover:underline"
+                >
+                  브리프 형식 넣기
+                </button>
+              </div>
               <Textarea
                 id="description"
                 name="description"
+                ref={descriptionRef}
                 rows={4}
                 placeholder="원하는 콘텐츠 방향·필수 조건·일정 등을 적어 주세요."
               />

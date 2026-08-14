@@ -3,14 +3,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import CreatorCard from "@/components/creator-card";
+import SortTabs from "@/components/sort-tabs";
 import { Button } from "@/components/ui/button";
+import { toProfileSort, type ProfileSort } from "@/lib/labels";
 import { backendGet } from "@/lib/server/backend-api";
 import type { ProfileListingResponse } from "@/lib/types";
 
 const PAGE_SIZE = 20;
 
 type PageParams = Promise<{ category: string }>;
-type PageSearchParams = Promise<{ page?: string }>;
+type PageSearchParams = Promise<{ page?: string; sort?: string }>;
 
 /** 카테고리 허브(§7-2) — 인덱싱 가능한 고유 URL. 홈 필터와 달리 쿼리 없는 정적 경로다. */
 export async function generateMetadata({ params }: { params: PageParams }): Promise<Metadata> {
@@ -33,8 +35,9 @@ export default async function CategoryHubPage({
   searchParams: PageSearchParams;
 }) {
   const category = decodeURIComponent((await params).category);
-  const { page } = await searchParams;
+  const { page, sort: sortParam } = await searchParams;
   const currentPage = Math.max(1, Number(page) || 1);
+  const sort = toProfileSort(sortParam);
 
   const categories = (await backendGet<string[]>("/creator/categories")) ?? [];
   if (!categories.includes(category)) notFound();
@@ -43,14 +46,21 @@ export default async function CategoryHubPage({
     category,
     limit: String(PAGE_SIZE),
     offset: String((currentPage - 1) * PAGE_SIZE),
+    ...(sort !== "latest" ? { sort } : {}),
   });
   const listing = await backendGet<ProfileListingResponse>(`/creator/profiles?${query}`);
   const items = listing?.items ?? [];
   const total = listing?.total ?? 0;
   const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const related = categories.filter((name) => name !== category);
-  const hubHref = (name: string, pageNo = 1) =>
-    `/creators/category/${encodeURIComponent(name)}${pageNo > 1 ? `?page=${pageNo}` : ""}`;
+  // 정렬은 페이지 이동·다른 카테고리로도 유지한다(홈 필터와 같은 방침)
+  const hubHref = (name: string, pageNo = 1, nextSort: ProfileSort = sort) => {
+    const qs = new URLSearchParams({
+      ...(pageNo > 1 ? { page: String(pageNo) } : {}),
+      ...(nextSort !== "latest" ? { sort: nextSort } : {}),
+    }).toString();
+    return `/creators/category/${encodeURIComponent(name)}${qs ? `?${qs}` : ""}`;
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6">
@@ -71,15 +81,29 @@ export default async function CategoryHubPage({
       </p>
 
       {items.length === 0 ? (
-        <p className="mt-10 rounded-xl border border-dashed py-16 text-center text-muted-foreground">
-          아직 이 카테고리에 등록된 크리에이터가 없습니다.
-        </p>
-      ) : (
-        <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-7 md:grid-cols-3 lg:grid-cols-4">
-          {items.map((profile) => (
-            <CreatorCard key={profile.id} profile={profile} />
-          ))}
+        <div className="mt-10 rounded-xl border border-dashed px-6 py-14 text-center">
+          <p className="text-[17px] font-semibold">아직 이 카테고리에 등록된 크리에이터가 없습니다</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            아래에서 다른 카테고리를 둘러보거나 전체 목록에서 찾아보세요.
+          </p>
+          <Link
+            href="/"
+            className="mt-5 inline-flex h-10 items-center justify-center rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent-foreground"
+          >
+            전체 크리에이터 보기
+          </Link>
         </div>
+      ) : (
+        <>
+          <div className="mt-8 flex justify-end">
+            <SortTabs current={sort} hrefFor={(next) => hubHref(category, 1, next)} />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-7 md:grid-cols-3 lg:grid-cols-4">
+            {items.map((profile) => (
+              <CreatorCard key={profile.id} profile={profile} />
+            ))}
+          </div>
+        </>
       )}
 
       {lastPage > 1 && (

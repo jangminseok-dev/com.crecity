@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import AnalyticsManager from "@/components/analytics-manager";
 import FaqManager from "@/components/faq-manager";
+import OnboardingChecklist from "@/components/onboarding-checklist";
 import PortfolioManager from "@/components/portfolio-manager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -263,6 +264,7 @@ export default function DashboardProfilePage() {
       ) : (
         <ProfileView profile={profile} onEdit={() => setEditing(true)} />
       )}
+      <OnboardingChecklist slug={profile.slug} />
       <PortfolioManager slug={profile.slug} />
       <AnalyticsManager />
       <FaqManager />

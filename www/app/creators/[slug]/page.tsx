@@ -8,6 +8,7 @@ import CreatorReviews from "@/components/creator-reviews";
 import PackagePicker from "@/components/package-picker";
 import PortfolioGallery from "@/components/portfolio-gallery";
 import ProfileFaqAccordion from "@/components/profile-faq";
+import ReportButton from "@/components/report-button";
 import { Badge } from "@/components/ui/badge";
 import { PLATFORM_LABELS, formatFollowers } from "@/lib/labels";
 import { backendGet } from "@/lib/server/backend-api";
@@ -174,6 +175,15 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
               <CreatorReviews slug={profile.slug} />
             </div>
           </section>
+
+          {/* 부적절한 프로필 신고(갭 #54) — 로그인 사용자에게만 보인다 */}
+          <div className="mt-10 border-t pt-5">
+            <ReportButton
+              targetType="PROFILE"
+              targetId={profile.id}
+              label="이 프로필 신고하기"
+            />
+          </div>
         </div>
 
         <PackagePicker

@@ -8,6 +8,23 @@ export const PLATFORM_LABELS: Record<CreatorPackage["platform"], string> = {
   UGC: "UGC",
 };
 
+/* 목록 정렬 기준 — 백엔드 creator/domain/value_objects/profile_sort.py와 1:1.
+   평점·인기순은 다른 스포크 데이터라 DB 정렬 불가(인기순은 별도 섹션이 담당). */
+export const PROFILE_SORTS = [
+  { value: "latest", label: "최신순" },
+  { value: "price_asc", label: "가격 낮은순" },
+  { value: "price_desc", label: "가격 높은순" },
+] as const;
+
+export type ProfileSort = (typeof PROFILE_SORTS)[number]["value"];
+
+/** 허용 목록 밖 값은 기본값으로 — URL을 손으로 고쳐도 백엔드 422를 만들지 않는다. */
+export function toProfileSort(value?: string): ProfileSort {
+  return PROFILE_SORTS.some((sort) => sort.value === value)
+    ? (value as ProfileSort)
+    : "latest";
+}
+
 /* 고정 카테고리 목록 — 백엔드 creator/domain/value_objects/category.py와 1:1 */
 export const CREATOR_CATEGORIES = [
   "뷰티",

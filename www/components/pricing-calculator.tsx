@@ -7,25 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { formatKrw } from "@/lib/labels";
+import { PLATFORM_RATES, estimatePrice, type Estimate } from "@/lib/pricing";
 
-/* 플랫폼별 팔로워 1명당 기본 단가(원) — 국내 시장 통상 범위의 중간값 참고치 */
-const PLATFORM_RATES: { value: string; label: string; perFollower: number }[] = [
-  { value: "INSTAGRAM", label: "인스타그램 (릴스·피드)", perFollower: 15 },
-  { value: "YOUTUBE", label: "유튜브 (영상 1편)", perFollower: 40 },
-  { value: "TIKTOK", label: "틱톡 (영상 1편)", perFollower: 12 },
-  { value: "NAVER_BLOG", label: "네이버 블로그 (포스팅 1건)", perFollower: 10 },
-];
-
-/* 참여율 구간별 보정 — 참여가 높을수록 단가가 올라간다 */
-function engagementMultiplier(engagementRate: number): number {
-  if (engagementRate <= 0) return 1;
-  if (engagementRate < 1) return 0.7;
-  if (engagementRate < 3) return 1;
-  if (engagementRate < 6) return 1.3;
-  return 1.6;
-}
-
-type Estimate = { low: number; high: number; platformLabel: string };
 
 export default function PricingCalculator() {
   // 단일 객체 상태 — 계산 결과 (입력값은 FormData 패턴)
@@ -34,19 +17,12 @@ export default function PricingCalculator() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    const platform = PLATFORM_RATES.find((p) => p.value === form.get("platform"));
-    const followers = Number(form.get("followers"));
-    const engagement = Number(form.get("engagement")) || 0;
-    if (!platform || !followers || followers <= 0) return;
-
-    const base = followers * platform.perFollower * engagementMultiplier(engagement);
-    // 협상 폭 ±30% — 만 원 단위 반올림
-    const round = (value: number) => Math.max(10000, Math.round(value / 10000) * 10000);
-    setEstimate({
-      low: round(base * 0.7),
-      high: round(base * 1.3),
-      platformLabel: platform.label,
-    });
+    const result = estimatePrice(
+      String(form.get("platform") ?? ""),
+      Number(form.get("followers")),
+      Number(form.get("engagement")) || 0
+    );
+    if (result) setEstimate(result);
   };
 
   return (

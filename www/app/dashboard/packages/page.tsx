@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
 
+import PackagePriceHelper from "@/components/package-price-helper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,6 +41,8 @@ async function fetchMyProfile(): Promise<CreatorProfile | null> {
 // 폼 UI 상태 — 수정 대상·제출 진행·오류를 단일 객체로 (입력값은 FormData 패턴)
 type FormUiState = {
   editing: CreatorPackage | null;
+  // 단가 도우미(갭 #51)가 볼 현재 선택 플랫폼 — 미선택이면 editing 값/기본값을 쓴다
+  platform?: string;
   submitting: boolean;
   error: string | null;
 };
@@ -50,6 +53,8 @@ function PackageForm({ slug, ui, setUi }: {
   setUi: React.Dispatch<React.SetStateAction<FormUiState>>;
 }) {
   const queryClient = useQueryClient();
+  // 추천 단가를 넣을 대상 — 상태가 아니라 DOM 참조라 FormData 패턴을 유지한다
+  const priceRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -97,6 +102,9 @@ function PackageForm({ slug, ui, setUi }: {
                 id="platform"
                 name="platform"
                 defaultValue={ui.editing?.platform ?? "INSTAGRAM"}
+                onChange={(event) =>
+                  setUi((prev) => ({ ...prev, platform: event.target.value }))
+                }
                 className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
               >
                 {Object.entries(PLATFORM_LABELS).map(([value, label]) => (
@@ -109,6 +117,7 @@ function PackageForm({ slug, ui, setUi }: {
               <Input
                 id="price_krw"
                 name="price_krw"
+                ref={priceRef}
                 type="number"
                 min={1}
                 defaultValue={ui.editing?.price_krw ?? ""}
@@ -116,6 +125,12 @@ function PackageForm({ slug, ui, setUi }: {
               />
             </div>
           </div>
+          <PackagePriceHelper
+            platform={ui.platform ?? ui.editing?.platform ?? "INSTAGRAM"}
+            onPick={(price) => {
+              if (priceRef.current) priceRef.current.value = String(price);
+            }}
+          />
           <div className="grid gap-1.5">
             <Label htmlFor="title">패키지 이름</Label>
             <Input

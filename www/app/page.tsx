@@ -18,14 +18,17 @@ import Link from "next/link";
 import type { ComponentType } from "react";
 
 import CreatorCard from "@/components/creator-card";
+import EmptyResults from "@/components/empty-results";
+import SortTabs from "@/components/sort-tabs";
 import { Button } from "@/components/ui/button";
-import { PLATFORM_LABELS } from "@/lib/labels";
+import { PLATFORM_LABELS, toProfileSort, type ProfileSort } from "@/lib/labels";
+import { parsePriceRange } from "@/lib/search-filters";
 import { backendGet } from "@/lib/server/backend-api";
 import type { ProfileListingItem, ProfileListingResponse } from "@/lib/types";
 
 const PAGE_SIZE = 20;
 
-/* 가격대 프리셋 — 값은 "하한-상한"(상한 없으면 생략) 형식으로 URL에 실린다 */
+/* 가격대 프리셋 — 값의 형식·파싱은 lib/search-filters.ts가 정본 */
 const PRICE_RANGES: { value: string; label: string }[] = [
   { value: "0-100000", label: "10만원 이하" },
   { value: "100000-300000", label: "10~30만원" },
@@ -42,12 +45,6 @@ const PRESETS: { label: string; query: string }[] = [
   { label: "서울 크리에이터", query: "location=서울" },
   { label: "프리미엄 50만원 이상", query: "price=500000-" },
 ];
-
-function parsePriceRange(price?: string): { price_min?: string; price_max?: string } {
-  if (!price || !/^\d+-\d*$/.test(price)) return {};
-  const [min, max] = price.split("-");
-  return { price_min: min, ...(max ? { price_max: max } : {}) };
-}
 
 const KEYWORDS = ["숏폼 릴스", "제품 리뷰", "브랜디드 영상", "체험단", "언박싱"];
 
@@ -79,11 +76,13 @@ type HomeSearchParams = Promise<{
   platform?: string;
   price?: string;
   location?: string;
+  sort?: string;
 }>;
 
 export default async function Home({ searchParams }: { searchParams: HomeSearchParams }) {
-  const { category, q, page, platform, price, location } = await searchParams;
+  const { category, q, page, platform, price, location, sort: sortParam } = await searchParams;
   const currentPage = Math.max(1, Number(page) || 1);
+  const sort = toProfileSort(sortParam);
   const query = new URLSearchParams({
     limit: String(PAGE_SIZE),
     offset: String((currentPage - 1) * PAGE_SIZE),
@@ -92,8 +91,10 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
     ...(platform ? { platform } : {}),
     ...parsePriceRange(price),
     ...(location ? { location } : {}),
+    ...(sort !== "latest" ? { sort } : {}),
   });
-  const isFiltered = Boolean(category || q || platform || price || location || currentPage > 1);
+  const hasFilters = Boolean(category || q || platform || price || location);
+  const isFiltered = hasFilters || currentPage > 1;
   const [listing, categories, popular] = await Promise.all([
     backendGet<ProfileListingResponse>(`/creator/profiles?${query}`),
     backendGet<string[]>("/creator/categories"),
@@ -104,14 +105,21 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
   const total = listing?.total ?? 0;
   const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const filterHref = (params: { category?: string; q?: string; page?: number }) => {
+  const filterHref = (params: {
+    category?: string;
+    q?: string;
+    page?: number;
+    sort?: ProfileSort;
+  }) => {
+    const nextSort = params.sort ?? sort;
     const merged = new URLSearchParams({
       ...(params.category ? { category: params.category } : {}),
       ...(params.q ? { q: params.q } : {}),
-      // 상세 필터(플랫폼·가격대·위치)는 카테고리·페이지 이동에도 유지한다
+      // 상세 필터(플랫폼·가격대·위치)와 정렬은 카테고리·페이지 이동에도 유지한다
       ...(platform ? { platform } : {}),
       ...(price ? { price } : {}),
       ...(location ? { location } : {}),
+      ...(nextSort !== "latest" ? { sort: nextSort } : {}),
       ...((params.page ?? 1) > 1 ? { page: String(params.page) } : {}),
     });
     const qs = merged.toString();
@@ -240,6 +248,7 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
         >
           {q && <input type="hidden" name="q" value={q} />}
           {category && <input type="hidden" name="category" value={category} />}
+          {sort !== "latest" && <input type="hidden" name="sort" value={sort} />}
           <select
             name="platform"
             defaultValue={platform ?? ""}
@@ -278,7 +287,11 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
           </button>
           {(platform || price || location) && (
             <Link
-              href={category || q ? `/?${new URLSearchParams({ ...(category ? { category } : {}), ...(q ? { q } : {}) })}` : "/"}
+              href={
+                category || q || sort !== "latest"
+                  ? `/?${new URLSearchParams({ ...(category ? { category } : {}), ...(q ? { q } : {}), ...(sort !== "latest" ? { sort } : {}) })}`
+                  : "/"
+              }
               className="px-2 text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               필터 초기화 ✕
@@ -288,7 +301,7 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
 
         {/* 섹션 헤더 */}
         <section>
-          <div className="mb-6 mt-14 flex items-end justify-between">
+          <div className="mb-6 mt-14 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="text-[22px] font-bold tracking-[-0.02em]">
                 {q ? `"${q}" 검색 결과` : category ? `${category} 크리에이터` : "전체 크리에이터"}
@@ -297,22 +310,35 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
                 {total > 0 ? `${total}명의 크리에이터` : "크리에이터"} · 프로필 심사를 거쳐 등록됩니다
               </p>
             </div>
-            {q && (
-              <Link
-                href={filterHref({ category })}
-                className="text-sm font-semibold text-primary hover:underline"
-              >
-                검색 해제 ✕
-              </Link>
-            )}
+            <div className="flex items-center gap-3">
+              {q && (
+                <Link
+                  href={filterHref({ category })}
+                  className="text-sm font-semibold text-primary hover:underline"
+                >
+                  검색 해제 ✕
+                </Link>
+              )}
+              {items.length > 0 && (
+                <SortTabs
+                  current={sort}
+                  hrefFor={(next) => filterHref({ category, q, sort: next })}
+                />
+              )}
+            </div>
           </div>
 
           {items.length === 0 ? (
-            <p className="rounded-xl border border-dashed py-16 text-center text-muted-foreground">
-              {isFiltered
-                ? "조건에 맞는 크리에이터가 없습니다."
-                : "아직 등록된 크리에이터가 없습니다."}
-            </p>
+            hasFilters ? (
+              <EmptyResults
+                filters={{ category, q, platform, price, location }}
+                categories={categories ?? []}
+              />
+            ) : (
+              <p className="rounded-xl border border-dashed py-16 text-center text-muted-foreground">
+                아직 등록된 크리에이터가 없습니다.
+              </p>
+            )
           ) : (
             <div className="grid grid-cols-2 gap-x-5 gap-y-7 md:grid-cols-3 lg:grid-cols-4">
               {items.map((profile) => (
@@ -351,6 +377,11 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
           </h2>
           <p className="mt-1.5 text-center text-sm text-muted-foreground">
             탐색부터 정산까지, crecity가 중간에서 안전하게 진행해요
+          </p>
+          <p className="mt-3 text-center">
+            <Link href="/how-it-works" className="text-sm font-semibold text-primary hover:underline">
+              이용 방법 자세히 보기 →
+            </Link>
           </p>
           <div className="mt-10 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
             {HOW_IT_WORKS.map((step, index) => (

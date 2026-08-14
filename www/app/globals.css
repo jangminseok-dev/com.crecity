@@ -143,3 +143,16 @@ body {
     @apply font-sans;
   }
 }
+
+/* 인쇄 — 계약 조건 확인서(갭 #52)·지급명세서처럼 종이로 남기는 화면용.
+   사이트 네비게이션과 조작 버튼(.no-print)은 지면에서 뺀다. */
+@media print {
+  header,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+}

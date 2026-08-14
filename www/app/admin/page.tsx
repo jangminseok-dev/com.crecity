@@ -6,7 +6,10 @@ import { useState } from "react";
 
 import AdminAnnualPayouts from "@/components/admin-annual-payouts";
 import AdminAuditLogs from "@/components/admin-audit-logs";
+import AdminDashboardMetrics from "@/components/admin-dashboard-metrics";
 import AdminDisputes from "@/components/admin-disputes";
+import AdminOrderSearch from "@/components/admin-order-search";
+import AdminReports from "@/components/admin-reports";
 import AdminWithdrawals from "@/components/admin-withdrawals";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -116,7 +119,11 @@ export default function AdminPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-bold tracking-[-0.02em]">프로필 심사</h1>
+      <h1 className="mb-8 text-2xl font-bold tracking-[-0.02em]">운영 콘솔</h1>
+
+      {(user?.permissions.includes("dashboard.view") ?? false) && <AdminDashboardMetrics />}
+
+      <h2 className="text-xl font-bold tracking-[-0.02em]">프로필 심사</h2>
       <p className="mt-1 text-sm text-muted-foreground">
         승인하면 즉시 마켓플레이스 목록에 노출됩니다. 반려해도 프로필 링크 직접 공유는
         가능합니다(목록 제외만).
@@ -183,6 +190,8 @@ export default function AdminPage() {
         </>
       )}
       {(user?.permissions.includes("dispute.resolve") ?? false) && <AdminDisputes />}
+      {(user?.permissions.includes("report.review") ?? false) && <AdminReports />}
+      {(user?.permissions.includes("order.search") ?? false) && <AdminOrderSearch />}
       <AdminAuditLogs />
     </div>
   );

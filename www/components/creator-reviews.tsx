@@ -1,11 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiFetch } from "@/lib/api";
+import { Textarea } from "@/components/ui/textarea";
+import { ApiError, apiFetch } from "@/lib/api";
+
+type ReviewItem = {
+  id: number;
+  overall_score: number;
+  comment: string | null;
+  is_locked: boolean;
+  created_at: string | null;
+  reply: string | null;
+  replied_at: string | null;
+  can_reply: boolean;
+};
 
 type CreatorReviews = {
   total: number;
@@ -13,14 +27,83 @@ type CreatorReviews = {
   average_communication: number | null;
   average_timeliness: number | null;
   average_satisfaction: number | null;
-  items: {
-    id: number;
-    overall_score: number;
-    comment: string | null;
-    is_locked: boolean;
-    created_at: string | null;
-  }[];
+  items: ReviewItem[];
 };
+
+/** 답글 작성(갭 #53) — 리뷰당 1회라 등록 후에는 폼이 사라진다. */
+function ReplyForm({ reviewId, slug }: { reviewId: number; slug: string }) {
+  const queryClient = useQueryClient();
+  // 단일 객체 상태 — 열림 여부·오류 (본문은 FormData 패턴)
+  const [state, setState] = useState<{ open: boolean; error: string | null }>({
+    open: false,
+    error: null,
+  });
+
+  const mutation = useMutation({
+    mutationFn: (reply: string) =>
+      apiFetch(`/review/reviews/${reviewId}/reply`, {
+        method: "POST",
+        body: JSON.stringify({ reply }),
+      }),
+    onSuccess: async () => {
+      setState({ open: false, error: null });
+      await queryClient.invalidateQueries({ queryKey: ["creatorReviews", slug] });
+    },
+    onError: (error) =>
+      setState((prev) => ({
+        ...prev,
+        error: error instanceof ApiError ? error.detail : "답글 등록에 실패했습니다.",
+      })),
+  });
+
+  if (!state.open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setState({ open: true, error: null })}
+        className="mt-2 text-[13px] font-medium text-primary hover:underline"
+      >
+        답글 남기기
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className="mt-3 grid gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const reply = String(new FormData(event.currentTarget).get("reply") ?? "").trim();
+        if (!reply) {
+          setState((prev) => ({ ...prev, error: "답글 내용을 입력해 주세요." }));
+          return;
+        }
+        mutation.mutate(reply);
+      }}
+    >
+      <Textarea
+        name="reply"
+        rows={3}
+        maxLength={1000}
+        placeholder="리뷰에 대한 답글을 남겨 보세요. 한 번만 등록할 수 있습니다."
+      />
+      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" disabled={mutation.isPending}>
+          {mutation.isPending ? "등록 중…" : "답글 등록"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setState({ open: false, error: null })}
+        >
+          취소
+        </Button>
+      </div>
+    </form>
+  );
+}
 
 /** 집계는 공개, 원문은 로그인 시에만(블러 정책 — collabstr Freemium Gate). */
 export default function CreatorReviews({ slug }: { slug: string }) {
@@ -59,6 +142,15 @@ export default function CreatorReviews({ slug }: { slug: string }) {
               ) : (
                 <p className="mt-1 whitespace-pre-line text-sm">{item.comment}</p>
               )}
+
+              {/* 크리에이터 답글 — 원문이 잠기면 함께 잠긴다 */}
+              {item.reply && (
+                <div className="mt-3 rounded-lg bg-secondary p-3">
+                  <p className="text-[13px] font-semibold">크리에이터 답글</p>
+                  <p className="mt-1 whitespace-pre-line text-sm">{item.reply}</p>
+                </div>
+              )}
+              {item.can_reply && <ReplyForm reviewId={item.id} slug={slug} />}
             </CardContent>
           </Card>
         ))}

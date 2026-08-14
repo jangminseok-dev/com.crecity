@@ -43,10 +43,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.8,
     })),
+    // 이용 방법(§2.1-11) — 신뢰 장치 겸 롱테일 랜딩
+    { url: `${SITE_URL}/how-it-works`, changeFrequency: "monthly", priority: 0.8 },
     // 무료 도구(§3.9) — 검색 유입용 리드 마그넷
     { url: `${SITE_URL}/tools`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/tools/pricing-calculator`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/tools/engagement-calculator`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE_URL}/tools/campaign-brief`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/terms`, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE_URL}/privacy`, changeFrequency: "yearly", priority: 0.3 },
   ];

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -141,7 +142,15 @@ export default function OrderDetailPage() {
           </div>
           <Separator />
           <div className="grid gap-1 text-sm">
-            <p className="text-muted-foreground">계약 조건</p>
+            <div className="flex items-center justify-between">
+              <p className="text-muted-foreground">계약 조건</p>
+              <Link
+                href={`/dashboard/orders/${order.id}/contract`}
+                className="text-sm font-semibold text-primary hover:underline"
+              >
+                조건 확인서 보기
+              </Link>
+            </div>
             <p className="mt-0.5">
               수정 요청 {order.revisions_used}/{order.revision_limit}회 사용
               {order.revision_limit - order.revisions_used <= 0 && " — 더 이상 요청할 수 없습니다"}
