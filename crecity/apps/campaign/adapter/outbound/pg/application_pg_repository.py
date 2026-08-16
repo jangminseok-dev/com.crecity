@@ -6,6 +6,8 @@ from campaign.adapter.outbound.orm.campaign_orm import CampaignApplicationOrm
 from campaign.app.ports.output.application_repository import ApplicationRepository
 from campaign.domain.entities.campaign_entity import CampaignApplication
 from campaign.domain.value_objects.application_sort import ApplicationSort
+from hub.adapter.outbound.pg.outbox_pg_store import enqueue_events
+from hub.app.dtos.outbox_event_dto import OutboxEvent
 
 
 def _order_by(sort: ApplicationSort) -> list:
@@ -25,7 +27,12 @@ class ApplicationPgRepository(ApplicationRepository):
         self._session = session
 
     async def create(
-        self, campaign_id: int, creator_user_id: int, message: str, proposed_price_krw: int
+        self,
+        campaign_id: int,
+        creator_user_id: int,
+        message: str,
+        proposed_price_krw: int,
+        events: list[OutboxEvent] | None = None,
     ) -> CampaignApplication:
         result = await self._session.execute(
             insert(CampaignApplicationOrm)
@@ -37,6 +44,7 @@ class ApplicationPgRepository(ApplicationRepository):
             )
             .returning(CampaignApplicationOrm)
         )
+        enqueue_events(self._session, events or [])  # 지원+알림 = 단일 커밋
         await self._session.commit()
         return CampaignMapper.application_to_entity(result.scalar_one())
 

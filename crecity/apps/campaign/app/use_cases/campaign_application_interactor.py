@@ -7,6 +7,7 @@ from campaign.app.dtos.campaign_application_dto import (
     ApplicationsQuery,
     ApplyCommand,
 )
+from campaign.app.events import application_received_event
 from campaign.app.exceptions import (
     AlreadyAppliedError,
     CampaignNotFoundError,
@@ -56,7 +57,8 @@ class CampaignApplicationInteractor(CampaignApplicationUseCase):
             raise CampaignNotFoundError(f"공고를 찾을 수 없습니다: {command.campaign_id}")
         # 마감 공고·마감일 경과 409(도메인) — 스윕 주기와 무관하게 마감일이 정본
         campaign.ensure_open_for_application(datetime.now(timezone.utc))
-        if await self._creators.get_creator_by_user_id(command.creator_user_id) is None:
+        creator = await self._creators.get_creator_by_user_id(command.creator_user_id)
+        if creator is None:
             raise CreatorProfileRequiredError("프로필을 먼저 등록해야 지원할 수 있습니다.")
         if await self._applications.exists(command.campaign_id, command.creator_user_id):
             raise AlreadyAppliedError("이미 지원한 공고입니다.")
@@ -66,6 +68,15 @@ class CampaignApplicationInteractor(CampaignApplicationUseCase):
             creator_user_id=command.creator_user_id,
             message=command.message,
             proposed_price_krw=command.proposed_price_krw,
+            # 지원 사실을 모르면 공고를 올린 의미가 없다(갭 #73) — 지원 저장과 같은 커밋
+            events=[
+                application_received_event(
+                    campaign_id=campaign.id,
+                    brand_user_id=campaign.brand_user_id,
+                    campaign_title=campaign.title,
+                    creator_name=creator.name,
+                )
+            ],
         )
         return await self._to_result(application)
 

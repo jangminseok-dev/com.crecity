@@ -9,7 +9,7 @@
 | herald (myself) | `GET /campaign/myself` | 자기소개 |
 | campaign_posting | `POST /campaign/campaigns` · `POST /campaign/campaigns/{id}/close` | 공고 등록(**브랜드만 403**, OPEN 시작) · 마감(소유 브랜드만 403, 재마감 409 — 도메인 검증) |
 | campaign_listing | `GET /campaign/campaigns` · `/{id}` · `GET /campaign/my/campaigns` | OPEN 목록·상세(로그인 필수)·브랜드 내 공고 |
-| campaign_application | `POST·GET /campaign/campaigns/{id}/applications` | 지원(**크리에이터만·프로필 필수 403**, 공고당 1회 409, 마감 공고·마감일 경과 409) · 지원자 열람(**공고 브랜드만 403**) |
+| campaign_application | `POST·GET /campaign/campaigns/{id}/applications` | 지원(**크리에이터만·프로필 필수 403**, 공고당 1회 409, 마감 공고·마감일 경과 409) · 지원자 열람(**공고 브랜드만 403**). 지원 저장과 **같은 트랜잭션**으로 `campaign.application_received`를 적재해 공고를 올린 브랜드에게 알린다(갭 #73) |
 | campaign_deadline_sweep | (HTTP 없음) | 지원 마감일 스캔 — `scripts/campaign_deadline_sweep.py`를 cron이 주기 실행(갭 #27). 마감일 경과 OPEN 공고 → CLOSED |
 
 - **지원자 정렬·필터(갭 #70)**: `ApplicationSort`(oldest·latest·price_asc·price_desc)

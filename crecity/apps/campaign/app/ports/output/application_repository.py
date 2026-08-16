@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from campaign.domain.entities.campaign_entity import CampaignApplication
+from hub.app.dtos.outbox_event_dto import OutboxEvent
 from campaign.domain.value_objects.application_sort import ApplicationSort
 
 
@@ -11,8 +12,15 @@ class ApplicationRepository(ABC):
 
     @abstractmethod
     async def create(
-        self, campaign_id: int, creator_user_id: int, message: str, proposed_price_krw: int
-    ) -> CampaignApplication: ...
+        self,
+        campaign_id: int,
+        creator_user_id: int,
+        message: str,
+        proposed_price_krw: int,
+        events: list[OutboxEvent] | None = None,
+    ) -> CampaignApplication:
+        """지원서와 알림 이벤트(갭 #73)를 같은 트랜잭션으로 적재한다."""
+        ...
 
     @abstractmethod
     async def exists(self, campaign_id: int, creator_user_id: int) -> bool: ...

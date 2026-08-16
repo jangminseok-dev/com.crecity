@@ -45,8 +45,10 @@ class _StubCampaignRepository:
 class _StubApplicationRepository:
     def __init__(self, existing: list[CampaignApplication] | None = None):
         self.applications = list(existing or [])
+        self.published: list = []          # 함께 적재된 알림 이벤트(갭 #73)
 
-    async def create(self, campaign_id, creator_user_id, message, proposed_price_krw):
+    async def create(self, campaign_id, creator_user_id, message, proposed_price_krw, events=None):
+        self.published += list(events or [])
         application = CampaignApplication(
             id=len(self.applications) + 1, campaign_id=campaign_id,
             creator_user_id=creator_user_id, message=message,
@@ -151,3 +153,21 @@ async def test_없는_공고_지원이면_CampaignNotFoundError():
     )
     with pytest.raises(CampaignNotFoundError):
         await interactor.apply(_apply_command())
+
+
+async def test_지원하면_공고를_올린_브랜드에게_알림이_간다():
+    """지원 사실을 모르면 공고를 올린 의미가 없다(갭 #73)."""
+    applications = _StubApplicationRepository()
+    interactor = CampaignApplicationInteractor(
+        _StubCampaignRepository(_campaign()), applications, _StubCreatorRefPort()
+    )
+    await interactor.apply(
+        ApplyCommand(
+            campaign_id=1, creator_user_id=CREATOR, account_type="CREATOR",
+            message="지원합니다", proposed_price_krw=300_000,
+        )
+    )
+    assert len(applications.published) == 1
+    event = applications.published[0]
+    assert event.event_type == "campaign.application_received"
+    assert event.payload["brand_user_id"] == BRAND

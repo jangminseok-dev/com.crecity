@@ -90,6 +90,21 @@ async def test_심사_이벤트는_프로필_링크로_안내한다():
     assert draft.link == "/dashboard/profile"
 
 
+async def test_새_지원자는_공고_브랜드에게_알린다():
+    """지원 사실을 모르면 공고를 올린 의미가 없다(갭 #73)."""
+    record = OutboxRecord(
+        id=1, event_type="campaign.application_received",
+        payload={"campaign_id": 5, "brand_user_id": BRAND,
+                 "campaign_title": "신제품 릴스", "creator_name": "김뷰티"},
+    )
+    store = _StubRelayStore([record])
+    await OutboxRelayInteractor(store).relay()
+    draft = store.published[0][1][0]
+    assert draft.user_id == BRAND
+    assert "김뷰티" in draft.body and "신제품 릴스" in draft.body
+    assert draft.link == "/campaigns/5"
+
+
 async def test_인출_지급_완료는_실지급액을_알린다():
     """돈이 오가는 사건이라 공백이 특히 크다(갭 #74)."""
     record = OutboxRecord(

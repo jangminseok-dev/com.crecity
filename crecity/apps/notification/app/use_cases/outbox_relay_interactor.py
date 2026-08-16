@@ -27,6 +27,15 @@ def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
         return [NotificationDraft(p["brand_user_id"], t, f"주문이 거절·환불되었습니다(크레딧 적립): {title}", _order_link(p))]
     if t == "order.submitted":
         return [NotificationDraft(p["brand_user_id"], t, f"콘텐츠가 제출되었습니다 — 72시간 내 검토해 주세요: {title}", _order_link(p))]
+    if t == "campaign.application_received":
+        # 새 지원자(갭 #73) — 공고를 올린 브랜드에게. 링크는 지원자 목록이 있는 공고 상세
+        return [
+            NotificationDraft(
+                p["brand_user_id"], t,
+                f"{p['creator_name']}님이 공고에 지원했습니다: {p['campaign_title']}",
+                f"/campaigns/{p['campaign_id']}",
+            )
+        ]
     if t == "withdrawal.paid":
         # 인출 지급 완료(갭 #74) — 실지급액(원천징수 후)을 그대로 알려준다
         return [
