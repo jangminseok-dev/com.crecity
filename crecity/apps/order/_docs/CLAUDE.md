@@ -17,7 +17,7 @@
 | party_stats | (HTTP 없음) | 당사자 거래 이력 집계(갭 #65·#66) — `OrderRepository.get_party_stats(user_id, as_brand)`가 상태별 건수·수정 누적을 한 쿼리로 센다. 주문 조회가 상대 이력을 붙이고, 허브 `CreatorTradeStatsPort`(order 구현)가 creator에 실적을 넘긴다. **시간 지표(평균 수락·승인 소요)는 상태 전이 시각을 남기지 않아 낼 수 없다** |
 | fee_policy | `GET /order/fee-policy` | **공개** 수수료·마감 정책(갭 #62) — 요율·원천징수 퍼밀·응답 마감을 그대로 내려준다. 화면이 숫자를 하드코딩하지 않게 하는 것이 목적(설정이 바뀌면 화면도 따라온다). I/O가 없어 유스케이스는 `def` |
 | balance_lookup | `GET /order/balance` | 내 잔액 = 적립성 기입 합 − 차감성 기입 합 |
-| withdrawal_request | `POST/GET /order/withdrawals` | 크리에이터 적립금 인출 — 요청 시 잔액 재검증+차감 기입(WITHDRAWAL)을 advisory lock 단일 트랜잭션으로(과인출 차단), 원천징수 3.3% 세액·실지급액 스냅샷. 운영 처리(완료/실패·복원)는 허브 `WithdrawalSettlementPort`(order 구현 게이트웨이)로 admin이 수행 |
+| withdrawal_request | `POST/GET /order/withdrawals` | 크리에이터 적립금 인출 — 요청 시 잔액 재검증+차감 기입(WITHDRAWAL)을 advisory lock 단일 트랜잭션으로(과인출 차단), 원천징수 3.3% 세액·실지급액 스냅샷. 운영 처리(완료/실패·복원)는 허브 `WithdrawalSettlementPort`(order 구현 게이트웨이)로 admin이 수행. **처리 결과는 크리에이터에게 알린다**(갭 #74) — `withdrawal.paid`(실지급액)·`withdrawal.failed`(복원 금액)를 상태 갱신·복원 기입과 **단일 트랜잭션**으로 적재(`save_settlement`의 `events` 인자, 빌더는 `app/withdrawal_events.py`). 돈이 오가는 사건이라 공백이 크고, 실패 시 잔액 복원도 조용히 일어난다 |
 | payout_statement | `GET /order/withdrawals/statements/{year}` | 연간 지급명세서(갭 #2) — **항상 본인 기준**(남의 명세 조회 불가). 지급 완료(PAID)된 인출을 지급일(`settled_at`) 연도로 집계 + 건별 내역. 새 테이블 없음(집계는 `AnnualPayout` VO). 운영자용 크리에이터별 집계는 admin `GET /admin/withdrawals/annual-summary/{year}` |
 | deadline_sweep | (HTTP 없음) | 72h 만료 스캔 — `scripts/order_deadline_sweep.py`를 cron이 주기 실행. 수락 만료→환불, 검토 만료→자동 승인. **만료 전 임박 알림**(갭 #76)도 같은 스캔이 보낸다 — `ORDER_DEADLINE_WARNING_HOURS`(12h) 안으로 들어오면 움직여야 하는 쪽에 1회. 중복은 `deadline_warned_at` 표식으로 막고 **표식+이벤트를 단일 트랜잭션**으로 남긴다(`record_deadline_warnings`). 제출로 마감이 재설정되면 표식도 비워진다 |
 

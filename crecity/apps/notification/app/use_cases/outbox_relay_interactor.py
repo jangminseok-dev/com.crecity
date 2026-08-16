@@ -27,6 +27,24 @@ def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
         return [NotificationDraft(p["brand_user_id"], t, f"주문이 거절·환불되었습니다(크레딧 적립): {title}", _order_link(p))]
     if t == "order.submitted":
         return [NotificationDraft(p["brand_user_id"], t, f"콘텐츠가 제출되었습니다 — 72시간 내 검토해 주세요: {title}", _order_link(p))]
+    if t == "withdrawal.paid":
+        # 인출 지급 완료(갭 #74) — 실지급액(원천징수 후)을 그대로 알려준다
+        return [
+            NotificationDraft(
+                p["creator_user_id"], t,
+                f"인출 {p['payout_krw']:,}원이 지급되었습니다",
+                "/dashboard/balance",
+            )
+        ]
+    if t == "withdrawal.failed":
+        # 실패 시 잔액이 조용히 복원된다 — 복원 사실까지 알려야 잔액 변화가 설명된다
+        return [
+            NotificationDraft(
+                p["creator_user_id"], t,
+                f"인출 {p['amount_krw']:,}원이 처리되지 않아 잔액으로 복원되었습니다",
+                "/dashboard/balance",
+            )
+        ]
     if t == "chat.message_received":
         # 새 메시지(갭 #72) — 상대가 이미 안 읽은 게 있으면 chat이 아예 발행하지 않는다
         sender = p.get("sender_name") or "상대방"

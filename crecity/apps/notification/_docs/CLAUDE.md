@@ -24,10 +24,11 @@
 | order.dispute_resolved | 브랜드+크리에이터 양측(판정 결과 문구 분기) | /dashboard/orders/{id} |
 | order.deadline_soon | payload `recipient_user_id`(움직여야 하는 쪽) | /dashboard/orders/{id} |
 | chat.message_received | payload `recipient_user_id`(대화 상대) | /chat/{conversation_id} |
+| withdrawal.paid · failed | 크리에이터(실패는 잔액 복원 사실까지 안내) | /dashboard/balance |
 | profile.approved · rejected | 크리에이터 | /dashboard/profile |
 | (모르는 유형) | 알림 없이 발행 마킹만 — 재처리 루프 방지 | — |
 
-- 발행 측: order 리포지토리(`create`/`save_transition`의 `events` 인자), chat 메시지
+- 발행 측: order 리포지토리(`create`/`save_transition`/`save_settlement`의 `events` 인자), chat 메시지
   리포지토리(`create`의 `events` 인자), creator 심사 게이트웨이가 각자 자기 트랜잭션에
   `enqueue_events`로 함께 커밋한다(상태+이벤트 원자성).
 - `user_id`·payload 속 id들은 타 스포크 논리 참조(DB FK 없음). 크래시 안전: 마킹 전에

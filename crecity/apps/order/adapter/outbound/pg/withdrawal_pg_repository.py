@@ -3,6 +3,8 @@ from __future__ import annotations
 from sqlalchemy import func, insert, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from hub.adapter.outbound.pg.outbox_pg_store import enqueue_events
+from hub.app.dtos.outbox_event_dto import OutboxEvent
 from order.adapter.outbound.orm.ledger_entry_orm import LedgerEntryOrm
 from order.adapter.outbound.orm.withdrawal_orm import WithdrawalOrm
 from order.adapter.outbound.pg.ledger_pg_repository import _SIGNED_AMOUNT
@@ -117,7 +119,10 @@ class WithdrawalPgRepository(WithdrawalRepository):
         return [_to_entity(orm) for orm in result.scalars()]
 
     async def save_settlement(
-        self, withdrawal: Withdrawal, entries: list[LedgerEntryDraft]
+        self,
+        withdrawal: Withdrawal,
+        entries: list[LedgerEntryDraft],
+        events: list[OutboxEvent] | None = None,
     ) -> Withdrawal:
         result = await self._session.execute(
             update(WithdrawalOrm)
@@ -136,5 +141,6 @@ class WithdrawalPgRepository(WithdrawalRepository):
                     amount_krw=entry.amount_krw,
                 )
             )
+        enqueue_events(self._session, events or [])  # 상태+복원+알림 = 단일 커밋
         await self._session.commit()
         return _to_entity(orm)

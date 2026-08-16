@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+from hub.app.dtos.outbox_event_dto import OutboxEvent
 from order.domain.entities.ledger_entry_entity import LedgerEntryDraft
 from order.domain.entities.withdrawal_entity import Withdrawal, WithdrawalStatus
 
@@ -53,7 +54,10 @@ class WithdrawalRepository(ABC):
 
     @abstractmethod
     async def save_settlement(
-        self, withdrawal: Withdrawal, entries: list[LedgerEntryDraft]
+        self,
+        withdrawal: Withdrawal,
+        entries: list[LedgerEntryDraft],
+        events: list[OutboxEvent] | None = None,
     ) -> Withdrawal:
-        """처리 결과(상태·정산 시각)와 복원 기입(실패 시)을 원자적으로 저장한다."""
+        """처리 결과(상태·정산 시각)·복원 기입(실패 시)·알림 이벤트를 원자적으로 저장한다."""
         ...

@@ -4,6 +4,7 @@ from core.database import session_scope
 from hub.app.dtos.withdrawal_settlement_dto import AnnualPayoutSummary, WithdrawalSummary
 from hub.app.ports.output.withdrawal_settlement_port import WithdrawalSettlementPort
 from order.adapter.outbound.pg.withdrawal_pg_repository import WithdrawalPgRepository
+from order.app.withdrawal_events import withdrawal_event
 from order.domain.entities.ledger_entry_entity import LedgerEntryDraft, LedgerEntryType
 from order.domain.entities.withdrawal_entity import (
     InvalidWithdrawalStateError,
@@ -69,7 +70,9 @@ class OrderWithdrawalSettlementGateway(WithdrawalSettlementPort):
                 paid = withdrawal.mark_paid()
             except InvalidWithdrawalStateError as error:
                 raise ValueError(str(error))
-            saved = await repository.save_settlement(paid, entries=[])
+            saved = await repository.save_settlement(
+                paid, entries=[], events=[withdrawal_event("withdrawal.paid", paid)]
+            )
         return _to_summary(saved)
 
     async def fail(self, withdrawal_id: int) -> WithdrawalSummary | None:
@@ -91,5 +94,6 @@ class OrderWithdrawalSettlementGateway(WithdrawalSettlementPort):
                         amount_krw=withdrawal.amount_krw,
                     )
                 ],
+                events=[withdrawal_event("withdrawal.failed", failed)],
             )
         return _to_summary(saved)

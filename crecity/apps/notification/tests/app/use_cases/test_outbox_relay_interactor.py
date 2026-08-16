@@ -90,6 +90,35 @@ async def test_심사_이벤트는_프로필_링크로_안내한다():
     assert draft.link == "/dashboard/profile"
 
 
+async def test_인출_지급_완료는_실지급액을_알린다():
+    """돈이 오가는 사건이라 공백이 특히 크다(갭 #74)."""
+    record = OutboxRecord(
+        id=1, event_type="withdrawal.paid",
+        payload={"withdrawal_id": 3, "creator_user_id": CREATOR,
+                 "amount_krw": 500_000, "payout_krw": 483_500},
+    )
+    store = _StubRelayStore([record])
+    await OutboxRelayInteractor(store).relay()
+    draft = store.published[0][1][0]
+    assert draft.user_id == CREATOR
+    assert "483,500원" in draft.body
+    assert draft.link == "/dashboard/balance"
+
+
+async def test_인출_실패는_잔액_복원을_함께_알린다():
+    """복원이 조용히 일어나면 잔액 변화가 설명되지 않는다(갭 #74)."""
+    record = OutboxRecord(
+        id=1, event_type="withdrawal.failed",
+        payload={"withdrawal_id": 3, "creator_user_id": CREATOR,
+                 "amount_krw": 500_000, "payout_krw": 483_500},
+    )
+    store = _StubRelayStore([record])
+    await OutboxRelayInteractor(store).relay()
+    draft = store.published[0][1][0]
+    assert draft.user_id == CREATOR
+    assert "500,000원" in draft.body and "복원" in draft.body
+
+
 async def test_모르는_이벤트는_알림_없이_발행_마킹만_된다():
     store = _StubRelayStore([_record(event_type="future.unknown")])
     result = await OutboxRelayInteractor(store).relay()
