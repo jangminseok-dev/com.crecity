@@ -1,20 +1,31 @@
 from __future__ import annotations
 
 from chat.app.dtos.messaging_dto import MessageResult, MessagesQuery, SendMessageCommand
+from chat.app.message_notifications import build_message_events
 from chat.app.exceptions import ConversationNotFoundError
 from chat.app.ports.input.messaging_use_case import MessagingUseCase
 from chat.app.ports.output.conversation_repository import ConversationRepository
 from chat.app.ports.output.message_repository import MessageRepository
 from chat.domain.entities.conversation_entity import Message
+from hub.app.ports.output.creator_ref_port import CreatorRefPort
+from hub.app.ports.output.user_directory_port import UserDirectoryPort
 
 _MESSAGE_LIMIT = 100
 
 
 class MessagingInteractor(MessagingUseCase):
 
-    def __init__(self, conversations: ConversationRepository, messages: MessageRepository) -> None:
+    def __init__(
+        self,
+        conversations: ConversationRepository,
+        messages: MessageRepository,
+        creators: CreatorRefPort,
+        users: UserDirectoryPort,
+    ) -> None:
         self._conversations = conversations
         self._messages = messages
+        self._creators = creators
+        self._users = users
 
     def _to_result(self, message: Message, requester_user_id: int) -> MessageResult:
         return MessageResult(
@@ -38,11 +49,17 @@ class MessagingInteractor(MessagingUseCase):
         body = command.body.strip()
         if not body:
             raise ValueError("메시지 내용을 입력해 주세요.")
-        await self._participant_conversation(command.conversation_id, command.sender_user_id)
+        conversation = await self._participant_conversation(
+            command.conversation_id, command.sender_user_id
+        )
+        events = await build_message_events(
+            conversation, command.sender_user_id, self._messages, self._creators, self._users
+        )
         message = await self._messages.create(
             conversation_id=command.conversation_id,
             sender_user_id=command.sender_user_id,
             body=body,
+            events=events,
         )
         return self._to_result(message, command.sender_user_id)
 

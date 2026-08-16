@@ -5,6 +5,8 @@ from chat.adapter.outbound.mappers.conversation_mapper import ConversationMapper
 from chat.adapter.outbound.orm.conversation_orm import ConversationReadOrm, MessageOrm
 from chat.app.ports.output.message_repository import MessageRepository
 from chat.domain.entities.conversation_entity import Message
+from hub.adapter.outbound.pg.outbox_pg_store import enqueue_events
+from hub.app.dtos.outbox_event_dto import OutboxEvent
 
 
 class MessagePgRepository(MessageRepository):
@@ -18,6 +20,7 @@ class MessagePgRepository(MessageRepository):
         sender_user_id: int,
         body: str,
         image_file_name: str | None = None,
+        events: list[OutboxEvent] | None = None,
     ) -> Message:
         result = await self._session.execute(
             insert(MessageOrm)
@@ -29,6 +32,9 @@ class MessagePgRepository(MessageRepository):
             )
             .returning(MessageOrm)
         )
+        if events:
+            # 메시지와 알림 이벤트는 같은 커밋 — 갈라지면 보낸 메시지의 알림이 유실된다
+            enqueue_events(self._session, events)
         await self._session.commit()
         return ConversationMapper.message_to_entity(result.scalar_one())
 

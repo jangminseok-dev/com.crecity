@@ -12,6 +12,8 @@ from chat.app.exceptions import (
 from chat.app.use_cases.conversation_listing_interactor import ConversationListingInteractor
 from chat.app.use_cases.conversation_opening_interactor import ConversationOpeningInteractor
 from chat.app.use_cases.messaging_interactor import MessagingInteractor
+from hub.app.dtos.creator_ref_dto import CreatorRef
+from hub.app.dtos.user_ref_dto import UserRef
 from chat.domain.entities.conversation_entity import (
     Conversation,
     Message,
@@ -51,17 +53,37 @@ class _StubConversationRepository:
         return [c for c in self.conversations if c.is_participant(user_id)]
 
 
+class _StubCreators:
+    async def get_creator_by_slug(self, slug):
+        raise NotImplementedError
+
+    async def get_creator_by_user_id(self, user_id):
+        return CreatorRef(creator_user_id=user_id, slug="kim-beauty", name="김뷰티")
+
+
+class _StubUsers:
+    async def get_user(self, user_id):
+        return UserRef(user_id=user_id, name="라이트홈", account_type="BRAND")
+
+
+def _messaging(conversations, messages):
+    return MessagingInteractor(conversations, messages, _StubCreators(), _StubUsers())
+
+
 class _StubMessageRepository:
-    def __init__(self):
+    def __init__(self, unread: dict[int, int] | None = None):
         self.read_marks: list[tuple[int, int]] = []
         self.messages: list[Message] = []
+        self.published: list = []          # 함께 적재된 알림 이벤트(갭 #72)
+        self.unread = unread or {}
 
-    async def create(self, conversation_id, sender_user_id, body):
+    async def create(self, conversation_id, sender_user_id, body, image_file_name=None, events=None):
         message = Message(
             id=len(self.messages) + 1, conversation_id=conversation_id,
             sender_user_id=sender_user_id, body=body,
         )
         self.messages.append(message)
+        self.published += list(events or [])
         return message
 
     async def list_by_conversation(self, conversation_id, limit):
@@ -72,6 +94,8 @@ class _StubMessageRepository:
         return found[-1] if found else None
 
     async def unread_counts(self, user_id, conversation_ids):
+        if self.unread:  # 테스트가 값을 주면 그대로 쓴다(갭 #72 조건 검증용)
+            return self.unread
         # 읽음 기록 없음 가정 — 상대가 보낸 메시지를 모두 안 읽음으로 센다
         counts: dict[int, int] = {}
         for message in self.messages:
@@ -173,7 +197,7 @@ async def test_참여자가_아니면_상세_조회_403():
 async def test_참여자는_메시지를_보내고_받는다():
     conversations = _StubConversationRepository([_conversation()])
     messages = _StubMessageRepository()
-    interactor = MessagingInteractor(conversations, messages)
+    interactor = _messaging(conversations, messages)
 
     sent = await interactor.send(SendMessageCommand(conversation_id=1, sender_user_id=BRAND, body="  안녕하세요!  "))
     assert sent.body == "안녕하세요!"  # 공백 정리
@@ -185,18 +209,42 @@ async def test_참여자는_메시지를_보내고_받는다():
 
 
 async def test_참여자가_아니면_전송_403():
-    interactor = MessagingInteractor(_StubConversationRepository([_conversation()]), _StubMessageRepository())
+    interactor = _messaging(_StubConversationRepository([_conversation()]), _StubMessageRepository())
     with pytest.raises(NotParticipantError):
         await interactor.send(SendMessageCommand(conversation_id=1, sender_user_id=999, body="침입"))
 
 
 async def test_빈_메시지는_ValueError():
-    interactor = MessagingInteractor(_StubConversationRepository([_conversation()]), _StubMessageRepository())
+    interactor = _messaging(_StubConversationRepository([_conversation()]), _StubMessageRepository())
     with pytest.raises(ValueError):
         await interactor.send(SendMessageCommand(conversation_id=1, sender_user_id=BRAND, body="   "))
 
 
 async def test_없는_대화방이면_ConversationNotFoundError():
-    interactor = MessagingInteractor(_StubConversationRepository(), _StubMessageRepository())
+    interactor = _messaging(_StubConversationRepository(), _StubMessageRepository())
     with pytest.raises(ConversationNotFoundError):
         await interactor.list_messages(MessagesQuery(conversation_id=9, requester_user_id=BRAND))
+
+
+async def test_새_메시지_알림은_상대가_읽은_뒤에만_간다():
+    """연속 전송에 알림이 도배되지 않아야 한다(갭 #72)."""
+    conversations = _StubConversationRepository([_conversation()])
+    messages = _StubMessageRepository()  # 안 읽은 메시지 없음 = 방금이 첫 미읽음
+    interactor = _messaging(conversations, messages)
+
+    await interactor.send(SendMessageCommand(conversation_id=1, sender_user_id=BRAND, body="안녕하세요"))
+    assert len(messages.published) == 1
+    event = messages.published[0]
+    assert event.event_type == "chat.message_received"
+    assert event.payload["recipient_user_id"] == CREATOR
+    assert event.payload["sender_name"] == "라이트홈"
+
+
+async def test_상대가_아직_안_읽었으면_추가_알림은_없다():
+    conversations = _StubConversationRepository([_conversation()])
+    messages = _StubMessageRepository(unread={1: 2})  # 이미 안 읽은 메시지 2건
+    interactor = _messaging(conversations, messages)
+
+    await interactor.send(SendMessageCommand(conversation_id=1, sender_user_id=BRAND, body="추가 메시지"))
+    assert messages.published == []
+

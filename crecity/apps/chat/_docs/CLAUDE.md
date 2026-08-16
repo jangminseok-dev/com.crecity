@@ -22,4 +22,10 @@
   브랜드면 `UserDirectoryPort`(이름, §5 "회원 디렉토리 조회" 실현 — auth 구현).
 - **안 읽음 표시(갭 #35)**: `conversation_reads`(대화방×참여자 조인 테이블, 3NF)의
   `last_read_at` 이후 도착한 **상대** 메시지를 센다 — 읽음 기록이 없으면 전부 안 읽음.
+- **새 메시지 알림(갭 #72)**: 텍스트·사진 전송이 `chat.message_received` Outbox 이벤트를
+  메시지 저장과 **같은 트랜잭션**으로 남긴다(`MessageRepository.create`의 `events` 인자).
+  조립은 `app/message_notifications.py` 한 곳 — 두 인터랙터에 복제하면 규칙이 갈라진다.
+  **상대가 이미 안 읽은 메시지를 갖고 있으면 보내지 않는다** — 연속 전송마다 알리면
+  알림함이 도배된다(상대가 한 번 읽으면 다음 메시지에 다시 간다). 보낸 사람 이름은
+  스냅샷 없이 허브로 해석(크리에이터=`CreatorRefPort`, 브랜드=`UserDirectoryPort`).
 - 예정: 팀 초대(30번 — 팀 워크스페이스와 함께) · 신고.

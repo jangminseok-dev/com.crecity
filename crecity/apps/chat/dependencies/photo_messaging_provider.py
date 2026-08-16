@@ -9,6 +9,8 @@ from chat.adapter.outbound.pg.message_pg_repository import MessagePgRepository
 from chat.app.ports.input.photo_messaging_use_case import PhotoMessagingUseCase
 from chat.app.use_cases.photo_messaging_interactor import PhotoMessagingInteractor
 from core.database import get_db
+from hub.dependencies.creator_ref_provider import get_creator_ref_port
+from hub.dependencies.user_directory_provider import get_user_directory_port
 
 
 def get_photo_messaging_use_case(
@@ -18,4 +20,6 @@ def get_photo_messaging_use_case(
         conversations=ConversationPgRepository(session=db),
         messages=MessagePgRepository(session=db),
         storage=LocalChatPhotoStorage(),
+        creators=get_creator_ref_port(),
+        users=get_user_directory_port(),
     )

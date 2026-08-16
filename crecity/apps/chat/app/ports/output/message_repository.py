@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from chat.domain.entities.conversation_entity import Message
+from hub.app.dtos.outbox_event_dto import OutboxEvent
 
 
 class MessageRepository(ABC):
@@ -15,7 +16,10 @@ class MessageRepository(ABC):
         sender_user_id: int,
         body: str,
         image_file_name: str | None = None,
-    ) -> Message: ...
+        events: list[OutboxEvent] | None = None,
+    ) -> Message:
+        """메시지 저장 — events를 주면 **같은 트랜잭션**으로 적재한다(알림 유실 방지)."""
+        ...
 
     @abstractmethod
     async def list_by_conversation(self, conversation_id: int, limit: int) -> list[Message]:

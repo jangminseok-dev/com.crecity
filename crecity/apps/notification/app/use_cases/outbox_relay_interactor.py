@@ -27,6 +27,17 @@ def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
         return [NotificationDraft(p["brand_user_id"], t, f"주문이 거절·환불되었습니다(크레딧 적립): {title}", _order_link(p))]
     if t == "order.submitted":
         return [NotificationDraft(p["brand_user_id"], t, f"콘텐츠가 제출되었습니다 — 72시간 내 검토해 주세요: {title}", _order_link(p))]
+    if t == "chat.message_received":
+        # 새 메시지(갭 #72) — 상대가 이미 안 읽은 게 있으면 chat이 아예 발행하지 않는다
+        sender = p.get("sender_name") or "상대방"
+        return [
+            NotificationDraft(
+                p["recipient_user_id"],
+                t,
+                f"{sender}님이 메시지를 보냈습니다",
+                f"/chat/{p['conversation_id']}",
+            )
+        ]
     if t == "order.deadline_soon":
         # 마감 때문에 움직여야 하는 쪽만 받는다(수락 대기=크리에이터, 검토 대기=브랜드)
         hours = p.get("hours_left")
