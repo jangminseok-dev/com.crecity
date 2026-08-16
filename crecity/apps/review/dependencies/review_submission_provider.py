@@ -4,6 +4,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from hub.dependencies.creator_ref_provider import get_creator_ref_port
 from hub.dependencies.order_participants_provider import get_order_participants_port
 from review.adapter.outbound.pg.review_pg_repository import ReviewPgRepository
 from review.app.ports.input.review_submission_use_case import ReviewSubmissionUseCase
@@ -16,4 +17,5 @@ def get_review_submission_use_case(
     return ReviewSubmissionInteractor(
         reviews=ReviewPgRepository(session=db),
         orders=get_order_participants_port(),
+        creators=get_creator_ref_port(),
     )

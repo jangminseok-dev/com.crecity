@@ -1,6 +1,8 @@
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from hub.adapter.outbound.pg.outbox_pg_store import enqueue_events
+from hub.app.dtos.outbox_event_dto import OutboxEvent
 from review.adapter.outbound.mappers.review_mapper import ReviewMapper
 from review.adapter.outbound.orm.review_orm import ReviewOrm
 from review.app.ports.output.review_repository import ReviewRepository
@@ -21,6 +23,7 @@ class ReviewPgRepository(ReviewRepository):
         timeliness_score: int,
         satisfaction_score: int,
         comment: str,
+        events: list[OutboxEvent] | None = None,
     ) -> Review:
         result = await self._session.execute(
             insert(ReviewOrm)
@@ -35,6 +38,7 @@ class ReviewPgRepository(ReviewRepository):
             )
             .returning(ReviewOrm)
         )
+        enqueue_events(self._session, events or [])  # 리뷰+알림 = 단일 커밋
         await self._session.commit()
         return ReviewMapper.to_entity(result.scalar_one())
 

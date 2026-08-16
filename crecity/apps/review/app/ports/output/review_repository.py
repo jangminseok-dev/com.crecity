@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+from hub.app.dtos.outbox_event_dto import OutboxEvent
 from review.domain.entities.review_entity import Review
 
 
@@ -18,6 +19,7 @@ class ReviewRepository(ABC):
         timeliness_score: int,
         satisfaction_score: int,
         comment: str,
+        events: list[OutboxEvent] | None = None,
     ) -> Review: ...
 
     @abstractmethod

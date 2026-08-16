@@ -27,6 +27,15 @@ def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
         return [NotificationDraft(p["brand_user_id"], t, f"주문이 거절·환불되었습니다(크레딧 적립): {title}", _order_link(p))]
     if t == "order.submitted":
         return [NotificationDraft(p["brand_user_id"], t, f"콘텐츠가 제출되었습니다 — 72시간 내 검토해 주세요: {title}", _order_link(p))]
+    if t == "review.received":
+        # 새 리뷰(갭 #75) — 답글(갭 #53) 폼이 있는 공개 프로필로 보낸다
+        return [
+            NotificationDraft(
+                p["creator_user_id"], t,
+                "새 리뷰가 등록되었습니다 — 답글을 남길 수 있습니다",
+                f"/creators/{p['creator_slug']}",
+            )
+        ]
     if t == "campaign.application_received":
         # 새 지원자(갭 #73) — 공고를 올린 브랜드에게. 링크는 지원자 목록이 있는 공고 상세
         return [

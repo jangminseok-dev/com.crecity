@@ -90,6 +90,19 @@ async def test_심사_이벤트는_프로필_링크로_안내한다():
     assert draft.link == "/dashboard/profile"
 
 
+async def test_새_리뷰는_답글_폼이_있는_프로필로_안내한다():
+    """답글(갭 #53)을 달 계기가 없으면 답글 기능이 죽는다(갭 #75)."""
+    record = OutboxRecord(
+        id=1, event_type="review.received",
+        payload={"creator_user_id": CREATOR, "creator_slug": "kim-beauty"},
+    )
+    store = _StubRelayStore([record])
+    await OutboxRelayInteractor(store).relay()
+    draft = store.published[0][1][0]
+    assert draft.user_id == CREATOR
+    assert draft.link == "/creators/kim-beauty"
+
+
 async def test_새_지원자는_공고_브랜드에게_알린다():
     """지원 사실을 모르면 공고를 올린 의미가 없다(갭 #73)."""
     record = OutboxRecord(

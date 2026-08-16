@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from hub.app.ports.output.creator_ref_port import CreatorRefPort
 from hub.app.ports.output.order_participants_port import OrderParticipantsPort
 from review.app.dtos.review_submission_dto import ReviewResult, ReviewSubmissionCommand
+from review.app.events import review_received_event
 from review.app.exceptions import (
     NotOrderBrandError,
     OrderNotCompletedError,
@@ -29,9 +31,15 @@ def _to_result(review: Review) -> ReviewResult:
 
 class ReviewSubmissionInteractor(ReviewSubmissionUseCase):
 
-    def __init__(self, reviews: ReviewRepository, orders: OrderParticipantsPort) -> None:
+    def __init__(
+        self,
+        reviews: ReviewRepository,
+        orders: OrderParticipantsPort,
+        creators: CreatorRefPort,
+    ) -> None:
         self._reviews = reviews
         self._orders = orders
+        self._creators = creators
 
     async def submit(self, command: ReviewSubmissionCommand) -> ReviewResult:
         order = await self._orders.get_order_participants(command.order_id)
@@ -52,8 +60,17 @@ class ReviewSubmissionInteractor(ReviewSubmissionUseCase):
             timeliness_score=validate_score("기한 준수", command.timeliness_score),
             satisfaction_score=validate_score("만족도", command.satisfaction_score),
             comment=command.comment,
+            # 리뷰를 받은 걸 모르면 답글(갭 #53)을 달 계기가 없다(갭 #75).
+            # 링크는 답글 폼이 있는 공개 프로필 — 프로필이 없으면 알림도 보내지 않는다
+            events=await self._notification_events(order.creator_user_id),
         )
         return _to_result(review)
+
+    async def _notification_events(self, creator_user_id: int):
+        creator = await self._creators.get_creator_by_user_id(creator_user_id)
+        if creator is None:
+            return None
+        return [review_received_event(creator_user_id, creator.slug)]
 
     async def get_order_review(self, order_id: int, requester_user_id: int) -> ReviewResult:
         review = await self._reviews.find_by_order_id(order_id)
