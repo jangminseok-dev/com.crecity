@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+import BrandOnboarding from "@/components/brand-onboarding";
 import OrderStatusBadge from "@/components/order-status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
@@ -31,6 +32,8 @@ export default function DashboardOrdersPage() {
 
   if (isPending || !user) return <Skeleton className="h-64 w-full" />;
   if (!orders || orders.length === 0) {
+    // 브랜드는 가입 직후 할 일이 안 보인다(갭 #78) — 빈 목록 자리에 첫 걸음을 안내한다
+    if (user.account_type === "BRAND") return <BrandOnboarding />;
     return (
       <p className="rounded-xl border border-dashed py-16 text-center text-muted-foreground">
         아직 주문이 없습니다.

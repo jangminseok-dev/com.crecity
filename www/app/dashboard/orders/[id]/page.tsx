@@ -278,10 +278,21 @@ export default function OrderDetailPage() {
       )}
 
       {order.status === "COMPLETED" && (
-        <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
-          구매가 확정된 주문입니다 —{" "}
-          {isBrand ? "크리에이터에게 대금이 적립되었습니다." : "잔액 탭에서 적립금을 확인하세요."}
-        </p>
+        <div className="rounded-md bg-muted p-3">
+          <p className="text-sm text-muted-foreground">
+            구매가 확정된 주문입니다 —{" "}
+            {isBrand ? "크리에이터에게 대금이 적립되었습니다." : "잔액 탭에서 적립금을 확인하세요."}
+          </p>
+          {/* 재주문 경로(갭 #77) — 만족한 거래를 다시 잇는 길이 없으면 프로필을 다시 찾아야 한다 */}
+          {isBrand && order.counterpart_slug && (
+            <Link
+              href={`/creators/${order.counterpart_slug}`}
+              className="mt-2 inline-block text-sm font-semibold text-primary hover:underline"
+            >
+              {order.counterpart_name ?? "이 크리에이터"}에게 다시 주문하기 →
+            </Link>
+          )}
+        </div>
       )}
       {order.status === "COMPLETED" && isBrand && <OrderReviewSection orderId={order.id} />}
       {order.status === "CANCELLED" && (
