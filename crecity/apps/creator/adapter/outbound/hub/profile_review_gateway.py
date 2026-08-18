@@ -10,7 +10,7 @@ from creator.domain.entities.creator_profile_entity import CreatorProfile, Profi
 from creator.domain.value_objects.vetting_check import VettingCheck
 from hub.adapter.outbound.pg.outbox_pg_store import enqueue_events
 from hub.app.dtos.outbox_event_dto import OutboxEvent
-from hub.app.dtos.profile_review_dto import ProfileReviewSummary
+from hub.app.dtos.profile_review_dto import FlaggedAnalyticsSummary, ProfileReviewSummary
 from hub.app.ports.output.profile_review_port import ProfileReviewPort
 
 # 심사 목록 상한 — 한 화면 분량(더 쌓이면 처리 후 재조회)
@@ -88,3 +88,11 @@ class CreatorProfileReviewGateway(ProfileReviewPort):
                 )
             profile = await repository.update_status(profile_id, status)
         return _to_summary(profile) if profile is not None else None
+
+    async def list_flagged_analytics(self) -> list[FlaggedAnalyticsSummary]:
+        async with session_scope() as session:
+            return await AnalyticsPgRepository(session).list_flagged()
+
+    async def clear_analytics_flag(self, analytics_id: int) -> bool:
+        async with session_scope() as session:
+            return await AnalyticsPgRepository(session).clear_flag(analytics_id)

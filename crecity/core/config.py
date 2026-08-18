@@ -58,6 +58,11 @@ VETTING_MIN_ENGAGEMENT_PERMILLE = int(_secrets.get("VETTING_MIN_ENGAGEMENT_PERMI
 # 무응답 만료·분쟁 환불 판정이 0건일 때. 실거래 분포 확보 후 재조정 전제.
 TRUST_MIN_VERIFIED_CHANNELS = int(_secrets.get("TRUST_MIN_VERIFIED_CHANNELS", "1"))
 TRUST_MIN_COMPLETED_ORDERS = int(_secrets.get("TRUST_MIN_COMPLETED_ORDERS", "3"))
+# 자가 입력 지표 이상치 기준(갭 #82) — 플래그만 하고 노출·거래는 막지 않는다.
+# 재제출 시 3배 이상 급증 · 팔로워 1만 이상 계정의 참여율 15%(150‰) 초과.
+ANOMALY_FOLLOWER_SURGE_MULTIPLIER = int(_secrets.get("ANOMALY_FOLLOWER_SURGE_MULTIPLIER", "3"))
+ANOMALY_ENGAGEMENT_FOLLOWER_FLOOR = int(_secrets.get("ANOMALY_ENGAGEMENT_FOLLOWER_FLOOR", "10000"))
+ANOMALY_MAX_ENGAGEMENT_PERMILLE = int(_secrets.get("ANOMALY_MAX_ENGAGEMENT_PERMILLE", "150"))
 
 # 업로드 파일 저장 루트 — 로컬 디스크 시작(오브젝트 스토리지 전환 시 어댑터 교체).
 UPLOAD_DIR = _secrets.get("UPLOAD_DIR", "uploads")

@@ -26,3 +26,5 @@ class ProfileAnalytics:
     # 오디언스(§2.1-6, 갭 #67) — 지역은 단일 값, 연령·성별 비율은 별도 행
     top_audience_region: str | None = None
     audience: tuple[AudienceShare, ...] = ()
+    # 이상치 플래그 사유(갭 #82) — None이면 정상. 내부 운영 신호(공개 응답 미노출)
+    flag_reason: str | None = None

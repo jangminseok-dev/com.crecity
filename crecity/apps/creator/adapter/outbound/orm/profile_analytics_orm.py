@@ -25,6 +25,8 @@ class ProfileAnalyticsOrm(Base):
     screenshot_file_name: Mapped[str] = mapped_column(String(100))
     # 주 오디언스 지역(§2.1-6, 갭 #67) — 단일 값이라 컬럼으로 둔다(연령·성별은 조인 테이블)
     top_audience_region: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # 이상치 플래그 사유(갭 #82) — NULL이면 정상. 플래그 여부는 파생값이라 별도 bool을 두지 않는다
+    flag_reason: Mapped[str | None] = mapped_column(String(200), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )

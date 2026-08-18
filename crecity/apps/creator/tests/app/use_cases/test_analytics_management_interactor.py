@@ -38,12 +38,13 @@ class _StubAnalyticsRepository:
     def __init__(self):
         self.rows: dict[str, ProfileAnalytics] = {}
 
-    async def upsert(self, profile_id, platform, followers_count, engagement_permille, screenshot_file_name, top_audience_region=None, audience=None):
+    async def upsert(self, profile_id, platform, followers_count, engagement_permille, screenshot_file_name, top_audience_region=None, audience=None, flag_reason=None):
         row = ProfileAnalytics(
             id=len(self.rows) + 1, profile_id=profile_id, platform=platform,
             followers_count=followers_count, engagement_permille=engagement_permille,
             screenshot_file_name=screenshot_file_name, updated_at=_NOW,
             top_audience_region=top_audience_region, audience=tuple(audience or ()),
+            flag_reason=flag_reason,
         )
         self.rows[platform] = row
         return row
@@ -66,7 +67,9 @@ class _StubStorage:
 def _interactor(profile=_PROFILE):
     analytics = _StubAnalyticsRepository()
     interactor = AnalyticsManagementInteractor(
-        profiles=_StubProfileRepository(profile), analytics=analytics, storage=_StubStorage()
+        profiles=_StubProfileRepository(profile), analytics=analytics, storage=_StubStorage(),
+        anomaly_surge_multiplier=3, anomaly_engagement_floor=10000,
+        anomaly_max_engagement_permille=150,
     )
     return interactor, analytics
 
@@ -185,3 +188,15 @@ async def test_같은_축_비율_합이_100퍼센트를_넘으면_거부한다()
                 ),
             )
         )
+
+
+async def test_재제출_급증은_플래그되고_정상_재제출이면_해제된다():
+    # 이상치 검사(갭 #82) — 판정은 도메인 순수 함수, 여기서는 관통만 본다
+    interactor, analytics = _interactor()
+    await interactor.submit(_command(followers=10000))
+    flagged = await interactor.submit(_command(followers=50000))
+    assert flagged.followers_count == 50000
+    assert analytics.rows["INSTAGRAM"].flag_reason is not None
+    normal = await interactor.submit(_command(followers=52000))
+    assert normal.followers_count == 52000
+    assert analytics.rows["INSTAGRAM"].flag_reason is None

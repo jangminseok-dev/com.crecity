@@ -4,10 +4,12 @@ from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from creator.adapter.outbound.orm.audience_breakdown_orm import AudienceBreakdownOrm
+from creator.adapter.outbound.orm.creator_profile_orm import CreatorProfileOrm
 from creator.adapter.outbound.orm.profile_analytics_orm import ProfileAnalyticsOrm
 from creator.app.ports.output.analytics_repository import AnalyticsRepository
 from creator.domain.entities.profile_analytics_entity import ProfileAnalytics
 from creator.domain.value_objects.audience_breakdown import AudienceDimension, AudienceShare
+from hub.app.dtos.profile_review_dto import FlaggedAnalyticsSummary
 
 
 def _to_entity(
@@ -23,6 +25,7 @@ def _to_entity(
         updated_at=orm.updated_at,
         top_audience_region=orm.top_audience_region,
         audience=audience,
+        flag_reason=orm.flag_reason,
     )
 
 
@@ -40,6 +43,7 @@ class AnalyticsPgRepository(AnalyticsRepository):
         screenshot_file_name: str,
         top_audience_region: str | None = None,
         audience: list[AudienceShare] | None = None,
+        flag_reason: str | None = None,
     ) -> ProfileAnalytics:
         updated = await self._session.execute(
             update(ProfileAnalyticsOrm)
@@ -52,6 +56,7 @@ class AnalyticsPgRepository(AnalyticsRepository):
                 engagement_permille=engagement_permille,
                 screenshot_file_name=screenshot_file_name,
                 top_audience_region=top_audience_region,
+                flag_reason=flag_reason,
             )
             .returning(ProfileAnalyticsOrm)
         )
@@ -66,6 +71,7 @@ class AnalyticsPgRepository(AnalyticsRepository):
                     engagement_permille=engagement_permille,
                     screenshot_file_name=screenshot_file_name,
                     top_audience_region=top_audience_region,
+                    flag_reason=flag_reason,
                 )
                 .returning(ProfileAnalyticsOrm)
             )
@@ -140,3 +146,35 @@ class AnalyticsPgRepository(AnalyticsRepository):
             )
         )
         return int(result.scalar_one())
+
+    # ── 이상치 재검토 큐(갭 #82) — 허브 게이트웨이 전용(포트 미승격) ──────────
+
+    async def list_flagged(self) -> list[FlaggedAnalyticsSummary]:
+        result = await self._session.execute(
+            select(ProfileAnalyticsOrm, CreatorProfileOrm.slug, CreatorProfileOrm.name)
+            .join(CreatorProfileOrm, CreatorProfileOrm.id == ProfileAnalyticsOrm.profile_id)
+            .where(ProfileAnalyticsOrm.flag_reason.is_not(None))
+            .order_by(ProfileAnalyticsOrm.updated_at)
+        )
+        return [
+            FlaggedAnalyticsSummary(
+                id=orm.id,
+                profile_slug=slug,
+                profile_name=name,
+                platform=orm.platform,
+                followers_count=orm.followers_count,
+                engagement_permille=orm.engagement_permille,
+                flag_reason=orm.flag_reason,
+                updated_at=orm.updated_at,
+            )
+            for orm, slug, name in result.all()
+        ]
+
+    async def clear_flag(self, analytics_id: int) -> bool:
+        result = await self._session.execute(
+            update(ProfileAnalyticsOrm)
+            .where(ProfileAnalyticsOrm.id == analytics_id)
+            .values(flag_reason=None)
+        )
+        await self._session.commit()
+        return result.rowcount > 0

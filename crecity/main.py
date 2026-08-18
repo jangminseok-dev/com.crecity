@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from admin.adapter.inbound.api.v1.audit_log_router import audit_log_router
 from admin.adapter.inbound.api.v1.dashboard_metrics_router import dashboard_metrics_router
 from admin.adapter.inbound.api.v1.order_search_router import order_search_router
+from admin.adapter.inbound.api.v1.analytics_review_router import analytics_review_router
 from admin.adapter.inbound.api.v1.report_router import report_router
 from admin.adapter.inbound.api.v1.profile_review_router import profile_review_router
 from admin.adapter.inbound.api.v1.steward_router import steward_router
@@ -220,6 +221,7 @@ app.include_router(steward_router)
 app.include_router(profile_review_router)
 app.include_router(dashboard_metrics_router)
 app.include_router(order_search_router)
+app.include_router(analytics_review_router)
 app.include_router(report_router)
 app.include_router(audit_log_router)
 app.include_router(paymaster_router)

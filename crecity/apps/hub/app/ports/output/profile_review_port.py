@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from hub.app.dtos.profile_review_dto import ProfileReviewSummary
+from hub.app.dtos.profile_review_dto import FlaggedAnalyticsSummary, ProfileReviewSummary
 
 
 class ProfileReviewPort(ABC):
@@ -19,4 +19,14 @@ class ProfileReviewPort(ABC):
     @abstractmethod
     async def review_profile(self, profile_id: int, approved: bool) -> ProfileReviewSummary | None:
         """승인(APPROVED)/반려(REJECTED) 전이 — 대상 없으면 None."""
+        ...
+
+    @abstractmethod
+    async def list_flagged_analytics(self) -> list[FlaggedAnalyticsSummary]:
+        """이상치 플래그된 채널 지표(갭 #82) — 오래된 순."""
+        ...
+
+    @abstractmethod
+    async def clear_analytics_flag(self, analytics_id: int) -> bool:
+        """운영자 확인 처리 — 플래그 해제. 대상 없으면 False."""
         ...

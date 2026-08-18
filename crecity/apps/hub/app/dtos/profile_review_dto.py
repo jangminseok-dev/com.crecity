@@ -21,3 +21,17 @@ class ProfileReviewSummary:
     min_followers: int = 0
     min_engagement_permille: int = 0
     vetting_passed: bool = False
+
+
+@dataclass(frozen=True)
+class FlaggedAnalyticsSummary:
+    """이상치 플래그된 채널 지표(갭 #82) — 운영자 재검토 큐 한 행."""
+
+    id: int  # profile_analytics 행 id
+    profile_slug: str
+    profile_name: str
+    platform: str
+    followers_count: int
+    engagement_permille: int | None
+    flag_reason: str
+    updated_at: datetime | None

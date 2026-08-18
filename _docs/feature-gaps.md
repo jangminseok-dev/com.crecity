@@ -411,8 +411,16 @@ order는 이벤트 11종을 모두 발행·소비하지만 **campaign·chat·rev
   **공개 수치로는 노출하지 않는다** — 감점 신호 공개는 크리에이터에게 가혹해 배지 판정에만
   쓴다. 임의 가중치 등급(브론즈~골드류)은 기각 — 실데이터 없이 가중치를 정당화할 수 없다.
   종단: 인증 채널 0인 프로필 False → 채널 지표 등록 후 True 전환·배지 렌더 확인.
-- [ ] **82. 지표 정합성 검사** — 자가 입력 팔로워·참여율의 이상치(급증·통계적 이상) 자동
-  플래그 → 운영 콘솔 재심사 큐. "검증은 브랜드의 실사 몫"이라는 Collabstr 비판의 반대편.
+- [x] **82. 지표 정합성 검사** — ✅ 2026-08-18 구축. 채널 지표 제출 시 이상치를 자동
+  판정(creator 도메인 `metric_anomaly.py` 순수 함수): ① 재제출 급증(직전 대비
+  `ANOMALY_FOLLOWER_SURGE_MULTIPLIER`(3)배↑) ② 대형 계정 고참여율(팔로워
+  `ANOMALY_ENGAGEMENT_FOLLOWER_FLOOR`(1만)↑ & 참여율 `ANOMALY_MAX_ENGAGEMENT_PERMILLE`
+  (15%)↑). **플래그만 하고 저장·노출·거래는 막지 않는다**(오탐 보호 — 광고 표기 검수와
+  같은 원칙). `profile_analytics.flag_reason`(NULL=정상, 별도 bool 없음 — 파생 저장 회피),
+  정상값 재제출 시 자동 해제. 운영 콘솔 **지표 재검토 큐**: 허브 `ProfileReviewPort` 확장
+  (`list_flagged_analytics`·`clear_analytics_flag`) + admin `GET /admin/analytics/flagged`·
+  `POST /admin/analytics/{id}/clear-flag`(profile.review 권한·감사 로그). 종단: 45k→900k
+  재제출 플래그 → 큐 노출 → 확인 처리 204 → 감사 로그 → 정상값 복원 시 자동 해제.
 - [ ] **83. 양방향 리뷰(크리에이터→브랜드)** — 브랜드도 평가받는다. 크리에이터가 나쁜
   브랜드를 피할 수 있는 보호 장치. Collabstr에 없음.
 

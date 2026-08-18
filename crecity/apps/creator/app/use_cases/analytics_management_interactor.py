@@ -14,6 +14,7 @@ from creator.domain.entities.creator_profile_entity import CreatorProfile
 from creator.domain.entities.profile_analytics_entity import ANALYTICS_PLATFORMS
 from creator.domain.value_objects.audience_breakdown import validate_breakdown
 from creator.domain.value_objects.image_file import ImageFile
+from creator.domain.value_objects.metric_anomaly import detect_anomaly
 
 _MAX_ENGAGEMENT_PERMILLE = 1000  # 100.0%
 
@@ -25,10 +26,16 @@ class AnalyticsManagementInteractor(AnalyticsManagementUseCase):
         profiles: CreatorProfileRepository,
         analytics: AnalyticsRepository,
         storage: AnalyticsFileStorage,
+        anomaly_surge_multiplier: int,
+        anomaly_engagement_floor: int,
+        anomaly_max_engagement_permille: int,
     ) -> None:
         self._profiles = profiles
         self._analytics = analytics
         self._storage = storage
+        self._anomaly_surge_multiplier = anomaly_surge_multiplier
+        self._anomaly_engagement_floor = anomaly_engagement_floor
+        self._anomaly_max_engagement_permille = anomaly_max_engagement_permille
 
     async def _my_profile(self, requester_user_id: int) -> CreatorProfile:
         profile = await self._profiles.find_by_user_id(requester_user_id)
@@ -51,6 +58,23 @@ class AnalyticsManagementInteractor(AnalyticsManagementUseCase):
         audience = validate_breakdown(list(command.audience))
 
         profile = await self._my_profile(command.requester_user_id)
+        # 이상치 판정(갭 #82) — 직전 제출값과 비교해 급증·고참여율을 플래그(저장은 그대로 진행)
+        previous = next(
+            (
+                row
+                for row in await self._analytics.list_by_profile_id(profile.id)
+                if row.platform == command.platform
+            ),
+            None,
+        )
+        flag_reason = detect_anomaly(
+            previous_followers=previous.followers_count if previous else None,
+            new_followers=command.followers_count,
+            engagement_permille=command.engagement_permille,
+            surge_multiplier=self._anomaly_surge_multiplier,
+            engagement_floor_followers=self._anomaly_engagement_floor,
+            max_engagement_permille=self._anomaly_max_engagement_permille,
+        )
         file_name = self._storage.save(screenshot.content, screenshot.extension)
         analytics = await self._analytics.upsert(
             profile_id=profile.id,
@@ -60,6 +84,7 @@ class AnalyticsManagementInteractor(AnalyticsManagementUseCase):
             screenshot_file_name=file_name,
             top_audience_region=(command.top_audience_region or None),
             audience=audience,
+            flag_reason=flag_reason,
         )
         return AnalyticsResult.from_entity(analytics)
 

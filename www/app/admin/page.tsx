@@ -8,6 +8,7 @@ import AdminAnnualPayouts from "@/components/admin-annual-payouts";
 import AdminAuditLogs from "@/components/admin-audit-logs";
 import AdminDashboardMetrics from "@/components/admin-dashboard-metrics";
 import AdminDisputes from "@/components/admin-disputes";
+import AdminFlaggedAnalytics from "@/components/admin-flagged-analytics";
 import AdminOrderSearch from "@/components/admin-order-search";
 import AdminReports from "@/components/admin-reports";
 import AdminWithdrawals from "@/components/admin-withdrawals";
@@ -189,6 +190,7 @@ export default function AdminPage() {
           <AdminAnnualPayouts />
         </>
       )}
+      {(user?.permissions.includes("profile.review") ?? false) && <AdminFlaggedAnalytics />}
       {(user?.permissions.includes("dispute.resolve") ?? false) && <AdminDisputes />}
       {(user?.permissions.includes("report.review") ?? false) && <AdminReports />}
       {(user?.permissions.includes("order.search") ?? false) && <AdminOrderSearch />}
