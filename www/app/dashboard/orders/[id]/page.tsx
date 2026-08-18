@@ -9,6 +9,7 @@ import OrderAdjustmentSection from "@/components/order-adjustment-section";
 import OrderDeliverablesSection from "@/components/order-deliverables-section";
 import OrderDisputeSection from "@/components/order-dispute-section";
 import OrderReviewSection from "@/components/order-review-section";
+import OrderRevisionsSection from "@/components/order-revisions-section";
 import OrderStatusBadge from "@/components/order-status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,25 +60,20 @@ function availableActions(order: Order, userId: number): TransitionAction[] {
       confirm: "제출하면 브랜드 검토가 시작됩니다(72시간 내 무응답 시 자동 승인). 제출할까요?",
     });
   }
+  // 수정 요청은 코멘트가 필수라 전이 버튼이 아니라 수정 요청 섹션의 폼에서 보낸다(갭 #84)
   if (isBrand && order.status === "DRAFT_REVIEW") {
-    actions.push(
-      {
-        path: "approve-draft",
-        label: "초안 컨펌",
-        confirm: "컨펌하면 크리에이터가 게시 작업을 이어갑니다. 컨펌할까요?",
-      },
-      { path: "request-revision", label: "수정 요청", variant: "outline" },
-    );
+    actions.push({
+      path: "approve-draft",
+      label: "초안 컨펌",
+      confirm: "컨펌하면 크리에이터가 게시 작업을 이어갑니다. 컨펌할까요?",
+    });
   }
   if (isBrand && order.status === "IN_REVIEW") {
-    actions.push(
-      {
-        path: "approve",
-        label: "승인 (구매 확정)",
-        confirm: "승인하면 크리에이터에게 대금이 적립되고 주문이 완료됩니다. 승인할까요?",
-      },
-      { path: "request-revision", label: "수정 요청", variant: "outline" },
-    );
+    actions.push({
+      path: "approve",
+      label: "승인 (구매 확정)",
+      confirm: "승인하면 크리에이터에게 대금이 적립되고 주문이 완료됩니다. 승인할까요?",
+    });
   }
   // 양측 합의 취소 — 진행 중 주문의 당사자만, 요청자 본인은 동의·거부 불가
   if (
@@ -237,9 +233,15 @@ export default function OrderDetailPage() {
           </div>
           {order.deadline_at && (
             <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
-              ⏰ {order.status === "PENDING_ACCEPT" ? "수락 마감" : "검토 마감"}:{" "}
-              {formatDeadline(order.deadline_at)}
+              ⏰{" "}
+              {order.status === "PENDING_ACCEPT"
+                ? "수락 마감"
+                : order.status === "DRAFT_REVIEW"
+                  ? "초안 검토 마감"
+                  : "검토 마감"}
+              : {formatDeadline(order.deadline_at)}
               {order.status === "IN_REVIEW" && " — 지나면 자동 승인됩니다"}
+              {order.status === "DRAFT_REVIEW" && " — 지나면 자동 컨펌됩니다"}
               {order.status === "PENDING_ACCEPT" && " — 지나면 자동 환불됩니다"}
             </p>
           )}
@@ -247,7 +249,7 @@ export default function OrderDetailPage() {
       </Card>
 
       {order.cancel_requested_by !== null &&
-        ["IN_PROGRESS", "IN_REVIEW"].includes(order.status) && (
+        ["IN_PROGRESS", "DRAFT_REVIEW", "IN_REVIEW"].includes(order.status) && (
           <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
             ⚠️{" "}
             {order.cancel_requested_by === user.id
@@ -256,7 +258,7 @@ export default function OrderDetailPage() {
           </p>
         )}
 
-      {["IN_PROGRESS", "IN_REVIEW"].includes(order.status) && (
+      {["IN_PROGRESS", "DRAFT_REVIEW", "IN_REVIEW"].includes(order.status) && (
         <OrderAdjustmentSection
           orderId={order.id}
           userId={user.id}
@@ -266,16 +268,23 @@ export default function OrderDetailPage() {
         />
       )}
 
-      {["IN_PROGRESS", "IN_REVIEW", "COMPLETED"].includes(order.status) && (
+      {["IN_PROGRESS", "DRAFT_REVIEW", "IN_REVIEW", "COMPLETED"].includes(order.status) && (
         <OrderDeliverablesSection
           orderId={order.id}
           canUpload={!isBrand && order.status === "IN_PROGRESS"}
         />
       )}
 
+      {/* 수정 요청 이력·폼(갭 #84) — 이력은 당사자 모두, 요청은 검토 중의 브랜드만 */}
+      <OrderRevisionsSection
+        orderId={order.id}
+        canRequest={isBrand && ["DRAFT_REVIEW", "IN_REVIEW"].includes(order.status)}
+        revisionsLeft={order.revision_limit - order.revisions_used}
+      />
+
       <OrderDisputeSection
         orderId={order.id}
-        canRaise={["IN_PROGRESS", "IN_REVIEW"].includes(order.status)}
+        canRaise={["IN_PROGRESS", "DRAFT_REVIEW", "IN_REVIEW"].includes(order.status)}
       />
 
       {actions.length > 0 && (

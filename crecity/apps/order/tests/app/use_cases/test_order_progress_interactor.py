@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from order.app.dtos.order_progress_dto import OrderTransitionCommand
+from order.app.dtos.order_progress_dto import OrderTransitionCommand, RevisionRequestCommand
 from order.app.exceptions import OrderNotFoundError
 from order.app.use_cases.order_progress_interactor import OrderProgressInteractor
 from order.domain.entities.ledger_entry_entity import LedgerEntryType
@@ -27,8 +27,11 @@ class _StubOrderRepository:
     async def find_by_id(self, order_id):
         return self.order if self.order and self.order.id == order_id else None
 
-    async def save_transition(self, order, entries, events):
+    async def save_transition(self, order, entries, events, revision_comment=None):
         self.saved.append((order, entries, events))
+        self.revision_comments = getattr(self, "revision_comments", []) + (
+            [revision_comment] if revision_comment is not None else []
+        )
 
     async def list_by_participant(self, user_id):
         raise NotImplementedError
@@ -126,3 +129,35 @@ async def test_없는_주문이면_OrderNotFoundError():
     interactor, _ = _interactor(None)
     with pytest.raises(OrderNotFoundError):
         await interactor.accept(OrderTransitionCommand(order_id=99, actor_user_id=CREATOR))
+
+
+async def test_초안_제출하면_초안_검토와_마감이_저장된다():
+    interactor, repo = _interactor(_order(OrderStatus.IN_PROGRESS, deadline_at=None))
+    result = await interactor.submit_draft(
+        OrderTransitionCommand(order_id=1, actor_user_id=CREATOR)
+    )
+    assert result.status == OrderStatus.DRAFT_REVIEW.value
+    saved_order, _, events = repo.saved[0]
+    assert saved_order.deadline_at is not None
+    assert events[0].event_type == "order.draft_submitted"
+
+
+async def test_초안_컨펌하면_작업중_복귀와_컨펌_이벤트가_저장된다():
+    interactor, repo = _interactor(_order(OrderStatus.DRAFT_REVIEW))
+    result = await interactor.approve_draft(
+        OrderTransitionCommand(order_id=1, actor_user_id=BRAND)
+    )
+    assert result.status == OrderStatus.IN_PROGRESS.value
+    assert result.draft_approved is True
+    assert repo.saved[0][2][0].event_type == "order.draft_approved"
+
+
+async def test_수정_요청은_피드백_본문이_전이와_함께_저장된다():
+    # 갭 #84 — 코멘트가 같은 save_transition 호출에 실려야 원자성이 보장된다
+    interactor, repo = _interactor(_order(OrderStatus.IN_REVIEW))
+    result = await interactor.request_revision(
+        RevisionRequestCommand(order_id=1, actor_user_id=BRAND, comment="로고가 잘렸어요 — 다시 촬영 부탁해요")
+    )
+    assert result.status == OrderStatus.IN_PROGRESS.value
+    assert repo.revision_comments == ["로고가 잘렸어요 — 다시 촬영 부탁해요"]
+    assert repo.saved[0][2][0].event_type == "order.revision_requested"

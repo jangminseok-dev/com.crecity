@@ -49,9 +49,17 @@ class OrderRepository(ABC):
 
     @abstractmethod
     async def save_transition(
-        self, order: Order, entries: list[LedgerEntryDraft], events: list[OutboxEvent]
+        self,
+        order: Order,
+        entries: list[LedgerEntryDraft],
+        events: list[OutboxEvent],
+        revision_comment: str | None = None,
     ) -> None:
-        """전이 결과(상태·마감)·원장 기입·이벤트를 원자적으로 저장한다."""
+        """전이 결과(상태·마감)·원장 기입·이벤트를 원자적으로 저장한다.
+
+        revision_comment(갭 #84)가 있으면 수정 요청 이력도 **같은 트랜잭션**으로 남긴다 —
+        갈라지면 횟수만 늘고 피드백이 없는 요청이 생긴다.
+        """
         ...
 
     @abstractmethod

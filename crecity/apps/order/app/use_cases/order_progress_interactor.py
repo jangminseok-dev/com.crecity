@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from order.app.dtos.order_progress_dto import OrderTransitionCommand
+from order.app.dtos.order_progress_dto import OrderTransitionCommand, RevisionRequestCommand
 from order.app.dtos.order_result_dto import OrderResult
 from order.app.events import order_event
 from order.app.exceptions import OrderNotFoundError
@@ -69,10 +69,15 @@ class OrderProgressInteractor(OrderProgressUseCase):
         await self._orders.save_transition(order, [], [order_event("order.submitted", order)])
         return OrderResult.from_order(order)
 
-    async def request_revision(self, command: OrderTransitionCommand) -> OrderResult:
+    async def request_revision(self, command: RevisionRequestCommand) -> OrderResult:
         order = (await self._get(command.order_id)).request_revision(command.actor_user_id)
+        # 피드백 본문은 전이와 같은 트랜잭션으로 남는다(갭 #84) — 횟수만 늘고 본문이 없는
+        # 요청이 생기지 않게 한다
         await self._orders.save_transition(
-            order, [], [order_event("order.revision_requested", order)]
+            order,
+            [],
+            [order_event("order.revision_requested", order)],
+            revision_comment=command.comment,
         )
         return OrderResult.from_order(order)
 

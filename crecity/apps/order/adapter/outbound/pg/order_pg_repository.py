@@ -9,6 +9,7 @@ from order.adapter.outbound.mappers.order_mapper import OrderMapper
 from order.adapter.outbound.orm.dispute_orm import DisputeOrm
 from order.adapter.outbound.orm.ledger_entry_orm import LedgerEntryOrm
 from order.adapter.outbound.orm.order_orm import OrderOrm
+from order.adapter.outbound.orm.order_revision_request_orm import OrderRevisionRequestOrm
 from order.adapter.outbound.orm.order_status_transition_orm import OrderStatusTransitionOrm
 from order.adapter.outbound.pg.ledger_pg_repository import _SIGNED_AMOUNT
 from order.app.dtos.party_stats_dto import PartyTradeStats
@@ -126,7 +127,11 @@ class OrderPgRepository(OrderRepository):
         return OrderMapper.to_entity(orm) if orm is not None else None
 
     async def save_transition(
-        self, order: Order, entries: list[LedgerEntryDraft], events: list[OutboxEvent]
+        self,
+        order: Order,
+        entries: list[LedgerEntryDraft],
+        events: list[OutboxEvent],
+        revision_comment: str | None = None,
     ) -> None:
         # 전이 이력(갭 #79) — from은 저장 시점의 DB 상태를 읽는다(엔티티의 옛 상태보다 정확).
         # 상태가 실제로 바뀐 저장만 이력이 된다(취소 요청 등 상태 유지 저장은 제외).
@@ -140,6 +145,15 @@ class OrderPgRepository(OrderRepository):
                     order_id=order.id,
                     from_status=from_status,
                     to_status=order.status.value,
+                )
+            )
+        if revision_comment is not None:
+            # 수정 요청 이력(갭 #84) — 어느 검토 단계의 요청인지는 전이 전 상태가 말해준다
+            await self._session.execute(
+                insert(OrderRevisionRequestOrm).values(
+                    order_id=order.id,
+                    requested_in=from_status,
+                    comment=revision_comment,
                 )
             )
         await self._session.execute(

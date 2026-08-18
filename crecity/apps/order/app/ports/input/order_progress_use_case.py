@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from order.app.dtos.order_progress_dto import OrderTransitionCommand
+from order.app.dtos.order_progress_dto import OrderTransitionCommand, RevisionRequestCommand
 from order.app.dtos.order_result_dto import OrderResult
 
 
@@ -41,8 +41,8 @@ class OrderProgressUseCase(ABC):
         ...
 
     @abstractmethod
-    async def request_revision(self, command: OrderTransitionCommand) -> OrderResult:
-        """브랜드 수정 요청 → IN_PROGRESS (무제한 반복 가능)."""
+    async def request_revision(self, command: RevisionRequestCommand) -> OrderResult:
+        """브랜드 수정 요청 → IN_PROGRESS. 피드백 본문이 이력으로 남는다(갭 #84)."""
         ...
 
     @abstractmethod

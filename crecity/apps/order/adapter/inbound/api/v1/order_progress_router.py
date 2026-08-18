@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from hub.app.dtos.verified_user_dto import VerifiedUser
 from hub.dependencies.current_user_provider import get_current_user
+from order.adapter.inbound.api.schemas.order_progress_schema import RevisionRequestSchema
 from order.adapter.inbound.api.schemas.order_result_schema import OrderResponseSchema
-from order.app.dtos.order_progress_dto import OrderTransitionCommand
+from order.app.dtos.order_progress_dto import OrderTransitionCommand, RevisionRequestCommand
 from order.app.dtos.order_result_dto import OrderResult
 from order.app.exceptions import OrderNotFoundError
 from order.app.ports.input.order_progress_use_case import OrderProgressUseCase
@@ -87,10 +88,24 @@ async def submit_order(
 )
 async def request_revision(
     order_id: int,
+    body: RevisionRequestSchema,
     user: VerifiedUser = Depends(get_current_user),
     use_case: OrderProgressUseCase = Depends(get_order_progress_use_case),
 ) -> OrderResponseSchema:
-    return await _transition(use_case.request_revision, order_id, user)
+    """수정 요청(갭 #84) — 피드백 본문이 필수이며 이력으로 남는다."""
+    try:
+        result = await use_case.request_revision(
+            RevisionRequestCommand(
+                order_id=order_id, actor_user_id=user.id, comment=body.comment
+            )
+        )
+    except OrderNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error))
+    except NotOrderActorError as error:
+        raise HTTPException(status_code=403, detail=str(error))
+    except InvalidOrderTransitionError as error:
+        raise HTTPException(status_code=409, detail=str(error))
+    return OrderResponseSchema.from_result(result)
 
 
 @order_progress_router.post("/orders/{order_id}/approve", response_model=OrderResponseSchema)
