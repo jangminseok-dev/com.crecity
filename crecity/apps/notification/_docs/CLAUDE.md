@@ -29,6 +29,7 @@
 | withdrawal.paid · failed | 크리에이터(실패는 잔액 복원 사실까지 안내) | /dashboard/balance |
 | campaign.application_received | 공고를 올린 브랜드 | /campaigns/{id}(지원자 목록) |
 | review.received | 리뷰를 받은 크리에이터 | /creators/{slug}(답글 폼) |
+| review.brand_received | 평가받은 브랜드(갭 #83) | /dashboard/orders/{id} |
 | profile.approved · rejected | 크리에이터 | /dashboard/profile |
 | (모르는 유형) | 알림 없이 발행 마킹만 — 재처리 루프 방지 | — |
 

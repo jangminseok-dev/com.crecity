@@ -5,7 +5,9 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
+import BrandRatingBadge from "@/components/brand-rating-badge";
 import OrderAdjustmentSection from "@/components/order-adjustment-section";
+import OrderBrandReviewSection from "@/components/order-brand-review-section";
 import OrderDeliverablesSection from "@/components/order-deliverables-section";
 import OrderDisputeSection from "@/components/order-dispute-section";
 import OrderReviewSection from "@/components/order-review-section";
@@ -168,6 +170,8 @@ export default function OrderDetailPage() {
                 (order.counterpart_name ?? "확인할 수 없음")
               )}
             </p>
+            {/* 브랜드 평점 집계(갭 #83) — 크리에이터의 수락 판단 근거. 0건이면 안 그린다 */}
+            {!isBrand && <BrandRatingBadge brandUserId={order.brand_user_id} />}
             {/* 상대의 거래 이력(갭 #65·#66) — 이력이 없으면 아예 그리지 않는다 */}
             {order.counterpart_completed_orders !== null && (
               <p className="mt-1 text-xs text-muted-foreground">
@@ -327,6 +331,8 @@ export default function OrderDetailPage() {
         </div>
       )}
       {order.status === "COMPLETED" && isBrand && <OrderReviewSection orderId={order.id} />}
+      {/* 양방향 평가(갭 #83) — 크리에이터도 브랜드를 평가한다 */}
+      {order.status === "COMPLETED" && !isBrand && <OrderBrandReviewSection orderId={order.id} />}
       {order.status === "CANCELLED" && (
         <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
           양측 합의로 취소된 주문입니다 —{" "}
