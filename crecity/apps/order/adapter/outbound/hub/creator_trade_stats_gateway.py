@@ -16,6 +16,7 @@ class OrderCreatorTradeStatsGateway(CreatorTradeStatsPort):
             repository = OrderPgRepository(session)
             stats = await repository.get_party_stats(creator_user_id, as_brand=False)
             response = await repository.get_creator_response_stats(creator_user_id)
+            refund_disputes = await repository.count_creator_refund_disputes(creator_user_id)
         # 받은 주문 중 거절·만료로 끝난 것(REFUNDED)을 뺀 나머지가 '수락해 진행한' 주문이다
         return CreatorTradeStats(
             completed_orders=stats.completed_orders,
@@ -30,4 +31,5 @@ class OrderCreatorTradeStatsGateway(CreatorTradeStatsPort):
                 threshold_hours=ORDER_FAST_RESPONSE_HOURS,
                 min_samples=ORDER_FAST_RESPONSE_MIN_SAMPLES,
             ),
+            dispute_refund_orders=refund_disputes,
         )

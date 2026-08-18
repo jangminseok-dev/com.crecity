@@ -54,6 +54,10 @@ ORDER_FAST_RESPONSE_MIN_SAMPLES = int(_secrets.get("ORDER_FAST_RESPONSE_MIN_SAMP
 # 팔로워 1,000(나노 인플루언서 진입선) · 참여율 1.0%(=10‰, 통상 양호 하한).
 VETTING_MIN_FOLLOWERS = int(_secrets.get("VETTING_MIN_FOLLOWERS", "1000"))
 VETTING_MIN_ENGAGEMENT_PERMILLE = int(_secrets.get("VETTING_MIN_ENGAGEMENT_PERMILLE", "10"))
+# 신뢰 크리에이터 배지 기준(갭 #81) — 인증 채널·완료 거래가 이만큼이고
+# 무응답 만료·분쟁 환불 판정이 0건일 때. 실거래 분포 확보 후 재조정 전제.
+TRUST_MIN_VERIFIED_CHANNELS = int(_secrets.get("TRUST_MIN_VERIFIED_CHANNELS", "1"))
+TRUST_MIN_COMPLETED_ORDERS = int(_secrets.get("TRUST_MIN_COMPLETED_ORDERS", "3"))
 
 # 업로드 파일 저장 루트 — 로컬 디스크 시작(오브젝트 스토리지 전환 시 어댑터 교체).
 UPLOAD_DIR = _secrets.get("UPLOAD_DIR", "uploads")

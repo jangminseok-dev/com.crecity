@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.config import TRUST_MIN_COMPLETED_ORDERS, TRUST_MIN_VERIFIED_CHANNELS
 from core.database import get_db
 from creator.adapter.outbound.pg.analytics_pg_repository import AnalyticsPgRepository
 from creator.adapter.outbound.pg.creator_profile_pg_repository import CreatorProfilePgRepository
@@ -18,4 +19,6 @@ def get_profile_lookup_use_case(
         repository=CreatorProfilePgRepository(session=db),
         analytics=AnalyticsPgRepository(session=db),
         trade_stats=get_creator_trade_stats_port(),
+        trust_min_verified_channels=TRUST_MIN_VERIFIED_CHANNELS,
+        trust_min_completed_orders=TRUST_MIN_COMPLETED_ORDERS,
     )

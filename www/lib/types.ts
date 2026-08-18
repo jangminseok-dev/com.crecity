@@ -38,6 +38,8 @@ export type CreatorProfile = {
   // 응답 지표(갭 #80) — 전이 이력 표본이 없으면 null
   avg_accept_hours: number | null;
   fast_responder: boolean;
+  // 신뢰 크리에이터 배지(갭 #81) — 인증·실적·응답·분쟁 신호의 통합 판정
+  trusted_creator: boolean;
 };
 
 export type ProfileFaq = {

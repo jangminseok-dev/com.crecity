@@ -16,3 +16,5 @@ class CreatorTradeStats:
     # 응답 지표(갭 #80) — 이력 표본이 없으면 None / False. 배지 판정은 order가 소유
     avg_accept_hours: float | None = None
     fast_responder: bool = False
+    # 분쟁 환불 판정(패소) 수(갭 #81) — 신뢰 배지 판정 재료(공개 수치로는 노출하지 않는다)
+    dispute_refund_orders: int = 0

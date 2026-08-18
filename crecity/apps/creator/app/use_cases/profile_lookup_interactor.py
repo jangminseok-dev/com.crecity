@@ -7,6 +7,7 @@ from creator.app.ports.output.analytics_repository import AnalyticsRepository
 from creator.app.ports.output.creator_profile_repository import CreatorProfileRepository
 from hub.app.ports.output.creator_trade_stats_port import CreatorTradeStatsPort
 from creator.domain.entities.creator_profile_entity import ProfileStatus
+from creator.domain.value_objects.trust_check import is_trusted_creator
 
 
 class ProfileLookupInteractor(ProfileLookupUseCase):
@@ -16,10 +17,14 @@ class ProfileLookupInteractor(ProfileLookupUseCase):
         repository: CreatorProfileRepository,
         analytics: AnalyticsRepository,
         trade_stats: CreatorTradeStatsPort,
+        trust_min_verified_channels: int,
+        trust_min_completed_orders: int,
     ) -> None:
         self._repository = repository
         self._analytics = analytics
         self._trade_stats = trade_stats
+        self._trust_min_verified_channels = trust_min_verified_channels
+        self._trust_min_completed_orders = trust_min_completed_orders
 
     async def lookup(self, query: ProfileLookupQuery) -> ProfileLookupResult:
         profile = await self._repository.find_by_slug(query.slug)
@@ -32,7 +37,18 @@ class ProfileLookupInteractor(ProfileLookupUseCase):
             else None
         )
         has_history = stats is not None and stats.received_orders > 0
+        # 신뢰 배지(갭 #81) — 채널 지표는 스크린샷이 필수라 등록 채널 수 = 인증 채널 수
+        verified_channels = len(await self._analytics.list_by_profile_id(profile.id))
+        trusted = stats is not None and is_trusted_creator(
+            verified_channels=verified_channels,
+            completed_orders=stats.completed_orders,
+            accept_expired_orders=stats.accept_expired_orders,
+            dispute_refund_orders=stats.dispute_refund_orders,
+            min_verified_channels=self._trust_min_verified_channels,
+            min_completed_orders=self._trust_min_completed_orders,
+        )
         return ProfileLookupResult(
+            trusted_creator=trusted,
             followers_total=await self._analytics.followers_total(profile.id),
             completed_orders=stats.completed_orders if has_history else None,
             accepted_orders=stats.accepted_orders if has_history else None,

@@ -22,8 +22,9 @@ class _StubRepository:
 
 
 class _StubAnalyticsRepository:
-    def __init__(self, total=125000):
+    def __init__(self, total=125000, channels=1):
         self.total = total
+        self.channels = channels
 
     async def followers_total(self, profile_id):
         return self.total
@@ -32,7 +33,8 @@ class _StubAnalyticsRepository:
         raise NotImplementedError
 
     async def list_by_profile_id(self, profile_id):
-        raise NotImplementedError
+        # 채널 지표는 스크린샷이 필수라 행 수 = 인증 채널 수(갭 #81) — 판정은 개수만 쓴다
+        return [object()] * self.channels
 
     async def delete(self, profile_id, platform):
         raise NotImplementedError
@@ -50,11 +52,13 @@ class _StubTradeStats:
         return self.stats
 
 
-def _interactor(profile=None, stats=None):
+def _interactor(profile=None, stats=None, channels=1):
     return ProfileLookupInteractor(
         repository=_StubRepository(profile=profile),
-        analytics=_StubAnalyticsRepository(),
+        analytics=_StubAnalyticsRepository(channels=channels),
         trade_stats=_StubTradeStats(stats),
+        trust_min_verified_channels=1,
+        trust_min_completed_orders=3,
     )
 
 
@@ -127,3 +131,37 @@ async def test_받은_주문이_없으면_실적을_비운다():
     )
     assert result.completed_orders is None
     assert result.received_orders is None
+
+
+async def test_기준을_충족하면_신뢰_크리에이터다():
+    stats = CreatorTradeStats(
+        completed_orders=3, accepted_orders=3, received_orders=3, accept_expired_orders=0
+    )
+    result = await _interactor(_profile(user_id=101), stats=stats).lookup(
+        ProfileLookupQuery(slug="kim-beauty")
+    )
+    assert result.trusted_creator is True
+
+
+async def test_분쟁_패소가_있으면_신뢰_배지가_없다():
+    stats = CreatorTradeStats(
+        completed_orders=5,
+        accepted_orders=5,
+        received_orders=5,
+        accept_expired_orders=0,
+        dispute_refund_orders=1,
+    )
+    result = await _interactor(_profile(user_id=101), stats=stats).lookup(
+        ProfileLookupQuery(slug="kim-beauty")
+    )
+    assert result.trusted_creator is False
+
+
+async def test_인증_채널이_없으면_신뢰_배지가_없다():
+    stats = CreatorTradeStats(
+        completed_orders=5, accepted_orders=5, received_orders=5, accept_expired_orders=0
+    )
+    result = await _interactor(_profile(user_id=101), stats=stats, channels=0).lookup(
+        ProfileLookupQuery(slug="kim-beauty")
+    )
+    assert result.trusted_creator is False

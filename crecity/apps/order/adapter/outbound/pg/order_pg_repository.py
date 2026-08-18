@@ -15,7 +15,7 @@ from order.adapter.outbound.pg.ledger_pg_repository import _SIGNED_AMOUNT
 from order.app.dtos.party_stats_dto import PartyTradeStats
 from order.app.dtos.response_stats_dto import CreatorResponseStats
 from order.app.ports.output.order_repository import OrderRepository
-from order.domain.entities.dispute_entity import DisputeStatus
+from order.domain.entities.dispute_entity import DisputeResolution, DisputeStatus
 from order.domain.entities.ledger_entry_entity import LedgerEntryDraft
 from order.domain.entities.order_entity import Order, OrderStatus
 
@@ -233,6 +233,19 @@ class OrderPgRepository(OrderRepository):
             responded_exits=int(row[1]),
             expired_exits=int(row[2]),
         )
+
+    async def count_creator_refund_disputes(self, creator_user_id: int) -> int:
+        """크리에이터가 환불 판정(패소)을 받은 분쟁 수(갭 #81) — 허브 게이트웨이 전용."""
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(DisputeOrm)
+            .join(OrderOrm, OrderOrm.id == DisputeOrm.order_id)
+            .where(
+                OrderOrm.creator_user_id == creator_user_id,
+                DisputeOrm.resolution == DisputeResolution.REFUND.value,
+            )
+        )
+        return int(result.scalar_one())
 
     async def find_deadline_warning_targets(
         self, now: datetime, threshold: timedelta, limit: int

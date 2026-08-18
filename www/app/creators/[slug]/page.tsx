@@ -107,6 +107,7 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
                 {!profile.accepting_orders && (
                   <Badge variant="outline">지금은 주문을 받지 않아요</Badge>
                 )}
+                {profile.trusted_creator && <Badge>🛡️ 신뢰 크리에이터</Badge>}
                 {profile.fast_responder && <Badge>⚡ 빠른 응답</Badge>}
               </div>
               <p className="mt-2 text-[15px] text-muted-foreground">

@@ -35,4 +35,5 @@ async def lookup_profile(
         received_orders=result.received_orders,
         avg_accept_hours=result.avg_accept_hours,
         fast_responder=result.fast_responder,
+        trusted_creator=result.trusted_creator,
     )
