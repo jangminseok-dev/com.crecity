@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import CreatorAnalyticsSection from "@/components/creator-analytics-section";
+import CreatorCard from "@/components/creator-card";
 import CreatorReviews from "@/components/creator-reviews";
 import PackagePicker from "@/components/package-picker";
 import PortfolioGallery from "@/components/portfolio-gallery";
@@ -13,7 +14,13 @@ import ReportButton from "@/components/report-button";
 import { Badge } from "@/components/ui/badge";
 import { PLATFORM_LABELS, formatAcceptDuration, formatFollowers } from "@/lib/labels";
 import { backendGet } from "@/lib/server/backend-api";
-import type { CreatorPackage, CreatorProfile, PortfolioItem, ProfileFaq } from "@/lib/types";
+import type {
+  CreatorPackage,
+  CreatorProfile,
+  PortfolioItem,
+  ProfileFaq,
+  ProfileListingItem,
+} from "@/lib/types";
 
 /* 프로필 사진이 없을 때 이니셜 뒤에 깔리는 틴트 — creator-card와 동일 */
 const TINTS: [string, string][] = [
@@ -49,12 +56,13 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
 
 export default async function CreatorProfilePage({ params }: { params: PageParams }) {
   const { slug } = await params;
-  const [profile, packages, portfolio, reviews, faqs] = await Promise.all([
+  const [profile, packages, portfolio, reviews, faqs, similar] = await Promise.all([
     fetchProfile(slug),
     backendGet<CreatorPackage[]>(`/creator/profiles/${encodeURIComponent(slug)}/packages`),
     backendGet<PortfolioItem[]>(`/creator/profiles/${encodeURIComponent(slug)}/portfolio`),
     backendGet<ReviewSummary>(`/review/creators/${encodeURIComponent(slug)}`),
     backendGet<ProfileFaq[]>(`/creator/profiles/${encodeURIComponent(slug)}/faqs`),
+    backendGet<ProfileListingItem[]>(`/creator/profiles/${encodeURIComponent(slug)}/similar`),
   ]);
   if (!profile) notFound();
 
@@ -221,6 +229,18 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
           }}
         />
       </div>
+
+      {/* 유사 크리에이터 추천(갭 #88) — 카테고리·가격대·플랫폼 규칙 기반, 없으면 섹션 미렌더 */}
+      {similar && similar.length > 0 && (
+        <section className="mt-14">
+          <h2 className="border-b pb-3 text-[15px] font-semibold">비슷한 크리에이터</h2>
+          <div className="mt-6 grid grid-cols-2 gap-x-5 gap-y-7 md:grid-cols-3 lg:grid-cols-4">
+            {similar.map((item) => (
+              <CreatorCard key={item.id} profile={item} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

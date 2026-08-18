@@ -51,3 +51,8 @@ class CreatorPackageRepository(ABC):
     async def min_prices_by_profile_ids(self, profile_ids: list[int]) -> dict[int, int]:
         """프로필별 최저 패키지 가격(목록 카드 '부터' 가격) — 패키지 없는 프로필은 키 부재."""
         ...
+
+    @abstractmethod
+    async def platforms_by_profile_ids(self, profile_ids: list[int]) -> dict[int, set[str]]:
+        """프로필별 패키지 플랫폼 집합(유사 추천 #88의 겹침 판정) — 패키지 없는 프로필은 키 부재."""
+        ...

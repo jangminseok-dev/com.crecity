@@ -96,3 +96,16 @@ class CreatorPackagePgRepository(CreatorPackageRepository):
             .group_by(CreatorPackageOrm.profile_id)
         )
         return {profile_id: int(price) for profile_id, price in result}
+
+    async def platforms_by_profile_ids(self, profile_ids: list[int]) -> dict[int, set[str]]:
+        if not profile_ids:
+            return {}
+        result = await self._session.execute(
+            select(CreatorPackageOrm.profile_id, CreatorPackageOrm.platform)
+            .where(CreatorPackageOrm.profile_id.in_(profile_ids))
+            .distinct()
+        )
+        platforms: dict[int, set[str]] = {}
+        for profile_id, platform in result:
+            platforms.setdefault(profile_id, set()).add(platform)
+        return platforms

@@ -91,6 +91,7 @@ def check_public() -> None:
         "/creator/profiles?sort=price_asc",
         "/creator/categories",
         "/creator/profiles/popular?limit=4",
+        "/creator/profiles/minseok-studio/similar",
         "/order/fee-policy",
     ):
         expect(f"{BACKEND}{path}", 200, f"GET {path}")

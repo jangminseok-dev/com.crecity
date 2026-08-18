@@ -28,6 +28,7 @@ from creator.adapter.inbound.api.v1.package_management_router import (
 )
 from creator.adapter.inbound.api.v1.my_profile_lookup_router import my_profile_lookup_router
 from creator.adapter.inbound.api.v1.popular_profiles_router import popular_profiles_router
+from creator.adapter.inbound.api.v1.similar_profiles_router import similar_profiles_router
 from creator.adapter.inbound.api.v1.profile_listing_router import profile_listing_router
 from creator.adapter.inbound.api.v1.order_acceptance_router import order_acceptance_router
 from creator.adapter.inbound.api.v1.profile_view_router import profile_view_router
@@ -197,6 +198,7 @@ app.include_router(profile_listing_router)
 app.include_router(profile_view_router)
 app.include_router(order_acceptance_router)
 app.include_router(popular_profiles_router)
+app.include_router(similar_profiles_router)
 app.include_router(my_profile_lookup_router)
 app.include_router(profile_update_router)
 app.include_router(portfolio_management_router)
