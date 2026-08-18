@@ -108,6 +108,7 @@ def check_auth_required() -> None:
         "/creator/my/profile",
         "/order/orders",
         "/order/balance",
+        "/order/reports/2026",
         "/admin/dashboard/metrics",
         "/admin/reports/open",
         "/admin/orders",

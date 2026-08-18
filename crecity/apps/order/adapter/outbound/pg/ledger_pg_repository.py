@@ -25,3 +25,26 @@ class LedgerPgRepository(LedgerRepository):
             )
         )
         return int(result.scalar_one())
+
+    async def monthly_summary(
+        self, user_id: int, year: int
+    ) -> list[tuple[int, str, int, int]]:
+        month = func.extract("month", LedgerEntryOrm.created_at)
+        result = await self._session.execute(
+            select(
+                month,
+                LedgerEntryOrm.entry_type,
+                func.sum(LedgerEntryOrm.amount_krw),
+                func.count(),
+            )
+            .where(
+                LedgerEntryOrm.user_id == user_id,
+                func.extract("year", LedgerEntryOrm.created_at) == year,
+            )
+            .group_by(month, LedgerEntryOrm.entry_type)
+            .order_by(month, LedgerEntryOrm.entry_type)
+        )
+        return [
+            (int(m), entry_type, int(total), int(count))
+            for m, entry_type, total, count in result
+        ]

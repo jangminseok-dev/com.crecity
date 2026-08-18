@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import MonthlyReport from "@/components/monthly-report";
 import PayoutStatement from "@/components/payout-statement";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -174,12 +175,10 @@ export default function DashboardBalancePage() {
           )}
         </CardContent>
       </Card>
-      {isCreator && (
-        <>
-          <WithdrawalSection balanceKrw={balanceKrw} />
-          <PayoutStatement />
-        </>
-      )}
+      {isCreator && <WithdrawalSection balanceKrw={balanceKrw} />}
+      {/* 월별 수익·지출 리포트(갭 #90) — 양쪽 계정 공통, 라벨만 다르다 */}
+      <MonthlyReport isCreator={isCreator} />
+      {isCreator && <PayoutStatement />}
     </div>
   );
 }
