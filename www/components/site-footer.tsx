@@ -13,6 +13,7 @@ const GUIDE: { label: string; href: string }[] = [
   { label: "개인정보 처리방침", href: "/privacy" },
   { label: "환불 규정", href: "/terms" },
   { label: "무료 도구 — 계산기·템플릿", href: "/tools" },
+  { label: "블로그 — 인플루언서 마케팅 가이드", href: "/blog" },
   { label: "마케팅팀을 위한 안내", href: "/for/marketing-teams" },
   { label: "창업가를 위한 안내", href: "/for/founders" },
   { label: "크리에이터 등록 안내", href: "/for/creators" },

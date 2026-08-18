@@ -38,6 +38,10 @@ Next.js 16(App Router) · React 19 · TypeScript 5 · Tailwind 4 · zustand · T
   `core/config.py`의 `ORDER_*_FEE_PERCENT`라 "결제 화면에서 확인"으로 넘긴다.
   반대로 도메인이 강제하는 규칙(72h 기한, 원천징수 3.3%)은 그대로 적는다.
   새 공개 페이지는 sitemap(`app/sitemap.ts`)·푸터(`components/site-footer.tsx`) 등록까지 한다.
+- **블로그(갭 #69)의 콘텐츠 정본은 `lib/blog.ts`** — 페르소나 랜딩과 같은 원칙으로 페이지
+  (`/blog`·`/blog/[slug]`)는 렌더만 한다. 새 글은 배열에 항목을 더하면 목록·sitemap·
+  이전/다음 링크가 따라온다. 발행일은 절대 날짜(YYYY-MM-DD)로 적고, 실적 수치·고객 사례를
+  만들어 넣지 않으며 crecity 기능은 구현된 것만 언급한다.
 - **OG 이미지(갭 #46)**: 프로필 공유 카드는 `app/creators/[slug]/opengraph-image.tsx`가
   `next/og`로 그린다. 한글을 그리려면 폰트를 직접 실어야 한다 — `assets/Pretendard-{Bold,Regular}.otf`
   (OFL, 고지 파일 동봉)를 **모듈 스코프에서 한 번만** `readFile`한다. `ImageResponse`는

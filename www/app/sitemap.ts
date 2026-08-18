@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { BLOG_POSTS } from "@/lib/blog";
 import { PERSONAS } from "@/lib/personas";
 import { backendGet } from "@/lib/server/backend-api";
 import { SITE_URL } from "@/lib/site";
@@ -42,6 +43,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}/for/${persona.slug}`,
       changeFrequency: "monthly" as const,
       priority: 0.8,
+    })),
+    // 블로그(§7-4) — 백링크·롱테일 유입용 콘텐츠
+    { url: `${SITE_URL}/blog`, changeFrequency: "weekly", priority: 0.7 },
+    ...BLOG_POSTS.map((post) => ({
+      url: `${SITE_URL}/blog/${post.slug}`,
+      lastModified: post.publishedAt,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
     })),
     { url: `${SITE_URL}/faq`, changeFrequency: "monthly", priority: 0.6 },
     // 이용 방법(§2.1-11) — 신뢰 장치 겸 롱테일 랜딩

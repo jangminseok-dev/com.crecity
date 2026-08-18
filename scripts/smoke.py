@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import urllib.error
@@ -24,7 +25,8 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-BACKEND = "http://127.0.0.1:8000"
+# 8000이 다른 프로세스(VS Code 포트 포워딩 등)에 점유됐을 때 SMOKE_BACKEND로 우회한다
+BACKEND = os.environ.get("SMOKE_BACKEND", "http://127.0.0.1:8000")
 FRONTEND = "http://127.0.0.1:3000"
 
 # 토큰을 발급할 계정 — seed_demo_data.py가 만드는 계정과 실제 개발 계정
@@ -213,6 +215,8 @@ def check_frontend() -> None:
         "/tools/pricing-calculator",
         "/tools/campaign-brief",
         "/tools/contract-template",
+        "/blog",
+        "/blog/influencer-pricing-guide",
         "/for/marketing-teams",
         "/login",
         "/admin",
@@ -224,6 +228,7 @@ def check_frontend() -> None:
         expect(f"{FRONTEND}{path}", 200, f"GET {path}")
     expect(f"{FRONTEND}/no-such-page", 404, "없는 주소 404")
     expect(f"{FRONTEND}/creators/no-such-slug", 404, "없는 프로필 404")
+    expect(f"{FRONTEND}/blog/no-such-post", 404, "없는 블로그 글 404")
 
 
 def main() -> int:
