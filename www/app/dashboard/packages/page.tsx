@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { z } from "zod";
 
+import AccountTypeGuard from "@/components/account-type-guard";
 import PackagePriceHelper from "@/components/package-price-helper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -194,7 +195,7 @@ function PackageForm({ slug, ui, setUi }: {
   );
 }
 
-export default function DashboardPackagesPage() {
+function PackageManager() {
   const queryClient = useQueryClient();
   const [ui, setUi] = useState<FormUiState>({ editing: null, submitting: false, error: null });
 
@@ -278,5 +279,18 @@ export default function DashboardPackagesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/* 브랜드가 URL로 직접 열면 패키지 폼 대신 안내(갭 #93) */
+export default function DashboardPackagesPage() {
+  return (
+    <AccountTypeGuard
+      require="CREATOR"
+      feature="판매 패키지 관리"
+      hint={{ href: "/", label: "크리에이터 찾으러 가기" }}
+    >
+      <PackageManager />
+    </AccountTypeGuard>
   );
 }

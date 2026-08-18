@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { z } from "zod";
 
+import AccountTypeGuard from "@/components/account-type-guard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,7 +29,7 @@ const campaignSchema = z.object({
   target_location: z.string().optional(),
 });
 
-export default function DashboardCampaignsPage() {
+function CampaignManager() {
   const queryClient = useQueryClient();
   // 단일 객체 상태 — 제출 진행·오류 (입력값은 FormData 패턴)
   const [form, setForm] = useState<{ submitting: boolean; error: string | null }>({
@@ -199,5 +200,18 @@ export default function DashboardCampaignsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/* 크리에이터가 URL로 직접 열면 공고 폼 대신 안내(갭 #93) — 지원은 공고 목록에서 */
+export default function DashboardCampaignsPage() {
+  return (
+    <AccountTypeGuard
+      require="BRAND"
+      feature="공고 관리"
+      hint={{ href: "/campaigns", label: "공고 목록에서 지원하러 가기" }}
+    >
+      <CampaignManager />
+    </AccountTypeGuard>
   );
 }

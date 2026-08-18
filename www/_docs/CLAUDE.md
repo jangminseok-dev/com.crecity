@@ -21,6 +21,10 @@ Next.js 16(App Router) · React 19 · TypeScript 5 · Tailwind 4 · zustand · T
 - 페르소나 랜딩(`/for/[persona]`, 갭 #13)의 콘텐츠 정본은 `lib/personas.ts`다 — 페이지는
   렌더만 한다. **구현된 기능만 서술하고 성과 수치·고객 사례는 쓰지 않는다**(실적 확보 전
   허위 표기 방지). 새 페르소나는 배열에 항목을 더하면 sitemap·상호 링크가 따라온다.
+- **계정 유형 전용 대시보드 화면은 `account-type-guard.tsx`로 감싼다**(갭 #93) — 다른
+  유형이 URL로 직접 열면 상대 폼 대신 안내+대체 경로를 보여준다(보안이 아니라 UX 장치 —
+  실해는 백엔드 403 몫). 적용: campaigns(브랜드 전용)·packages·profile(크리에이터 전용).
+  새 전용 탭을 만들면 같은 가드로 감싼다.
 - **온보딩 안내는 계정 유형별로 다른 컴포넌트다** — 크리에이터는 `onboarding-checklist.tsx`
   (실제 등록 상태를 조회해 진행률, 갭 #58), 브랜드는 `brand-onboarding.tsx`(주문 0건일 때
   주문 목록 자리에 첫 걸음 안내, 갭 #78). 브랜드 쪽은 조회할 "완성도"가 없어 정적 안내다.

@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
 
+import AccountTypeGuard from "@/components/account-type-guard";
 import AnalyticsManager from "@/components/analytics-manager";
 import FaqManager from "@/components/faq-manager";
 import OnboardingChecklist from "@/components/onboarding-checklist";
@@ -249,7 +250,7 @@ function ProfileView({ profile, onEdit }: { profile: CreatorProfile; onEdit: () 
   );
 }
 
-export default function DashboardProfilePage() {
+function ProfileManager() {
   // 단일 값 상태 — 보기/수정 모드
   const [editing, setEditing] = useState(false);
   const { data: profile, isPending } = useQuery({
@@ -273,5 +274,18 @@ export default function DashboardProfilePage() {
       <AnalyticsManager />
       <FaqManager />
     </>
+  );
+}
+
+/* 브랜드가 URL로 직접 열면 프로필 폼 대신 안내(갭 #93) */
+export default function DashboardProfilePage() {
+  return (
+    <AccountTypeGuard
+      require="CREATOR"
+      feature="크리에이터 프로필 관리"
+      hint={{ href: "/dashboard/orders", label: "주문 관리로 가기" }}
+    >
+      <ProfileManager />
+    </AccountTypeGuard>
   );
 }
