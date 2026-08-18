@@ -29,6 +29,7 @@ from creator.adapter.inbound.api.v1.package_management_router import (
 from creator.adapter.inbound.api.v1.my_profile_lookup_router import my_profile_lookup_router
 from creator.adapter.inbound.api.v1.popular_profiles_router import popular_profiles_router
 from creator.adapter.inbound.api.v1.similar_profiles_router import similar_profiles_router
+from creator.adapter.inbound.api.v1.market_rates_router import market_rates_router
 from creator.adapter.inbound.api.v1.profile_listing_router import profile_listing_router
 from creator.adapter.inbound.api.v1.order_acceptance_router import order_acceptance_router
 from creator.adapter.inbound.api.v1.profile_view_router import profile_view_router
@@ -81,6 +82,7 @@ from order.adapter.inbound.api.v1.order_progress_router import order_progress_ro
 from order.adapter.inbound.api.v1.revision_lookup_router import revision_lookup_router
 from order.adapter.outbound.hub.creator_popularity_gateway import OrderCreatorPopularityGateway
 from order.adapter.outbound.hub.creator_trade_stats_gateway import OrderCreatorTradeStatsGateway
+from order.adapter.outbound.hub.completed_order_price_gateway import OrderCompletedPriceGateway
 from order.adapter.outbound.hub.credit_balance_gateway import OrderCreditBalanceGateway
 from order.adapter.outbound.hub.active_order_gateway import OrderActiveOrderGateway
 from order.adapter.outbound.hub.order_adjustment_gateway import OrderAdjustmentGateway
@@ -135,6 +137,7 @@ from notification.adapter.inbound.api.v1.notification_listing_router import (
 )
 from hub.dependencies.creator_popularity_provider import register_creator_popularity_port
 from hub.dependencies.creator_trade_stats_provider import register_creator_trade_stats_port
+from hub.dependencies.completed_order_price_provider import register_completed_order_price_port
 from hub.dependencies.dispute_resolution_provider import register_dispute_resolution_port
 from hub.dependencies.withdrawal_settlement_provider import register_withdrawal_settlement_port
 from hub.dependencies.creator_rating_provider import register_creator_rating_port
@@ -158,6 +161,7 @@ register_user_directory_port(UserDirectoryGateway())  # auth → 회원 디렉�
 register_creator_rating_port(ReviewCreatorRatingGateway())  # review → 평점 요약(목록 카드)
 register_creator_popularity_port(OrderCreatorPopularityGateway())  # order → 인기 순위(홈 섹션)
 register_creator_trade_stats_port(OrderCreatorTradeStatsGateway())  # order → 크리에이터 거래 실적
+register_completed_order_price_port(OrderCompletedPriceGateway())  # order → 실거래가(시세 집계)
 register_withdrawal_settlement_port(OrderWithdrawalSettlementGateway())  # order → 인출 운영 처리
 register_dispute_resolution_port(OrderDisputeResolutionGateway())  # order → 분쟁 판정
 register_credit_balance_port(OrderCreditBalanceGateway())  # order → 크레딧 잔액(체크아웃 적용액 확정)
@@ -199,6 +203,7 @@ app.include_router(profile_view_router)
 app.include_router(order_acceptance_router)
 app.include_router(popular_profiles_router)
 app.include_router(similar_profiles_router)
+app.include_router(market_rates_router)
 app.include_router(my_profile_lookup_router)
 app.include_router(profile_update_router)
 app.include_router(portfolio_management_router)

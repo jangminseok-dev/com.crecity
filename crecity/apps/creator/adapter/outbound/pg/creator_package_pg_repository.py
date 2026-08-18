@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from creator.adapter.outbound.mappers.creator_package_mapper import CreatorPackageMapper
 from creator.adapter.outbound.orm.creator_package_orm import CreatorPackageOrm
+from creator.adapter.outbound.orm.creator_profile_orm import CreatorProfileOrm
 from creator.app.ports.output.creator_package_repository import CreatorPackageRepository
 from creator.domain.entities.creator_package_entity import CreatorPackage, PackagePlatform
 
@@ -109,3 +110,22 @@ class CreatorPackagePgRepository(CreatorPackageRepository):
         for profile_id, platform in result:
             platforms.setdefault(profile_id, set()).add(platform)
         return platforms
+
+    async def classify_by_package_ids(
+        self, package_ids: list[int]
+    ) -> dict[int, tuple[str, str]]:
+        if not package_ids:
+            return {}
+        # 프로필 조인은 같은 스포크 안이라 허용 — 카테고리는 프로필, 플랫폼은 패키지 소유
+        result = await self._session.execute(
+            select(
+                CreatorPackageOrm.id,
+                CreatorProfileOrm.primary_category,
+                CreatorPackageOrm.platform,
+            )
+            .join(CreatorProfileOrm, CreatorProfileOrm.id == CreatorPackageOrm.profile_id)
+            .where(CreatorPackageOrm.id.in_(package_ids))
+        )
+        return {
+            package_id: (category, platform) for package_id, category, platform in result
+        }

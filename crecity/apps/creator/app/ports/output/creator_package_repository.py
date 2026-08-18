@@ -56,3 +56,10 @@ class CreatorPackageRepository(ABC):
     async def platforms_by_profile_ids(self, profile_ids: list[int]) -> dict[int, set[str]]:
         """프로필별 패키지 플랫폼 집합(유사 추천 #88의 겹침 판정) — 패키지 없는 프로필은 키 부재."""
         ...
+
+    @abstractmethod
+    async def classify_by_package_ids(
+        self, package_ids: list[int]
+    ) -> dict[int, tuple[str, str]]:
+        """패키지 id → (카테고리, 플랫폼) 분류(시세 집계 #89) — 삭제된 패키지는 키 부재."""
+        ...

@@ -64,5 +64,9 @@ ANOMALY_FOLLOWER_SURGE_MULTIPLIER = int(_secrets.get("ANOMALY_FOLLOWER_SURGE_MUL
 ANOMALY_ENGAGEMENT_FOLLOWER_FLOOR = int(_secrets.get("ANOMALY_ENGAGEMENT_FOLLOWER_FLOOR", "10000"))
 ANOMALY_MAX_ENGAGEMENT_PERMILLE = int(_secrets.get("ANOMALY_MAX_ENGAGEMENT_PERMILLE", "150"))
 
+# 실거래 시세 공개(갭 #89) — 표본이 이 건수 미만인 카테고리×플랫폼 조합은 공개하지 않는다.
+# 소표본 시세는 특정 거래 가격 역추정·왜곡된 참고치가 된다. 데이터가 쌓이면 상향 전제.
+MARKET_RATE_MIN_SAMPLES = int(_secrets.get("MARKET_RATE_MIN_SAMPLES", "3"))
+
 # 업로드 파일 저장 루트 — 로컬 디스크 시작(오브젝트 스토리지 전환 시 어댑터 교체).
 UPLOAD_DIR = _secrets.get("UPLOAD_DIR", "uploads")

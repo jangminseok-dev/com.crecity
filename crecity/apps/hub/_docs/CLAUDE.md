@@ -22,6 +22,7 @@
 | 인출 운영 처리 | `WithdrawalSettlementPort` 포트 + `WithdrawalSummary`·`AnnualPayoutSummary` DTO(`dependencies/withdrawal_settlement_provider.py`) | order(`OrderWithdrawalSettlementGateway`) | admin 인출 처리(완료·실패) + 연간 지급 집계(갭 #2) |
 | 분쟁 판정 | `DisputeResolutionPort` 포트 + `DisputeSummary` DTO(`dependencies/dispute_resolution_provider.py`) | order(`OrderDisputeResolutionGateway`) — main.py가 `register_dispute_resolution_port`로 조립 | admin 분쟁 중재(대기 목록·환불/지급/기각 판정 — 갭 #4) |
 | 활성 주문 확인 | `ActiveOrderPort`(`dependencies/active_order_provider.py`) | order(`OrderActiveOrderGateway`) | auth 계정 탈퇴 차단(갭 #33) |
+| 완료 주문 실거래가 | `CompletedOrderPricePort` 포트 + `PackageOrderAmount` DTO(`dependencies/completed_order_price_provider.py`) | order(`OrderCompletedPriceGateway`) — 최신 1만 건 상한, 커스텀 오퍼(패키지 없음) 제외 | creator 시세 집계(갭 #89 — 분류는 creator가 자기 데이터로 해석) |
 | 프로필 비활성화 | `ProfileDeactivationPort`(`dependencies/profile_deactivation_provider.py`) | creator(`CreatorProfileDeactivationGateway`) | auth 탈퇴 시 공개 프로필 DELETED 처리 |
 | Outbox 이벤트 중계 | `OutboxEvent` DTO(`app/dtos/outbox_event_dto.py`, `"<도메인>.<사건>"` 규약) + `outbox_events` 테이블 + `enqueue_events`/`fetch_unpublished`/`mark_published`(`adapter/outbound/pg/outbox_pg_store.py` — 전부 무커밋, 호출자 트랜잭션 참여) | (허브 자체 소유 — 조립 불필요) | 발행: order 리포지토리·creator 심사 게이트웨이 / 소비: notification 워커(BOUNDARIES §1) |
 

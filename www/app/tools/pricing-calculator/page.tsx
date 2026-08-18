@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import MarketRates from "@/components/market-rates";
 import PricingCalculator from "@/components/pricing-calculator";
 
 export const metadata: Metadata = {
@@ -30,6 +31,17 @@ export default function PricingCalculatorPage() {
       <div className="mt-7">
         <PricingCalculator />
       </div>
+
+      {/* 실거래 시세(갭 #89) — 계산기의 참고 상수와 달리 실제 성사된 거래가 통계 */}
+      <section className="mt-12">
+        <h2 className="text-lg font-bold tracking-[-0.01em]">crecity 실거래 시세</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          위 계산기는 시장 참고치이고, 아래는 crecity에서 실제로 완료된 거래의 가격 통계입니다.
+        </p>
+        <div className="mt-4">
+          <MarketRates />
+        </div>
+      </section>
     </div>
   );
 }
