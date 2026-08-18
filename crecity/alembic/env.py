@@ -43,6 +43,7 @@ import order.adapter.outbound.orm.withdrawal_orm  # noqa: E402, F401
 import order.adapter.outbound.orm.deliverable_orm  # noqa: E402, F401
 import order.adapter.outbound.orm.order_adjustment_orm  # noqa: E402, F401
 import order.adapter.outbound.orm.dispute_orm  # noqa: E402, F401
+import order.adapter.outbound.orm.order_status_transition_orm  # noqa: E402, F401
 import payment.adapter.outbound.orm.payment_intent_orm  # noqa: E402, F401
 import review.adapter.outbound.orm.review_orm  # noqa: E402, F401
 import campaign.adapter.outbound.orm.campaign_orm  # noqa: E402, F401

@@ -9,6 +9,7 @@ from order.adapter.outbound.mappers.order_mapper import OrderMapper
 from order.adapter.outbound.orm.dispute_orm import DisputeOrm
 from order.adapter.outbound.orm.ledger_entry_orm import LedgerEntryOrm
 from order.adapter.outbound.orm.order_orm import OrderOrm
+from order.adapter.outbound.orm.order_status_transition_orm import OrderStatusTransitionOrm
 from order.adapter.outbound.pg.ledger_pg_repository import _SIGNED_AMOUNT
 from order.app.dtos.party_stats_dto import PartyTradeStats
 from order.app.ports.output.order_repository import OrderRepository
@@ -122,6 +123,20 @@ class OrderPgRepository(OrderRepository):
     async def save_transition(
         self, order: Order, entries: list[LedgerEntryDraft], events: list[OutboxEvent]
     ) -> None:
+        # 전이 이력(갭 #79) — from은 저장 시점의 DB 상태를 읽는다(엔티티의 옛 상태보다 정확).
+        # 상태가 실제로 바뀐 저장만 이력이 된다(취소 요청 등 상태 유지 저장은 제외).
+        current = await self._session.execute(
+            select(OrderOrm.status).where(OrderOrm.id == order.id)
+        )
+        from_status = current.scalar_one()
+        if from_status != order.status.value:
+            await self._session.execute(
+                insert(OrderStatusTransitionOrm).values(
+                    order_id=order.id,
+                    from_status=from_status,
+                    to_status=order.status.value,
+                )
+            )
         await self._session.execute(
             update(OrderOrm)
             .where(OrderOrm.id == order.id)
