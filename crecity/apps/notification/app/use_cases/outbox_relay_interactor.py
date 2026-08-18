@@ -42,6 +42,13 @@ def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
                 f"/creators/{p['creator_slug']}",
             )
         ]
+    if t == "review.brand_received":
+        # 브랜드 평가(갭 #83) — 평가받은 사실을 브랜드에게. 원문은 주문 화면에서
+        return [
+            NotificationDraft(
+                p["brand_user_id"], t, "크리에이터가 거래 평가를 남겼습니다", _order_link(p)
+            )
+        ]
     if t == "campaign.application_received":
         # 새 지원자(갭 #73) — 공고를 올린 브랜드에게. 링크는 지원자 목록이 있는 공고 상세
         return [

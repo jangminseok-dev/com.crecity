@@ -141,6 +141,7 @@ from review.adapter.outbound.hub.creator_rating_gateway import ReviewCreatorRati
 from review.adapter.inbound.api.v1.appraiser_router import appraiser_router
 from review.adapter.inbound.api.v1.review_listing_router import review_listing_router
 from review.adapter.inbound.api.v1.review_reply_router import review_reply_router
+from review.adapter.inbound.api.v1.brand_review_router import brand_review_router
 from review.adapter.inbound.api.v1.review_submission_router import review_submission_router
 
 # 스타 토폴로지 조립 지점 — 스포크 구현체를 허브 계약에 등록한다
@@ -230,6 +231,7 @@ app.include_router(payment_confirmation_router)
 app.include_router(appraiser_router)
 app.include_router(review_submission_router)
 app.include_router(review_reply_router)
+app.include_router(brand_review_router)
 app.include_router(review_listing_router)
 app.include_router(herald_router)
 app.include_router(campaign_posting_router)

@@ -42,6 +42,7 @@ async def test_수신자_라우팅_이벤트별로_올바르다():
         "order.submitted": BRAND,
         "order.draft_submitted": BRAND,  # 초안 컨펌은 브랜드 몫(갭 #85)
         "order.draft_approved": CREATOR,  # 컨펌·자동 컨펌 모두 크리에이터가 이어받는다
+        "review.brand_received": BRAND,  # 브랜드 평가(갭 #83)
         "order.revision_requested": CREATOR,
         "order.completed": CREATOR,
     }

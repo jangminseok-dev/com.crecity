@@ -421,8 +421,14 @@ order는 이벤트 11종을 모두 발행·소비하지만 **campaign·chat·rev
   (`list_flagged_analytics`·`clear_analytics_flag`) + admin `GET /admin/analytics/flagged`·
   `POST /admin/analytics/{id}/clear-flag`(profile.review 권한·감사 로그). 종단: 45k→900k
   재제출 플래그 → 큐 노출 → 확인 처리 204 → 감사 로그 → 정상값 복원 시 자동 해제.
-- [ ] **83. 양방향 리뷰(크리에이터→브랜드)** — 브랜드도 평가받는다. 크리에이터가 나쁜
-  브랜드를 피할 수 있는 보호 장치. Collabstr에 없음.
+- [x] **83. 양방향 리뷰(크리에이터→브랜드)** — 🟡 2026-08-18 **백엔드 완료, 화면 잔여**.
+  `brand_reviews`(완료 주문당 1건, 단일 종합 평점 1~5 + 코멘트 — 브랜드 평가 축을 억지로
+  3축에 맞추지 않음). `POST·GET /review/orders/{id}/brand-review`(크리에이터 작성·당사자
+  조회) + **공개** `GET /review/brands/{user_id}/rating`(평점·건수만, 원문 비공개 —
+  크리에이터 평점 공개와 대칭). 알림 `review.brand_received`→브랜드(저장과 단일 트랜잭션).
+  order 미변경 — 화면이 공개 집계 API를 조합한다(허브 포트 불필요). **잔여**: 주문 상세
+  화면의 ① 크리에이터용 브랜드 평가 폼 ② 수락 판단용 브랜드 평점 표시. 종단: 완료 주문
+  평가 201 → 집계 {5.0, 1} 확인. 마이그레이션 866a1b386fce.
 
 ### 8-B. 협업 워크플로우 — 결과물 왕복의 마찰 제거
 
