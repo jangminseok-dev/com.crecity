@@ -15,6 +15,10 @@
 - **지원자 정렬·필터(갭 #70)**: `ApplicationSort`(oldest·latest·price_asc·price_desc)
   + `only_open`(미수락만). 캠페인이 소유한 값으로만 정렬한다 — 팔로워·평점은 다른 스포크
   소유라 DB 정렬이 스포크 경계를 넘는다(갭 #45와 같은 이유).
+- **지원자 나란히 비교(갭 #86)는 백엔드 미관여** — 화면(`campaign-applicant-compare.tsx`)이
+  지원자별 공개 프로필 API(`/creator/profiles/{slug}`·`/analytics`)를 조합한다(#83과 같은
+  원칙). 지원자 목록 응답에 팔로워·거래 실적을 실으려고 허브 포트를 늘리지 말 것 —
+  전부 공개 프로필에 이미 있는 값이고, 비교 뷰를 열 때만 조회하면 충분하다.
 - 엔티티: `Campaign`(+`CampaignPlatform`·`CampaignStatus`, `close`·`expire` 전이) ·
   `CampaignApplication`. 플랫폼 enum은 스포크 독립 원칙상 자체 정의(creator enum 미참조).
 - **마감일·타겟팅(갭 #27·#28)**: `deadline_at`(선택)이 지나면 스윕이 CLOSED로 전이하고,

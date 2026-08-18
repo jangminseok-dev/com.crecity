@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
 
+import CampaignApplicantCompare from "@/components/campaign-applicant-compare";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -99,10 +100,11 @@ const APPLICATION_SORTS = [
 ] as const;
 
 function ApplicationList({ campaignId }: { campaignId: number }) {
-  // 단일 객체 상태 — 정렬·필터
-  const [view, setView] = useState<{ sort: string; onlyOpen: boolean }>({
+  // 단일 객체 상태 — 정렬·필터·보기 방식
+  const [view, setView] = useState<{ sort: string; onlyOpen: boolean; compare: boolean }>({
     sort: "oldest",
     onlyOpen: false,
+    compare: false,
   });
   const { data: applications, isPending } = useQuery({
     queryKey: ["campaignApplications", campaignId, view],
@@ -121,6 +123,16 @@ function ApplicationList({ campaignId }: { campaignId: number }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-semibold">지원자 ({applications.length})</h3>
         <div className="flex items-center gap-2">
+          {/* 나란히 비교(갭 #86) — 지원자가 2명은 돼야 비교가 의미 있다 */}
+          {applications.length >= 2 && (
+            <button
+              type="button"
+              onClick={() => setView((prev) => ({ ...prev, compare: !prev.compare }))}
+              className="h-9 rounded-lg border border-input px-2.5 text-[13px] hover:bg-secondary"
+            >
+              {view.compare ? "카드 보기" : "나란히 비교"}
+            </button>
+          )}
           <label className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
             <input
               type="checkbox"
@@ -149,7 +161,11 @@ function ApplicationList({ campaignId }: { campaignId: number }) {
           {view.onlyOpen ? "아직 수락하지 않은 지원이 없습니다." : "아직 지원자가 없습니다."}
         </p>
       )}
-      {applications.map((application) => (
+      {view.compare && applications.length >= 2 && (
+        <CampaignApplicantCompare applications={applications} campaignId={campaignId} />
+      )}
+      {!(view.compare && applications.length >= 2) &&
+        applications.map((application) => (
         <Card key={application.id}>
           <CardContent className="grid gap-2 p-4">
             <div className="flex items-center justify-between gap-2">
