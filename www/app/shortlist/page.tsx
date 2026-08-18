@@ -2,13 +2,67 @@
 
 import { Star, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { formatKrw } from "@/lib/labels";
+import { useAuthStore } from "@/lib/auth-store";
+import { fetchAnalytics, fetchProfile, maxEngagementPermille } from "@/lib/creator-metrics";
+import { formatFollowers, formatKrw } from "@/lib/labels";
 import { useShortlistStore } from "@/lib/shortlist-store";
 
-/** 찜한 크리에이터 비교(§3.1) — 카테고리·지역·최저가·평점을 한 표에서 나란히 본다. */
+/* 지표 셀 3종(갭 #87) — 공개 프로필 API를 행 단위로 조합한다(#86과 같은 원칙).
+   참여율은 로그인 게이트(#14) 뒤에 있어 게스트에겐 조회하지 않고 가입 유도만 한다. */
+function MetricCells({ slug }: { slug: string }) {
+  const status = useAuthStore((s) => s.status);
+  const { data: profile } = useQuery({
+    queryKey: ["creatorProfile", slug],
+    queryFn: () => fetchProfile(slug),
+  });
+  const { data: analytics } = useQuery({
+    queryKey: ["profileAnalytics", slug],
+    queryFn: () => fetchAnalytics(slug),
+    enabled: status === "authenticated",
+  });
+
+  const engagement = analytics ? maxEngagementPermille(analytics) : null;
+
+  return (
+    <>
+      <td className="border-b py-3.5">
+        {profile && profile.followers_total > 0 ? formatFollowers(profile.followers_total) : "—"}
+      </td>
+      <td className="border-b py-3.5">
+        {status === "guest" ? (
+          <Link href="/login" className="text-xs text-muted-foreground underline-offset-2 hover:underline">
+            로그인 후 공개
+          </Link>
+        ) : engagement !== null ? (
+          `${(engagement / 10).toFixed(1)}%`
+        ) : (
+          "—"
+        )}
+      </td>
+      <td className="border-b py-3.5">
+        {profile && profile.completed_orders !== null ? (
+          <span>
+            {profile.completed_orders}건
+            {(profile.trusted_creator || profile.fast_responder) && (
+              <span className="ml-1" title={profile.trusted_creator ? "신뢰 크리에이터" : "빠른 응답"}>
+                {profile.trusted_creator && "🛡️"}
+                {profile.fast_responder && "⚡"}
+              </span>
+            )}
+          </span>
+        ) : (
+          "—"
+        )}
+      </td>
+    </>
+  );
+}
+
+/** 찜한 크리에이터 비교(§3.1, 갭 #87) — 가격·평점에 팔로워·참여율·거래 실적까지 나란히 본다. */
 export default function ShortlistPage() {
   const { items, remove, clear } = useShortlistStore();
   // localStorage 복원 전 렌더를 막아 SSR 결과와 어긋나지 않게 한다
@@ -47,7 +101,7 @@ export default function ShortlistPage() {
       </div>
 
       <div className="mt-7 overflow-x-auto">
-        <table className="w-full min-w-[640px] border-separate border-spacing-0 text-sm">
+        <table className="w-full min-w-[880px] border-separate border-spacing-0 text-sm">
           <thead>
             <tr className="text-left text-muted-foreground">
               <th className="border-b pb-2.5 font-medium">크리에이터</th>
@@ -55,6 +109,9 @@ export default function ShortlistPage() {
               <th className="border-b pb-2.5 font-medium">지역</th>
               <th className="border-b pb-2.5 font-medium">최저가</th>
               <th className="border-b pb-2.5 font-medium">평점</th>
+              <th className="border-b pb-2.5 font-medium">팔로워</th>
+              <th className="border-b pb-2.5 font-medium">참여율</th>
+              <th className="border-b pb-2.5 font-medium">완료 거래</th>
               <th className="border-b pb-2.5" />
             </tr>
           </thead>
@@ -103,6 +160,7 @@ export default function ShortlistPage() {
                     <span className="text-muted-foreground">—</span>
                   )}
                 </td>
+                <MetricCells slug={item.slug} />
                 <td className="border-b py-3.5 text-right">
                   <button
                     type="button"
@@ -117,6 +175,10 @@ export default function ShortlistPage() {
             ))}
           </tbody>
         </table>
+        <p className="mt-2 text-xs text-muted-foreground">
+          팔로워·참여율은 크리에이터가 등록한 채널 지표(참여율은 채널 중 최고값)이고,
+          최저가·평점은 찜한 시점의 값입니다.
+        </p>
       </div>
     </div>
   );

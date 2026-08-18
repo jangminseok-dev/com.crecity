@@ -4,26 +4,9 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
-import { ApiError, apiFetch } from "@/lib/api";
+import { fetchAnalytics, fetchProfile, maxEngagementPermille } from "@/lib/creator-metrics";
 import { formatAcceptDuration, formatFollowers, formatKrw } from "@/lib/labels";
-import type { CampaignApplication, CreatorProfile, ProfileAnalytics } from "@/lib/types";
-
-async function fetchProfile(slug: string): Promise<CreatorProfile | null> {
-  try {
-    return await apiFetch<CreatorProfile>(`/creator/profiles/${encodeURIComponent(slug)}`);
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) return null;
-    throw error;
-  }
-}
-
-/** 채널 중 최고 참여율(퍼밀) — vetting(#16)과 같은 관점으로 대표값을 하나만 보여준다. */
-function maxEngagementPermille(analytics: ProfileAnalytics[]): number | null {
-  const values = analytics
-    .map((row) => row.engagement_permille)
-    .filter((value): value is number => value !== null);
-  return values.length > 0 ? Math.max(...values) : null;
-}
+import type { CampaignApplication } from "@/lib/types";
 
 function CompareRow({
   application,
@@ -41,7 +24,7 @@ function CompareRow({
   });
   const { data: analytics } = useQuery({
     queryKey: ["creatorAnalytics", slug],
-    queryFn: () => apiFetch<ProfileAnalytics[]>(`/creator/profiles/${encodeURIComponent(slug)}/analytics`),
+    queryFn: () => fetchAnalytics(slug),
     enabled: slug !== "",
   });
 
