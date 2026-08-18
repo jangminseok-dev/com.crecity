@@ -47,6 +47,7 @@ export const PROFILE_STATUS_LABELS: Record<string, string> = {
 export const ORDER_STATUS_LABELS: Record<Order["status"], string> = {
   PENDING_ACCEPT: "수락 대기",
   IN_PROGRESS: "작업 중",
+  DRAFT_REVIEW: "초안 검토",
   IN_REVIEW: "검토 대기",
   COMPLETED: "완료",
   REFUNDED: "환불됨",

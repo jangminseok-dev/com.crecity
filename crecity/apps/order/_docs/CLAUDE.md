@@ -8,7 +8,7 @@
 |---|---|---|
 | bookkeeper (myself) | `GET /order/myself` | 자기소개 |
 | order_placement | (HTTP 없음 — 결제 경유 전용) | 주문 생성 — payment 승인 후 허브 `OrderPlacementPort`(order 구현 `PaidOrderPlacementGateway`)로만 호출된다. 커스텀 오퍼 주문(`place_custom`)은 `CustomOfferPort`로, 캠페인 지원 수락 주문(`place_application`)은 `CampaignApplicationPort`로 가격·당사자를 해석하며 package_id가 NULL. 금액·수수료율(§7-4)·패키지 제목 스냅샷, 72h 수락 마감, 에스크로 예치 기입. 결제 금액과 현재 계산 불일치 시 생성 거부(None). 크레딧 사용분(`credit_used_krw`)은 advisory lock 잔액 재검증 + CREDIT_SPENT 기입을 주문 생성과 단일 트랜잭션으로 — 부족 시 생성 거부. 장바구니(`place_cart`, §3.8)는 주문 N건+예치 N건을 `create_many` **단일 트랜잭션**으로 — 불가 패키지·크레딧 부족 시 전체 거부(부분 생성 없음) |
-| order_progress | `POST /order/orders/{id}/accept·reject·submit·request-revision·approve` | 상태 전이 — 규칙·행위자 검증은 도메인 `Order`가 강제(403/409). 거절→크레딧 환불, 승인→적립+수수료 확정 |
+| order_progress | `POST /order/orders/{id}/accept·reject·submit-draft·approve-draft·submit·request-revision·approve` | 상태 전이 — 규칙·행위자 검증은 도메인 `Order`가 강제(403/409). 거절→크레딧 환불, 승인→적립+수수료 확정. **초안 검토(갭 #85)는 선택 단계**: IN_PROGRESS→초안 제출(납품물 ≥1 전제)→DRAFT_REVIEW(72h, 무응답 자동 컨펌)→컨펌·수정 요청→IN_PROGRESS. 컨펌 표식(`draft_approved`) 후 초안 재제출 409. 수정 요청은 초안·최종 검토가 **같은 한도(revision_limit) 공유**(스냅샷 계약 조건 의미 보존). 취소·분쟁·금액 변경도 DRAFT_REVIEW에서 허용 |
 | deliverable_submission | `POST /order/orders/{id}/deliverables/files·links` · `GET /order/orders/{id}/deliverables` | 납품물(파일·링크) — 등록은 **IN_PROGRESS의 크리에이터만**(도메인 `ensure_can_attach_deliverable`), 열람은 당사자만(403). append-only(분쟁 근거 보존), 파일은 `/uploads/deliverables/` 로컬 저장(이미지·영상·PDF·ZIP, 100MB). 링크는 게시물 본문(`caption`, 3000자, 선택)을 함께 받아 **광고 표기 자동 검수**(갭 #17) |
 | order_cancellation | `POST /order/orders/{id}/cancel-request·cancel-consent·cancel-decline` | 양측 합의 취소 — 요청은 IN_PROGRESS·IN_REVIEW의 당사자 누구나(중복 409), 동의·거부는 **상대방만**(403). 동의 시 CANCELLED + 브랜드 전액 크레딧 환불(단일 트랜잭션). `orders.cancel_requested_by`가 대기 상태 표현 |
 | order_adjustment | `POST·GET /order/orders/{id}/adjustments` · `POST /order/adjustments/{id}/decline` | 진행 중 금액 변경(§3.8·§6, 갭 #31) — 요청은 **IN_PROGRESS·IN_REVIEW의 크리에이터만**(대기 중 중복 409), 거절은 브랜드만. **수락은 추가 결제**(payment `/checkouts/adjustment` → 허브 `OrderAdjustmentPort`로 주문 증액+증가분 예치 단일 트랜잭션). 감액은 미지원(합의 취소로) |
@@ -27,11 +27,14 @@
 
 ```
 PENDING_ACCEPT ──수락──▶ IN_PROGRESS ──제출──▶ IN_REVIEW ──승인/72h──▶ COMPLETED
-      │                                     │
-      ├─ 거절/72h 만료 ─▶ REFUNDED           └─ 수정 요청 ─▶ IN_PROGRESS (revision_limit까지)
+      │                    │    ▲                │
+      │           초안 제출│    │컨펌/72h·수정 요청 └─ 수정 요청 ─▶ IN_PROGRESS (revision_limit까지)
+      │                    ▼    │
+      │                 DRAFT_REVIEW  (선택 — 게시 전 초안 검토, 갭 #85)
+      └─ 거절/72h 만료 ─▶ REFUNDED
 
-IN_PROGRESS·IN_REVIEW ──취소 요청→상대 동의──▶ CANCELLED (브랜드 전액 크레딧 환불)
-                        └─ 상대 거부 ─▶ 요청 해제(주문 계속)
+IN_PROGRESS·DRAFT_REVIEW·IN_REVIEW ──취소 요청→상대 동의──▶ CANCELLED (브랜드 전액 크레딧 환불)
+                                     └─ 상대 거부 ─▶ 요청 해제(주문 계속)
 ```
 
 - **제출은 납품물 ≥1건이 전제**(`Order.submit`의 `deliverable_count`) — 상태 전이가 아니라

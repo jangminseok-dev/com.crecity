@@ -27,6 +27,12 @@ def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
         return [NotificationDraft(p["brand_user_id"], t, f"주문이 거절·환불되었습니다(크레딧 적립): {title}", _order_link(p))]
     if t == "order.submitted":
         return [NotificationDraft(p["brand_user_id"], t, f"콘텐츠가 제출되었습니다 — 72시간 내 검토해 주세요: {title}", _order_link(p))]
+    if t == "order.draft_submitted":
+        # 초안 제출(갭 #85) — 컨펌해야 게시 작업이 이어진다. 무응답 72h면 자동 컨펌
+        return [NotificationDraft(p["brand_user_id"], t, f"초안이 제출되었습니다 — 72시간 내 컨펌해 주세요: {title}", _order_link(p))]
+    if t == "order.draft_approved":
+        # 브랜드 컨펌 또는 72h 자동 컨펌 — 크리에이터가 게시 작업을 이어간다
+        return [NotificationDraft(p["creator_user_id"], t, f"초안이 컨펌되었습니다 — 게시 후 최종 제출해 주세요: {title}", _order_link(p))]
     if t == "review.received":
         # 새 리뷰(갭 #75) — 답글(갭 #53) 폼이 있는 공개 프로필로 보낸다
         return [
@@ -78,7 +84,12 @@ def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
         # 마감 때문에 움직여야 하는 쪽만 받는다(수락 대기=크리에이터, 검토 대기=브랜드)
         hours = p.get("hours_left")
         remain = f"{hours}시간" if isinstance(hours, int) else "곧"
-        action = "수락 여부를 결정" if p.get("order_status") == "PENDING_ACCEPT" else "검토"
+        status = p.get("order_status")
+        action = (
+            "수락 여부를 결정"
+            if status == "PENDING_ACCEPT"
+            else ("초안을 컨펌" if status == "DRAFT_REVIEW" else "검토")
+        )
         return [
             NotificationDraft(
                 p["recipient_user_id"],

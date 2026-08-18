@@ -36,6 +36,8 @@ class OrderOrm(Base):
     cancel_requested_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # 72h 내 미수락 환불 표식 — 인기 랭킹 페널티 집계에 쓰인다(§3.8)
     accept_expired: Mapped[bool] = mapped_column(Boolean, server_default="false", index=True)
+    # 초안 컨펌 표식(갭 #85) — 컨펌(또는 72h 자동 컨펌) 후엔 초안 재제출 불가
+    draft_approved: Mapped[bool] = mapped_column(Boolean, server_default="false")
     # 표준계약 구조화 필드(§3.3·§9.2) — 생성 시점 패키지 스냅샷
     revision_limit: Mapped[int] = mapped_column(Integer, server_default="2")
     revisions_used: Mapped[int] = mapped_column(Integer, server_default="0")

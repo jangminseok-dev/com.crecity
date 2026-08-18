@@ -28,14 +28,16 @@ class DeadlineSweepInteractor(DeadlineSweepUseCase):
             if outcome is None:  # 경합으로 이미 전이된 경우 등
                 continue
             updated, entries = outcome
-            event_type = (
-                "order.completed" if updated.status is OrderStatus.COMPLETED else "order.rejected"
-            )
-            extra = (
-                {"payout_krw": updated.creator_payout_krw()}
-                if updated.status is OrderStatus.COMPLETED
-                else {}
-            )
+            if updated.status is OrderStatus.COMPLETED:
+                event_type = "order.completed"
+                extra: dict[str, int | str] = {"payout_krw": updated.creator_payout_krw()}
+            elif updated.status is OrderStatus.IN_PROGRESS:
+                # 초안 검토 만료 → 자동 컨펌(갭 #85) — 컨펌과 같은 알림을 보낸다
+                event_type = "order.draft_approved"
+                extra = {}
+            else:
+                event_type = "order.rejected"
+                extra = {}
             await self._orders.save_transition(
                 updated, entries, [order_event(event_type, updated, **extra)]
             )

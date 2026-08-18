@@ -8,15 +8,20 @@ from order.domain.entities.ledger_entry_entity import LedgerEntryDraft, LedgerEn
 
 
 class OrderStatus(StrEnum):
-    """주문 상태머신 (BOUNDARIES §4 · collabstr-analysis §3.8).
+    """주문 상태머신 (BOUNDARIES §4 · collabstr-analysis §3.8 · 갭 #85 초안 단계).
 
     PENDING_ACCEPT ──수락──▶ IN_PROGRESS ──제출──▶ IN_REVIEW ──승인/72h──▶ COMPLETED
-          │                                     │
-          ├─ 거절/72h 만료 ─▶ REFUNDED           └─ 수정 요청 ─▶ IN_PROGRESS (revision_limit까지)
+          │                    │    ▲                │
+          │                    │    │                └─ 수정 요청 ─▶ IN_PROGRESS (revision_limit까지)
+          │           초안 제출│    │컨펌/72h·수정 요청
+          │                    ▼    │
+          │                 DRAFT_REVIEW   (선택 단계 — 게시 전 초안 검토, 국내 협찬 관행)
+          └─ 거절/72h 만료 ─▶ REFUNDED
     """
 
     PENDING_ACCEPT = "PENDING_ACCEPT"
     IN_PROGRESS = "IN_PROGRESS"
+    DRAFT_REVIEW = "DRAFT_REVIEW"  # 초안 검토 대기(갭 #85) — 선택 단계, 컨펌 후 게시 작업으로 복귀
     IN_REVIEW = "IN_REVIEW"
     COMPLETED = "COMPLETED"
     REFUNDED = "REFUNDED"
@@ -57,6 +62,8 @@ class Order:
     revision_limit: int = 2  # 브랜드가 요청할 수 있는 수정 횟수(0이면 수정 불가)
     revisions_used: int = 0
     usage_rights: str = ""  # 2차 활용 범위
+    # 초안 컨펌 표식(갭 #85) — 컨펌(또는 72h 자동 컨펌) 후엔 초안을 다시 제출할 수 없다
+    draft_approved: bool = False
     created_at: datetime | None = None
     # 마감 임박 알림을 보낸 시각(갭 #76) — 중복 발송 방지 표식. 마감이 새로 잡히면 비운다
     deadline_warned_at: datetime | None = None
@@ -140,10 +147,52 @@ class Order:
         self._require_creator(actor_user_id)
         self._require_status(OrderStatus.IN_PROGRESS, "납품물 등록")
 
-    def request_revision(self, actor_user_id: int) -> Order:
-        """브랜드 수정 요청 → 재작업. 원 요구사항 범위 내에서 스냅샷된 횟수만큼(§3.3)."""
+    # ── 초안 검토 (게시 전 컨펌 — 국내 협찬 관행, 갭 #85) ──────────────────
+
+    def submit_draft(
+        self,
+        actor_user_id: int,
+        now: datetime,
+        review_deadline: timedelta,
+        deliverable_count: int,
+    ) -> Order:
+        """크리에이터 초안 제출 → 브랜드 초안 검토 대기(72h — 무응답이면 자동 컨펌).
+
+        선택 단계다 — 거치지 않고 바로 최종 제출(submit)할 수 있다.
+        초안도 납품물이 근거다(제출과 같은 원칙). 컨펌된 뒤에는 다시 제출할 수 없다.
+        """
+        self._require_creator(actor_user_id)
+        self._require_status(OrderStatus.IN_PROGRESS, "초안 제출")
+        if self.draft_approved:
+            raise InvalidOrderTransitionError("이미 컨펌된 초안입니다 — 최종 제출로 진행하세요.")
+        if deliverable_count <= 0:
+            raise InvalidOrderTransitionError("초안(파일 또는 링크)을 먼저 등록해야 제출할 수 있습니다.")
+        return replace(
+            self,
+            status=OrderStatus.DRAFT_REVIEW,
+            deadline_at=now + review_deadline,
+            deadline_warned_at=None,
+        )
+
+    def approve_draft(self, actor_user_id: int) -> Order:
+        """브랜드 초안 컨펌 → 게시 작업으로 복귀(IN_PROGRESS)."""
         self._require_brand(actor_user_id)
-        self._require_status(OrderStatus.IN_REVIEW, "수정 요청")
+        self._require_status(OrderStatus.DRAFT_REVIEW, "초안 컨펌")
+        return replace(
+            self, status=OrderStatus.IN_PROGRESS, deadline_at=None, draft_approved=True
+        )
+
+    def request_revision(self, actor_user_id: int) -> Order:
+        """브랜드 수정 요청 → 재작업. 원 요구사항 범위 내에서 스냅샷된 횟수만큼(§3.3).
+
+        초안 검토(DRAFT_REVIEW)와 최종 검토(IN_REVIEW)가 같은 한도를 공유한다(갭 #85) —
+        단계마다 한도를 따로 주면 스냅샷된 계약 조건(revision_limit)의 의미가 바뀐다.
+        """
+        self._require_brand(actor_user_id)
+        if self.status not in (OrderStatus.IN_REVIEW, OrderStatus.DRAFT_REVIEW):
+            raise InvalidOrderTransitionError(
+                f"수정 요청은 검토 중 상태에서만 가능합니다 (현재: {self.status.value})"
+            )
         if self.revisions_left() <= 0:
             raise InvalidOrderTransitionError(
                 f"수정 요청은 {self.revision_limit}회까지 가능합니다 (이미 {self.revisions_used}회 사용)."
@@ -168,12 +217,16 @@ class Order:
         """
         if self.deadline_at is None or self.deadline_warned_at is not None:
             return False
-        if self.status not in (OrderStatus.PENDING_ACCEPT, OrderStatus.IN_REVIEW):
+        if self.status not in (
+            OrderStatus.PENDING_ACCEPT,
+            OrderStatus.DRAFT_REVIEW,
+            OrderStatus.IN_REVIEW,
+        ):
             return False
         return now < self.deadline_at <= now + threshold
 
     def deadline_warning_recipient(self) -> int:
-        """마감 때문에 움직여야 하는 쪽 — 수락 대기는 크리에이터, 검토 대기는 브랜드."""
+        """마감 때문에 움직여야 하는 쪽 — 수락 대기는 크리에이터, 초안·최종 검토는 브랜드."""
         return (
             self.creator_user_id
             if self.status is OrderStatus.PENDING_ACCEPT
@@ -183,7 +236,8 @@ class Order:
     def expire(self, now: datetime) -> tuple[Order, list[LedgerEntryDraft]] | None:
         """마감시각 경과 처리(주기 스캔 전용) — 대상 아니면 None.
 
-        PENDING_ACCEPT 만료 → 자동 환불 · IN_REVIEW 만료 → 자동 승인(§3.8).
+        PENDING_ACCEPT 만료 → 자동 환불 · DRAFT_REVIEW 만료 → 자동 컨펌 ·
+        IN_REVIEW 만료 → 자동 승인(§3.8 — 무응답의 비용은 응답해야 할 쪽이 진다).
         """
         if self.deadline_at is None or now < self.deadline_at:
             return None
@@ -191,6 +245,14 @@ class Order:
             # 크리에이터 무응답 — 거절 환불과 구분해 표식을 남긴다(랭킹 페널티)
             refunded, entries = self._refund()
             return replace(refunded, accept_expired=True), entries
+        if self.status is OrderStatus.DRAFT_REVIEW:
+            # 브랜드 무응답 — 초안 자동 컨펌으로 작업이 멈추지 않게 한다(돈 이동 없음)
+            return (
+                replace(
+                    self, status=OrderStatus.IN_PROGRESS, deadline_at=None, draft_approved=True
+                ),
+                [],
+            )
         if self.status is OrderStatus.IN_REVIEW:
             return self._complete()
         return None
@@ -198,7 +260,11 @@ class Order:
     # ── 진행 중 금액 변경 (§3.8·§6 — 갭 #31) ────────────────────────────
 
     def _require_adjustable(self, action: str) -> None:
-        if self.status not in (OrderStatus.IN_PROGRESS, OrderStatus.IN_REVIEW):
+        if self.status not in (
+            OrderStatus.IN_PROGRESS,
+            OrderStatus.DRAFT_REVIEW,
+            OrderStatus.IN_REVIEW,
+        ):
             raise InvalidOrderTransitionError(
                 f"{action}은(는) 작업 중·검토 중 상태에서만 가능합니다 (현재: {self.status.value})"
             )
@@ -233,7 +299,11 @@ class Order:
             raise NotOrderActorError("주문 당사자만 할 수 있는 동작입니다.")
 
     def _require_cancellable(self, action: str) -> None:
-        if self.status not in (OrderStatus.IN_PROGRESS, OrderStatus.IN_REVIEW):
+        if self.status not in (
+            OrderStatus.IN_PROGRESS,
+            OrderStatus.DRAFT_REVIEW,
+            OrderStatus.IN_REVIEW,
+        ):
             raise InvalidOrderTransitionError(
                 f"{action}은(는) 작업 중·검토 중 상태에서만 가능합니다 (현재: {self.status.value})"
             )

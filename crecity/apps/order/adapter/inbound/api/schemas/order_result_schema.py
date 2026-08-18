@@ -27,6 +27,7 @@ class OrderResponseSchema(BaseModel):
     revision_limit: int
     revisions_used: int
     usage_rights: str
+    draft_approved: bool  # 초안 컨펌 여부(갭 #85) — 기본값 금지(누락 은폐 방지)
     created_at: datetime | None
     # 조회 요청자 기준 거래 상대(갭 #63)
     counterpart_name: str | None = None
@@ -57,6 +58,7 @@ class OrderResponseSchema(BaseModel):
             revision_limit=result.revision_limit,
             revisions_used=result.revisions_used,
             usage_rights=result.usage_rights,
+            draft_approved=result.draft_approved,
             created_at=result.created_at,
             counterpart_name=result.counterpart_name,
             counterpart_slug=result.counterpart_slug,

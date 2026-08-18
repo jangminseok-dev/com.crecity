@@ -26,6 +26,16 @@ class OrderProgressUseCase(ABC):
         ...
 
     @abstractmethod
+    async def submit_draft(self, command: OrderTransitionCommand) -> OrderResult:
+        """크리에이터 초안 제출 → DRAFT_REVIEW (72h — 무응답이면 자동 컨펌, 갭 #85)."""
+        ...
+
+    @abstractmethod
+    async def approve_draft(self, command: OrderTransitionCommand) -> OrderResult:
+        """브랜드 초안 컨펌 → IN_PROGRESS 복귀(게시 작업, 갭 #85)."""
+        ...
+
+    @abstractmethod
     async def submit(self, command: OrderTransitionCommand) -> OrderResult:
         """크리에이터 제출 → IN_REVIEW (72h 검토 마감 시작)."""
         ...

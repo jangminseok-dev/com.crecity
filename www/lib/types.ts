@@ -70,12 +70,20 @@ export type Order = {
   brand_fee_percent: number;
   creator_fee_percent: number;
   requirements: string;
-  status: "PENDING_ACCEPT" | "IN_PROGRESS" | "IN_REVIEW" | "COMPLETED" | "REFUNDED" | "CANCELLED";
+  status:
+    | "PENDING_ACCEPT"
+    | "IN_PROGRESS"
+    | "DRAFT_REVIEW"
+    | "IN_REVIEW"
+    | "COMPLETED"
+    | "REFUNDED"
+    | "CANCELLED";
   deadline_at: string | null;
   cancel_requested_by: number | null;
   revision_limit: number;
   revisions_used: number;
   usage_rights: string;
+  draft_approved: boolean; // 초안 컨펌 여부(갭 #85) — 초안 버튼 노출 판단
   created_at: string | null;
   // 거래 상대(갭 #63)와 상대의 거래 이력(갭 #65)
   counterpart_name: string | null;

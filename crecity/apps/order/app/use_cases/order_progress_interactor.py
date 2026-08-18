@@ -42,6 +42,24 @@ class OrderProgressInteractor(OrderProgressUseCase):
         )
         return OrderResult.from_order(order)
 
+    async def submit_draft(self, command: OrderTransitionCommand) -> OrderResult:
+        now = datetime.now(timezone.utc)
+        deliverable_count = await self._deliverables.count_by_order(command.order_id)
+        order = (await self._get(command.order_id)).submit_draft(
+            command.actor_user_id, now, self._review_deadline, deliverable_count
+        )
+        await self._orders.save_transition(
+            order, [], [order_event("order.draft_submitted", order)]
+        )
+        return OrderResult.from_order(order)
+
+    async def approve_draft(self, command: OrderTransitionCommand) -> OrderResult:
+        order = (await self._get(command.order_id)).approve_draft(command.actor_user_id)
+        await self._orders.save_transition(
+            order, [], [order_event("order.draft_approved", order)]
+        )
+        return OrderResult.from_order(order)
+
     async def submit(self, command: OrderTransitionCommand) -> OrderResult:
         now = datetime.now(timezone.utc)
         deliverable_count = await self._deliverables.count_by_order(command.order_id)

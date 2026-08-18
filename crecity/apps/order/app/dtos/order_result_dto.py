@@ -27,6 +27,7 @@ class OrderResult:
     revision_limit: int
     revisions_used: int
     usage_rights: str
+    draft_approved: bool  # 초안 컨펌 여부(갭 #85) — 화면의 초안 버튼 노출 판단
     created_at: datetime | None
     # 조회 요청자 기준 거래 상대(갭 #63) — 붙이지 않은 슬라이스에서는 None
     counterpart_name: str | None = None
@@ -57,5 +58,6 @@ class OrderResult:
             revision_limit=order.revision_limit,
             revisions_used=order.revisions_used,
             usage_rights=order.usage_rights,
+            draft_approved=order.draft_approved,
             created_at=order.created_at,
         )

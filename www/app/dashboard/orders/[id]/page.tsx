@@ -43,11 +43,31 @@ function availableActions(order: Order, userId: number): TransitionAction[] {
     );
   }
   if (isCreator && order.status === "IN_PROGRESS") {
+    // 초안 검토(갭 #85)는 선택 단계 — 컨펌 전에는 초안 제출을, 이후엔 최종 제출만 안내
+    if (!order.draft_approved) {
+      actions.push({
+        path: "submit-draft",
+        label: "초안 제출 (게시 전 컨펌)",
+        variant: "outline",
+        confirm:
+          "게시 전에 브랜드 컨펌을 받는 단계입니다(72시간 내 무응답 시 자동 컨펌). 초안을 제출할까요?",
+      });
+    }
     actions.push({
       path: "submit",
-      label: "콘텐츠 제출",
+      label: order.draft_approved ? "최종 제출" : "콘텐츠 제출",
       confirm: "제출하면 브랜드 검토가 시작됩니다(72시간 내 무응답 시 자동 승인). 제출할까요?",
     });
+  }
+  if (isBrand && order.status === "DRAFT_REVIEW") {
+    actions.push(
+      {
+        path: "approve-draft",
+        label: "초안 컨펌",
+        confirm: "컨펌하면 크리에이터가 게시 작업을 이어갑니다. 컨펌할까요?",
+      },
+      { path: "request-revision", label: "수정 요청", variant: "outline" },
+    );
   }
   if (isBrand && order.status === "IN_REVIEW") {
     actions.push(
@@ -60,7 +80,10 @@ function availableActions(order: Order, userId: number): TransitionAction[] {
     );
   }
   // 양측 합의 취소 — 진행 중 주문의 당사자만, 요청자 본인은 동의·거부 불가
-  if ((isCreator || isBrand) && ["IN_PROGRESS", "IN_REVIEW"].includes(order.status)) {
+  if (
+    (isCreator || isBrand) &&
+    ["IN_PROGRESS", "DRAFT_REVIEW", "IN_REVIEW"].includes(order.status)
+  ) {
     if (order.cancel_requested_by === null) {
       actions.push({
         path: "cancel-request",

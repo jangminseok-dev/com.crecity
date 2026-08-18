@@ -17,7 +17,7 @@ import type { Order } from "@/lib/types";
 const TABS: { id: string; label: string; statuses: Order["status"][] | null }[] = [
   { id: "all", label: "전체", statuses: null },
   { id: "active", label: "진행중", statuses: ["PENDING_ACCEPT", "IN_PROGRESS"] },
-  { id: "review", label: "검토 대기", statuses: ["IN_REVIEW"] },
+  { id: "review", label: "검토 대기", statuses: ["DRAFT_REVIEW", "IN_REVIEW"] },
   { id: "done", label: "완료", statuses: ["COMPLETED"] },
   { id: "cancel", label: "취소·환불", statuses: ["REFUNDED", "CANCELLED"] },
 ];

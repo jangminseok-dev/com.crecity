@@ -49,6 +49,30 @@ async def reject_order(
     return await _transition(use_case.reject, order_id, user)
 
 
+@order_progress_router.post(
+    "/orders/{order_id}/submit-draft", response_model=OrderResponseSchema
+)
+async def submit_draft(
+    order_id: int,
+    user: VerifiedUser = Depends(get_current_user),
+    use_case: OrderProgressUseCase = Depends(get_order_progress_use_case),
+) -> OrderResponseSchema:
+    """초안 제출(갭 #85) — 게시 전 브랜드 컨펌을 받는 선택 단계."""
+    return await _transition(use_case.submit_draft, order_id, user)
+
+
+@order_progress_router.post(
+    "/orders/{order_id}/approve-draft", response_model=OrderResponseSchema
+)
+async def approve_draft(
+    order_id: int,
+    user: VerifiedUser = Depends(get_current_user),
+    use_case: OrderProgressUseCase = Depends(get_order_progress_use_case),
+) -> OrderResponseSchema:
+    """초안 컨펌(갭 #85) — 크리에이터가 게시 작업을 이어간다."""
+    return await _transition(use_case.approve_draft, order_id, user)
+
+
 @order_progress_router.post("/orders/{order_id}/submit", response_model=OrderResponseSchema)
 async def submit_order(
     order_id: int,

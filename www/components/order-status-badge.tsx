@@ -5,6 +5,7 @@ import type { Order } from "@/lib/types";
 const STATUS_STYLES: Record<Order["status"], string> = {
   PENDING_ACCEPT: "bg-[#f2f4f6] text-[#6b7684]",
   IN_PROGRESS: "bg-[#eef2ff] text-[#2743d6]",
+  DRAFT_REVIEW: "bg-[#fef3e0] text-[#c07908]", // 최종 검토와 같은 '기다리는 중' 계열
   IN_REVIEW: "bg-[#fef3e0] text-[#c07908]",
   COMPLETED: "bg-[#e6f7f0] text-[#0fa066]",
   REFUNDED: "bg-[#fdebec] text-[#e5484d]",

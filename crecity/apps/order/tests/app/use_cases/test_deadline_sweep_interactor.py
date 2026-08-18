@@ -148,3 +148,15 @@ async def test_제출하면_임박_표식이_비워진다():
         actor_user_id=CREATOR, now=now, review_deadline=timedelta(hours=72), deliverable_count=1
     )
     assert 제출됨.deadline_warned_at is None
+
+
+async def test_초안_검토_만료는_자동_컨펌이고_컨펌_알림이_실린다():
+    past = datetime.now(timezone.utc) - timedelta(hours=1)
+    repo = _StubOrderRepository([_order(1, OrderStatus.DRAFT_REVIEW, past)])
+    result = await DeadlineSweepInteractor(repo, _WARNING_THRESHOLD).sweep()
+    order, entries, events = repo.saved[0]
+    assert order.status is OrderStatus.IN_PROGRESS
+    assert order.draft_approved is True
+    assert entries == []  # 돈이 움직이지 않는다
+    assert events[0].event_type == "order.draft_approved"
+    assert result.outcomes[0].status == OrderStatus.IN_PROGRESS.value

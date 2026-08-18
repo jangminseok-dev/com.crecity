@@ -19,7 +19,11 @@ from order.domain.entities.ledger_entry_entity import LedgerEntryDraft
 from order.domain.entities.order_entity import Order, OrderStatus
 
 # 만료 스캔 대상 상태 — deadline_at을 갖는 상태만
-_EXPIRABLE_STATUSES = (OrderStatus.PENDING_ACCEPT.value, OrderStatus.IN_REVIEW.value)
+_EXPIRABLE_STATUSES = (
+    OrderStatus.PENDING_ACCEPT.value,
+    OrderStatus.DRAFT_REVIEW.value,
+    OrderStatus.IN_REVIEW.value,
+)
 
 
 class OrderPgRepository(OrderRepository):
@@ -147,6 +151,7 @@ class OrderPgRepository(OrderRepository):
                 cancel_requested_by=order.cancel_requested_by,
                 revisions_used=order.revisions_used,
                 accept_expired=order.accept_expired,
+                draft_approved=order.draft_approved,
             )
         )
         await self._insert_entries(order.id, entries)
