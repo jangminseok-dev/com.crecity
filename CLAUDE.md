@@ -121,6 +121,10 @@ cd www && pnpm run typecheck
 - **스모크 회귀**(서버를 띄운 뒤): `.venv/bin/python scripts/smoke.py [--frontend]`
   — 라우터 조립·권한 게이트·응답 필드·DB 정합성을 실제 서버에 대고 확인한다.
   pytest·typecheck가 못 잡는 영역이다(스텁·타입은 실제 응답을 보지 않는다).
+- **E2E 화면 회귀**(백엔드+프론트 기동 뒤): `.venv/bin/python scripts/e2e.py`
+  — 로그인 상태의 실제 브라우저 렌더를 검증한다(리프레시 토큰 쿠키 주입 → 세션 복원).
+  스모크가 못 보는 "화면이 제대로 그려지는가"를 잡는다(리뷰 블러·채팅 스크롤 회귀 포함).
+  설치된 Chrome을 쓰며, `--viewport 375`로 모바일 폭 점검.
 - **개발용 토큰**(로그인이 필요한 API를 확인할 때):
   `cd crecity && PYTHONPATH=.:apps ../.venv/bin/python scripts/dev_issue_token.py <이메일>`
   (계정 목록은 `--list`). 실제 발급기를 그대로 쓰므로 진짜 토큰과 같다.
