@@ -103,6 +103,23 @@ async def test_거래_실적을_함께_내려준다():
     assert result.received_orders == 10
 
 
+async def test_응답_지표를_함께_내려준다():
+    # 응답 지표(갭 #80) — 배지 판정은 order 몫이라 조회는 값을 그대로 통과시킨다
+    stats = CreatorTradeStats(
+        completed_orders=7,
+        accepted_orders=8,
+        received_orders=10,
+        accept_expired_orders=0,
+        avg_accept_hours=3.5,
+        fast_responder=True,
+    )
+    result = await _interactor(_profile(user_id=101), stats=stats).lookup(
+        ProfileLookupQuery(slug="kim-beauty")
+    )
+    assert result.avg_accept_hours == 3.5
+    assert result.fast_responder is True
+
+
 async def test_받은_주문이_없으면_실적을_비운다():
     # "완료 0건"을 보여주면 신규 크리에이터가 부당하게 나빠 보인다
     result = await _interactor(_profile(user_id=101)).lookup(

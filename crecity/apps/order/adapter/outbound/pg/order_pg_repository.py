@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import func, insert, select, text, update
+from sqlalchemy import extract, func, insert, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from hub.adapter.outbound.pg.outbox_pg_store import enqueue_events
@@ -12,6 +12,7 @@ from order.adapter.outbound.orm.order_orm import OrderOrm
 from order.adapter.outbound.orm.order_status_transition_orm import OrderStatusTransitionOrm
 from order.adapter.outbound.pg.ledger_pg_repository import _SIGNED_AMOUNT
 from order.app.dtos.party_stats_dto import PartyTradeStats
+from order.app.dtos.response_stats_dto import CreatorResponseStats
 from order.app.ports.output.order_repository import OrderRepository
 from order.domain.entities.dispute_entity import DisputeStatus
 from order.domain.entities.ledger_entry_entity import LedgerEntryDraft
@@ -182,6 +183,36 @@ class OrderPgRepository(OrderRepository):
             refunded_orders=int(row[3]),
             accept_expired_orders=int(row[4]),
             total_revisions=int(row[5]),
+        )
+
+    async def get_creator_response_stats(self, creator_user_id: int) -> CreatorResponseStats:
+        """응답 통계(갭 #80) — 수락 대기 이탈 전이(갭 #79)만 표본. 포트 아님(허브 게이트웨이 전용)."""
+        row = (
+            await self._session.execute(
+                select(
+                    func.avg(
+                        extract(
+                            "epoch",
+                            OrderStatusTransitionOrm.occurred_at - OrderOrm.created_at,
+                        )
+                    ).filter(
+                        OrderStatusTransitionOrm.to_status == OrderStatus.IN_PROGRESS.value
+                    ),
+                    func.count().filter(OrderOrm.accept_expired.is_(False)),
+                    func.count().filter(OrderOrm.accept_expired.is_(True)),
+                )
+                .select_from(OrderStatusTransitionOrm)
+                .join(OrderOrm, OrderOrm.id == OrderStatusTransitionOrm.order_id)
+                .where(
+                    OrderOrm.creator_user_id == creator_user_id,
+                    OrderStatusTransitionOrm.from_status == OrderStatus.PENDING_ACCEPT.value,
+                )
+            )
+        ).one()
+        return CreatorResponseStats(
+            avg_accept_seconds=float(row[0]) if row[0] is not None else None,
+            responded_exits=int(row[1]),
+            expired_exits=int(row[2]),
         )
 
     async def find_deadline_warning_targets(

@@ -69,6 +69,13 @@ export function formatKrw(amount: number): string {
   return `${krwFormatter.format(amount)}원`;
 }
 
+/** 평균 수락 소요 표기(갭 #80) — 0.5 → "1시간 이내", 6.2 → "6시간 내", 108.9 → "5일 내" */
+export function formatAcceptDuration(hours: number): string {
+  if (hours < 1) return "1시간 이내";
+  if (hours < 48) return `${Math.round(hours)}시간 내`;
+  return `${Math.ceil(hours / 24)}일 내`;
+}
+
 /** 팔로워 수 축약 표기 — 12500 → "1.3만", 980 → "980" */
 export function formatFollowers(count: number): string {
   if (count >= 10000) {

@@ -35,6 +35,9 @@ export type CreatorProfile = {
   completed_orders: number | null;
   accepted_orders: number | null;
   received_orders: number | null;
+  // 응답 지표(갭 #80) — 전이 이력 표본이 없으면 null
+  avg_accept_hours: number | null;
+  fast_responder: boolean;
 };
 
 export type ProfileFaq = {

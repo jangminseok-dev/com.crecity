@@ -45,6 +45,10 @@ ORDER_RESPONSE_DEADLINE_HOURS = int(_secrets.get("ORDER_RESPONSE_DEADLINE_HOURS"
 ORDER_DEADLINE_WARNING_HOURS = int(_secrets.get("ORDER_DEADLINE_WARNING_HOURS", "12"))
 # 인기 랭킹에서 수락 만료 1건이 상쇄하는 성사 주문 수(§3.8 — 무응답 페널티)
 RANKING_ACCEPT_EXPIRY_PENALTY = int(_secrets.get("RANKING_ACCEPT_EXPIRY_PENALTY", "2"))
+# "빠른 응답" 배지 기준(갭 #80) — 평균 수락 소요가 이 시간 이하 + 표본 최소 건수 + 만료 0건.
+# 24h = 응답 마감(72h)의 1/3 — 실거래 분포 확보 후 재조정 전제(launch-checklist §3).
+ORDER_FAST_RESPONSE_HOURS = int(_secrets.get("ORDER_FAST_RESPONSE_HOURS", "24"))
+ORDER_FAST_RESPONSE_MIN_SAMPLES = int(_secrets.get("ORDER_FAST_RESPONSE_MIN_SAMPLES", "3"))
 
 # 프로필 심사 정량 기준(갭 #16) — 자동 체크의 참고선일 뿐 자동 승인·반려는 하지 않는다.
 # 팔로워 1,000(나노 인플루언서 진입선) · 참여율 1.0%(=10‰, 통상 양호 하한).

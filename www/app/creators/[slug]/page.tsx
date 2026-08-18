@@ -11,7 +11,7 @@ import ProfileFaqAccordion from "@/components/profile-faq";
 import ProfileViewTracker from "@/components/profile-view-tracker";
 import ReportButton from "@/components/report-button";
 import { Badge } from "@/components/ui/badge";
-import { PLATFORM_LABELS, formatFollowers } from "@/lib/labels";
+import { PLATFORM_LABELS, formatAcceptDuration, formatFollowers } from "@/lib/labels";
 import { backendGet } from "@/lib/server/backend-api";
 import type { CreatorPackage, CreatorProfile, PortfolioItem, ProfileFaq } from "@/lib/types";
 
@@ -107,6 +107,7 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
                 {!profile.accepting_orders && (
                   <Badge variant="outline">지금은 주문을 받지 않아요</Badge>
                 )}
+                {profile.fast_responder && <Badge>⚡ 빠른 응답</Badge>}
               </div>
               <p className="mt-2 text-[15px] text-muted-foreground">
                 {profile.primary_category}
@@ -119,6 +120,9 @@ export default async function CreatorProfilePage({ params }: { params: PageParam
                   완료 거래 {profile.completed_orders}건
                   {profile.accepted_orders !== null &&
                     ` · 받은 주문 ${profile.received_orders}건 중 ${profile.accepted_orders}건 수락`}
+                  {/* 응답 지표(갭 #80) — 전이 이력이 쌓인 뒤부터 표시된다 */}
+                  {profile.avg_accept_hours !== null &&
+                    ` · 평균 ${formatAcceptDuration(profile.avg_accept_hours)} 수락`}
                 </p>
               )}
               {reviews && reviews.total > 0 && reviews.average_overall !== null && (

@@ -37,6 +37,9 @@ class ProfileLookupInteractor(ProfileLookupUseCase):
             completed_orders=stats.completed_orders if has_history else None,
             accepted_orders=stats.accepted_orders if has_history else None,
             received_orders=stats.received_orders if has_history else None,
+            # 응답 지표(갭 #80)는 이력 표본 유무를 order가 판단한다(None/False로 온다)
+            avg_accept_hours=stats.avg_accept_hours if stats is not None else None,
+            fast_responder=stats.fast_responder if stats is not None else False,
             id=profile.id,
             slug=profile.slug,
             name=profile.name,

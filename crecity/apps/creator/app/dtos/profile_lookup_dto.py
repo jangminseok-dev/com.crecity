@@ -26,3 +26,6 @@ class ProfileLookupResult:
     completed_orders: int | None = None
     accepted_orders: int | None = None
     received_orders: int | None = None
+    # 응답 지표(갭 #80) — 전이 이력 표본이 없으면 None / False
+    avg_accept_hours: float | None = None
+    fast_responder: bool = False

@@ -20,3 +20,6 @@ class ProfileLookupResponseSchema(BaseModel):
     completed_orders: int | None = None
     accepted_orders: int | None = None
     received_orders: int | None = None
+    # 응답 지표(갭 #80) — 표본 없으면 null. fast_responder는 항상 값이 있어 기본값 금지
+    avg_accept_hours: float | None = None
+    fast_responder: bool
