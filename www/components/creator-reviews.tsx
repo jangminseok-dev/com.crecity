@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 
 type ReviewItem = {
   id: number;
@@ -107,9 +108,14 @@ function ReplyForm({ reviewId, slug }: { reviewId: number; slug: string }) {
 
 /** 집계는 공개, 원문은 로그인 시에만(블러 정책 — collabstr Freemium Gate). */
 export default function CreatorReviews({ slug }: { slug: string }) {
+  // 공개 API라 토큰 없이도 200이 온다 — 세션 복원 전에 조회하면 로그인 상태인데도
+  // 잠긴(블러) 응답이 캐시되고 401 재시도 경로도 타지 않는다. 복원이 끝날 때까지 기다리고,
+  // 로그인 여부를 키에 넣어 로그인/로그아웃 시 다시 조회한다.
+  const authStatus = useAuthStore((s) => s.status);
   const { data, isPending } = useQuery({
-    queryKey: ["creatorReviews", slug],
+    queryKey: ["creatorReviews", slug, authStatus === "authenticated"],
     queryFn: () => apiFetch<CreatorReviews>(`/review/creators/${slug}`),
+    enabled: authStatus !== "loading",
   });
 
   if (isPending) return <Skeleton className="h-32 w-full" />;

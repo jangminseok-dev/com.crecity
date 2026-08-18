@@ -37,7 +37,7 @@ export default function ChatRoomPage() {
   const { id } = useParams<{ id: string }>();
   const { status, user } = useAuthStore();
   const queryClient = useQueryClient();
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: conversation } = useQuery({
     queryKey: ["conversation", id],
@@ -80,9 +80,11 @@ export default function ChatRoomPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["messages", id] }),
   });
 
-  // 새 메시지 도착 시 맨 아래로
+  // 새 메시지 도착 시 맨 아래로 — scrollIntoView는 window까지 스크롤해
+  // 대화 상단(상대 정보·주문 카드)이 화면 밖으로 밀리므로 메시지 영역만 스크롤한다
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = scrollRef.current;
+    el?.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages?.length]);
 
   if (status === "guest") {
@@ -126,7 +128,7 @@ export default function ChatRoomPage() {
         <OfferPanel conversationId={id} isCreator={user?.account_type === "CREATOR"} />
       )}
 
-      <div className="flex-1 space-y-2 overflow-y-auto py-4">
+      <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto py-4">
         {isPending ? (
           <Skeleton className="h-40 w-full" />
         ) : !messages || messages.length === 0 ? (
@@ -165,7 +167,6 @@ export default function ChatRoomPage() {
             </div>
           ))
         )}
-        <div ref={bottomRef} />
       </div>
 
       <form onSubmit={handleSubmit} className="flex gap-2.5 border-t pt-3">
