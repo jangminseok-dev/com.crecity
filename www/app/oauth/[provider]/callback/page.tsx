@@ -60,7 +60,8 @@ function CallbackContent() {
         return;
       }
       setSession(payload.access_token as string);
-      router.replace("/");
+      // 로그인 전에 보던 페이지로 복귀(갭 #94) — 기록이 없으면 홈
+      router.replace(context.return_to ?? "/");
     };
     void login();
     // searchParams·provider는 마운트 시점에 확정 — 1회만 실행한다

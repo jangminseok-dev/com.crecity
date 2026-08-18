@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "./providers";
+import RouteTracker from "@/components/route-tracker";
 import SiteFooter from "@/components/site-footer";
 import SiteHeader from "@/components/site-header";
 import { SITE_URL } from "@/lib/site";
@@ -32,6 +33,7 @@ export default function RootLayout({
     <html lang="ko" className="h-full font-sans antialiased">
       <body className="flex min-h-dvh flex-col">
         <Providers>
+          <RouteTracker />
           <SiteHeader />
           <main className="flex-1">{children}</main>
           <SiteFooter />
