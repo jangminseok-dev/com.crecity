@@ -12,7 +12,7 @@
 | order_conversation | `POST /chat/conversations/order/{order_id}` | 주문 당사자 간 대화 열기(갭 #95) — **크리에이터도 열 수 있다**(주문이 있으면 콜드 DM이 아니므로 브랜드 전용 제한을 풀어도 스팸이 안 됨). 당사자 검증은 허브 `OrderParticipantsPort`(리뷰 자격 검증과 같은 계약 — 비당사자 403·없는 주문 404). 대화는 같은 (브랜드,크리에이터) 쌍이면 일반 문의 방을 그대로 재사용. main.py에서 listing보다 먼저 등록(`/conversations/{id}` 경로 겹침) |
 | conversation_listing | `GET /chat/conversations` · `/{id}` · `POST /chat/conversations/{id}/read` | 내 대화 목록(최근 메시지순·미리보기)·상세 — **참여자만(403)** |
 | messaging | `POST·GET /chat/conversations/{id}/messages` | 전송(빈 본문 422)·조회(오래된 순 최근 100) — **참여자만(403)** |
-| offer_management | `POST·GET /chat/conversations/{id}/offers` | 커스텀 오퍼 — 제안은 **해당 대화의 크리에이터만(403)**, 열람은 참여자만. 제목 1~100자·가격 양수(422), PENDING→PAID는 결제 완료 시 허브 경유로만 전이 |
+| offer_management | `POST·GET /chat/conversations/{id}/offers` | 커스텀 오퍼 — 제안은 **해당 대화의 크리에이터만(403)**, 열람은 참여자만. 제목 1~100자·가격 양수(422), PENDING→PAID는 결제 완료 시 허브 경유로만 전이. **합의 조건(갭 #98)**: `revision_limit`(0~10, 기본 2)·`usage_rights`(≤300자, 선택)를 오퍼에 담아 결제 시 주문 계약 조건으로 스냅샷된다(§3.3 사전 합의 — 패키지 표준계약 필드와 동일 규칙, 기존 오퍼 행은 기본값) |
 
 - 엔티티: `Conversation`(참여자 검증 `ensure_participant`·상대 판정) · `Message`(append-only) ·
   `CustomOffer`(+`OfferStatus`, `is_payable`). 오퍼 수신자·제안자는 대화방이 알고 있어

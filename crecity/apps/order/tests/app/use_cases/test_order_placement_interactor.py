@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 
+from hub.app.dtos.custom_offer_dto import CustomOfferSummary
 from hub.app.dtos.package_summary_dto import PackageSummary
 from order.app.dtos.order_placement_dto import OrderPlacementCommand
 from order.app.exceptions import (
@@ -200,6 +201,19 @@ async def test_커스텀_오퍼_주문은_오퍼_스냅샷으로_생성된다():
     assert order.creator_user_id == CREATOR
     assert entries[0].amount_krw == 495000  # 가격 + 브랜드 수수료 10%
     assert result.status == OrderStatus.PENDING_ACCEPT.value
+
+
+async def test_오퍼의_합의_조건이_계약_조건으로_스냅샷된다():
+    orders = _StubOrderRepository()
+    offer = CustomOfferSummary(
+        offer_id=11, title="맞춤 릴스 2건", price_krw=450000,
+        brand_user_id=BRAND, creator_user_id=CREATOR,
+        revision_limit=5, usage_rights="SNS 게시 6개월",
+    )
+    await _custom_interactor(offer, orders).place_custom(_custom_command(offer_id=11))
+    order, _, _ = orders.created[0]
+    assert order.revision_limit == 5
+    assert order.usage_rights == "SNS 게시 6개월"
 
 
 async def test_결제_불가_오퍼는_주문할_수_없다():

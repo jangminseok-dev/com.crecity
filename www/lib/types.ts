@@ -216,6 +216,9 @@ export type CustomOffer = {
   conversation_id: number;
   title: string;
   price_krw: number;
+  // 합의 조건(갭 #98) — 결제 시 주문 계약 조건으로 스냅샷된다
+  revision_limit: number;
+  usage_rights: string;
   status: "PENDING" | "PAID";
   order_id: number | null;
   created_at: string | null;

@@ -29,7 +29,12 @@ export default function OfferPanel({
   });
 
   const send = useMutation({
-    mutationFn: (body: { title: string; price_krw: number }) =>
+    mutationFn: (body: {
+      title: string;
+      price_krw: number;
+      revision_limit: number;
+      usage_rights: string;
+    }) =>
       apiFetch<CustomOffer>(`/chat/conversations/${conversationId}/offers`, {
         method: "POST",
         body: JSON.stringify(body),
@@ -45,8 +50,15 @@ export default function OfferPanel({
     const formData = new FormData(e.currentTarget);
     const title = String(formData.get("title") ?? "").trim();
     const price = Number(formData.get("price_krw"));
+    const revisionLimit = Number(formData.get("revision_limit") ?? 2);
+    const usageRights = String(formData.get("usage_rights") ?? "").trim();
     if (!title || !Number.isInteger(price) || price <= 0) return;
-    send.mutate({ title, price_krw: price });
+    send.mutate({
+      title,
+      price_krw: price,
+      revision_limit: revisionLimit,
+      usage_rights: usageRights,
+    });
   };
 
   if (!offers?.length && !isCreator) return null;
@@ -60,7 +72,10 @@ export default function OfferPanel({
         >
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">💼 {offer.title}</p>
-            <p className="text-sm text-muted-foreground">{formatKrw(offer.price_krw)}</p>
+            <p className="text-sm text-muted-foreground">
+              {formatKrw(offer.price_krw)} · 수정 {offer.revision_limit}회
+              {offer.usage_rights ? ` · ${offer.usage_rights}` : ""}
+            </p>
           </div>
           {offer.status === "PAID" ? (
             offer.order_id ? (
@@ -94,6 +109,27 @@ export default function OfferPanel({
           <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2">
             <Input name="title" placeholder="오퍼 내용 (예: 릴스 2건 + 사진 5장)" className="flex-1" maxLength={100} />
             <Input name="price_krw" type="number" min={1} placeholder="가격(원)" className="w-32" />
+            {/* 합의 조건(갭 #98) — 결제 시 주문 계약 조건으로 그대로 저장된다 */}
+            <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              수정
+              <select
+                name="revision_limit"
+                defaultValue="2"
+                className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+              >
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((count) => (
+                  <option key={count} value={count}>
+                    {count}회
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Input
+              name="usage_rights"
+              placeholder="2차 활용 범위 (선택)"
+              className="w-56"
+              maxLength={300}
+            />
             <Button type="submit" size="sm" disabled={send.isPending}>
               보내기
             </Button>

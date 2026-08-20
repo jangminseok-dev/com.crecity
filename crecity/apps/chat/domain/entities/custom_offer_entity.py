@@ -22,6 +22,9 @@ class CustomOffer:
     title: str
     price_krw: int
     status: OfferStatus
+    # 합의 조건(갭 #98) — 결제 시 주문 계약 조건으로 스냅샷된다(§3.3 사전 합의)
+    revision_limit: int = 2
+    usage_rights: str = ""
     order_id: int | None = None  # 결제 완료 시 생성된 주문(타 스포크 논리 참조)
     created_at: datetime | None = None
 

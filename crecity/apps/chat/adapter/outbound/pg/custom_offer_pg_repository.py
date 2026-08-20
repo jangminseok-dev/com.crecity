@@ -14,11 +14,20 @@ class CustomOfferPgRepository(CustomOfferRepository):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def create(self, conversation_id: int, title: str, price_krw: int) -> CustomOffer:
+    async def create(
+        self,
+        conversation_id: int,
+        title: str,
+        price_krw: int,
+        revision_limit: int,
+        usage_rights: str,
+    ) -> CustomOffer:
         orm = CustomOfferOrm(
             conversation_id=conversation_id,
             title=title,
             price_krw=price_krw,
+            revision_limit=revision_limit,
+            usage_rights=usage_rights,
             status=OfferStatus.PENDING.value,
         )
         self._session.add(orm)

@@ -6,7 +6,14 @@ from chat.domain.entities.custom_offer_entity import CustomOffer
 class CustomOfferRepository(ABC):
 
     @abstractmethod
-    async def create(self, conversation_id: int, title: str, price_krw: int) -> CustomOffer: ...
+    async def create(
+        self,
+        conversation_id: int,
+        title: str,
+        price_krw: int,
+        revision_limit: int,
+        usage_rights: str,
+    ) -> CustomOffer: ...
 
     @abstractmethod
     async def find_by_id(self, offer_id: int) -> CustomOffer | None: ...

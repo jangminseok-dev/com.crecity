@@ -26,6 +26,8 @@ class CustomOfferGateway(CustomOfferPort):
             price_krw=offer.price_krw,
             brand_user_id=conversation.brand_user_id,
             creator_user_id=conversation.creator_user_id,
+            revision_limit=offer.revision_limit,
+            usage_rights=offer.usage_rights,
         )
 
     async def mark_paid(self, offer_id: int, order_id: int) -> None:

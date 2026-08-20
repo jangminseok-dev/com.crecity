@@ -21,6 +21,8 @@ def _to_schema(result) -> OfferResponseSchema:
         conversation_id=result.conversation_id,
         title=result.title,
         price_krw=result.price_krw,
+        revision_limit=result.revision_limit,
+        usage_rights=result.usage_rights,
         status=result.status,
         order_id=result.order_id,
         created_at=result.created_at,
@@ -44,6 +46,8 @@ async def create_offer(
                 conversation_id=conversation_id,
                 title=body.title,
                 price_krw=body.price_krw,
+                revision_limit=body.revision_limit,
+                usage_rights=body.usage_rights,
                 requester_user_id=user.id,
             )
         )

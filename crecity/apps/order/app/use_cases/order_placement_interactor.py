@@ -81,6 +81,9 @@ class OrderPlacementInteractor(OrderPlacementUseCase):
             brand_user_id=command.brand_user_id,
             requirements=command.requirements,
             credit_used_krw=command.credit_used_krw,
+            # 채팅에서 합의한 조건(갭 #98)이 계약 조건으로 스냅샷된다(§3.3 사전 합의)
+            revision_limit=offer.revision_limit,
+            usage_rights=offer.usage_rights,
         )
 
     async def place_application(self, command: ApplicationOrderPlacementCommand) -> OrderResult:

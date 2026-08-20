@@ -9,6 +9,8 @@ def to_entity(orm: CustomOfferOrm) -> CustomOffer:
         title=orm.title,
         price_krw=orm.price_krw,
         status=OfferStatus(orm.status),
+        revision_limit=orm.revision_limit,
+        usage_rights=orm.usage_rights,
         order_id=orm.order_id,
         created_at=orm.created_at,
     )

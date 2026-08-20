@@ -15,6 +15,9 @@ class CustomOfferOrm(Base):
     conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id"), index=True)
     title: Mapped[str] = mapped_column(String(100))
     price_krw: Mapped[int] = mapped_column(BigInteger)
+    # 합의 조건(갭 #98) — 기존 행은 기본값(수정 2회·사용권 빈 값)으로 채운다
+    revision_limit: Mapped[int] = mapped_column(Integer, server_default="2")
+    usage_rights: Mapped[str] = mapped_column(String(300), server_default="")
     # OfferStatus 값
     status: Mapped[str] = mapped_column(String(10))
     order_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
