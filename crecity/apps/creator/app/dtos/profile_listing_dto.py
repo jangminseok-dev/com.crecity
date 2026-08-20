@@ -17,6 +17,9 @@ class ProfileListingQuery:
     price_max: int | None = None
     location: str | None = None
     sort: ProfileSort = ProfileSort.LATEST  # 정렬 기준(§3.1, 갭 #45)
+    # 지표 필터(§3.1, 갭 #97) — 자가입력 채널 지표 기반(팔로워=합계, 참여율=최고값 퍼밀)
+    followers_min: int | None = None
+    engagement_min: int | None = None
 
 
 @dataclass(frozen=True)

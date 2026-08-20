@@ -39,6 +39,8 @@ class ProfileListingInteractor(ProfileListingUseCase):
             price_max=query.price_max,
             location=query.location,
             sort=query.sort,
+            followers_min=query.followers_min,
+            engagement_min=query.engagement_min,
         )
         total = await self._repository.count_by_status(
             status=ProfileStatus.APPROVED,
@@ -48,6 +50,8 @@ class ProfileListingInteractor(ProfileListingUseCase):
             price_min=query.price_min,
             price_max=query.price_max,
             location=query.location,
+            followers_min=query.followers_min,
+            engagement_min=query.engagement_min,
         )
 
         # 카드 보강 — 같은 스포크(패키지·포트폴리오)는 리포지토리, 평점은 허브(review 구현)

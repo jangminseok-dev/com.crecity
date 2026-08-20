@@ -13,6 +13,9 @@ export type SearchFilters = {
   platform?: string;
   price?: string;
   location?: string;
+  // 지표 필터(갭 #97) — followers=팔로워 합계 하한, engagement=참여율 하한(퍼밀)
+  followers?: string;
+  engagement?: string;
 };
 
 /** 필터 → 홈 URL. 값이 없는 키는 빼서 기본 상태가 "/"로 수렴하게 한다. */
@@ -32,5 +35,7 @@ export function listingQuery(filters: SearchFilters, extra: Record<string, strin
     ...(filters.platform ? { platform: filters.platform } : {}),
     ...parsePriceRange(filters.price),
     ...(filters.location ? { location: filters.location } : {}),
+    ...(filters.followers ? { followers_min: filters.followers } : {}),
+    ...(filters.engagement ? { engagement_min: filters.engagement } : {}),
   }).toString();
 }

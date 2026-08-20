@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { PLATFORM_LABELS } from "@/lib/labels";
+import { PLATFORM_LABELS, formatFollowers } from "@/lib/labels";
 import { homeHref, listingQuery, type SearchFilters } from "@/lib/search-filters";
 import { backendGet } from "@/lib/server/backend-api";
 import type { ProfileListingResponse } from "@/lib/types";
@@ -23,6 +23,10 @@ function activeFilters(filters: SearchFilters): { key: keyof SearchFilters; labe
     const platform = PLATFORM_LABELS[filters.platform as keyof typeof PLATFORM_LABELS];
     labels.push({ key: "platform", label: platform ?? filters.platform });
   }
+  if (filters.followers)
+    labels.push({ key: "followers", label: `팔로워 ${formatFollowers(Number(filters.followers))}+` });
+  if (filters.engagement)
+    labels.push({ key: "engagement", label: `참여율 ${Number(filters.engagement) / 10}%+` });
   if (filters.category) labels.push({ key: "category", label: `${filters.category} 카테고리` });
   if (filters.q) labels.push({ key: "q", label: `검색어 "${filters.q}"` });
   return labels;

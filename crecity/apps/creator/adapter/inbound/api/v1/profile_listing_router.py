@@ -28,6 +28,10 @@ async def list_profiles(
     price_min: int | None = Query(None, ge=0, description="패키지 가격 하한(원)"),
     price_max: int | None = Query(None, ge=0, description="패키지 가격 상한(원)"),
     location: str | None = Query(None, max_length=100, description="활동 지역 부분 일치"),
+    followers_min: int | None = Query(None, ge=0, description="팔로워 합계 하한(자가입력 지표)"),
+    engagement_min: int | None = Query(
+        None, ge=0, le=1000, description="참여율 하한(퍼밀 — 채널 중 최고값 기준)"
+    ),
     sort: ProfileSort = Query(ProfileSort.LATEST, description="정렬 기준(최신·가격 오름/내림)"),
     limit: int = Query(20, ge=1, le=50),
     offset: int = Query(0, ge=0),
@@ -44,6 +48,8 @@ async def list_profiles(
             price_max=price_max,
             location=location,
             sort=sort,
+            followers_min=followers_min,
+            engagement_min=engagement_min,
         )
     )
     return ProfileListingResponseSchema(

@@ -49,6 +49,8 @@ class CreatorProfileRepository(ABC):
         price_max: int | None = None,
         location: str | None = None,
         sort: ProfileSort = ProfileSort.LATEST,
+        followers_min: int | None = None,
+        engagement_min: int | None = None,
     ) -> list[CreatorProfile]:
         """상태로 필터한 프로필을 sort 기준으로 조회한다(§3.1 검색 필터·정렬).
 
@@ -67,6 +69,8 @@ class CreatorProfileRepository(ABC):
         price_min: int | None = None,
         price_max: int | None = None,
         location: str | None = None,
+        followers_min: int | None = None,
+        engagement_min: int | None = None,
     ) -> int: ...
 
     @abstractmethod

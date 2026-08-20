@@ -89,6 +89,7 @@ def check_public() -> None:
     for path in (
         "/creator/profiles",
         "/creator/profiles?sort=price_asc",
+        "/creator/profiles?followers_min=1000&engagement_min=10",
         "/creator/categories",
         "/creator/profiles/popular?limit=4",
         "/creator/profiles/minseok-studio/similar",

@@ -76,11 +76,14 @@ type HomeSearchParams = Promise<{
   platform?: string;
   price?: string;
   location?: string;
+  followers?: string;
+  engagement?: string;
   sort?: string;
 }>;
 
 export default async function Home({ searchParams }: { searchParams: HomeSearchParams }) {
-  const { category, q, page, platform, price, location, sort: sortParam } = await searchParams;
+  const { category, q, page, platform, price, location, followers, engagement, sort: sortParam } =
+    await searchParams;
   const currentPage = Math.max(1, Number(page) || 1);
   const sort = toProfileSort(sortParam);
   const query = new URLSearchParams({
@@ -91,9 +94,11 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
     ...(platform ? { platform } : {}),
     ...parsePriceRange(price),
     ...(location ? { location } : {}),
+    ...(followers ? { followers_min: followers } : {}),
+    ...(engagement ? { engagement_min: engagement } : {}),
     ...(sort !== "latest" ? { sort } : {}),
   });
-  const hasFilters = Boolean(category || q || platform || price || location);
+  const hasFilters = Boolean(category || q || platform || price || location || followers || engagement);
   const isFiltered = hasFilters || currentPage > 1;
   const [listing, categories, popular] = await Promise.all([
     backendGet<ProfileListingResponse>(`/creator/profiles?${query}`),
@@ -115,10 +120,12 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
     const merged = new URLSearchParams({
       ...(params.category ? { category: params.category } : {}),
       ...(params.q ? { q: params.q } : {}),
-      // 상세 필터(플랫폼·가격대·위치)와 정렬은 카테고리·페이지 이동에도 유지한다
+      // 상세 필터(플랫폼·가격대·위치·지표)와 정렬은 카테고리·페이지 이동에도 유지한다
       ...(platform ? { platform } : {}),
       ...(price ? { price } : {}),
       ...(location ? { location } : {}),
+      ...(followers ? { followers } : {}),
+      ...(engagement ? { engagement } : {}),
       ...(nextSort !== "latest" ? { sort: nextSort } : {}),
       ...((params.page ?? 1) > 1 ? { page: String(params.page) } : {}),
     });
@@ -279,13 +286,34 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
             placeholder="지역 (예: 서울)"
             className="h-10 w-36 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus:border-primary"
           />
+          {/* 지표 필터(갭 #97) — 자가입력 채널 지표 기반(폼 아래 각주로 명시) */}
+          <select
+            name="followers"
+            defaultValue={followers ?? ""}
+            className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm"
+          >
+            <option value="">팔로워 전체</option>
+            <option value="1000">1천 이상</option>
+            <option value="10000">1만 이상</option>
+            <option value="100000">10만 이상</option>
+          </select>
+          <select
+            name="engagement"
+            defaultValue={engagement ?? ""}
+            className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm"
+          >
+            <option value="">참여율 전체</option>
+            <option value="10">1% 이상</option>
+            <option value="30">3% 이상</option>
+            <option value="50">5% 이상</option>
+          </select>
           <button
             type="submit"
             className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent-foreground"
           >
             필터 적용
           </button>
-          {(platform || price || location) && (
+          {(platform || price || location || followers || engagement) && (
             <Link
               href={
                 category || q || sort !== "latest"
@@ -296,6 +324,11 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
             >
               필터 초기화 ✕
             </Link>
+          )}
+          {(followers || engagement) && (
+            <span className="w-full text-xs text-muted-foreground">
+              팔로워·참여율은 크리에이터가 등록한 채널 지표(자가입력·스크린샷 인증) 기준입니다.
+            </span>
           )}
         </form>
 
@@ -331,7 +364,7 @@ export default async function Home({ searchParams }: { searchParams: HomeSearchP
           {items.length === 0 ? (
             hasFilters ? (
               <EmptyResults
-                filters={{ category, q, platform, price, location }}
+                filters={{ category, q, platform, price, location, followers, engagement }}
                 categories={categories ?? []}
               />
             ) : (

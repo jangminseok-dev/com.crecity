@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from creator.adapter.outbound.mappers.creator_profile_mapper import CreatorProfileMapper
 from creator.adapter.outbound.orm.creator_package_orm import CreatorPackageOrm
 from creator.adapter.outbound.orm.creator_profile_orm import CreatorProfileOrm
+from creator.adapter.outbound.orm.profile_analytics_orm import ProfileAnalyticsOrm
 from creator.app.ports.output.creator_profile_repository import CreatorProfileRepository
 from creator.domain.entities.creator_profile_entity import CreatorProfile, ProfileStatus
 from creator.domain.value_objects.profile_sort import ProfileSort
@@ -16,6 +17,8 @@ def _listing_conditions(
     price_min: int | None,
     price_max: int | None,
     location: str | None,
+    followers_min: int | None = None,
+    engagement_min: int | None = None,
 ) -> list:
     """목록·카운트가 공유하는 검색 필터(§3.1) — 목록과 총계가 항상 같은 조건을 본다."""
     # 주문을 받지 않는 프로필은 목록에서 뺀다(갭 #64) — 골라도 살 수 없으면 헛수고다.
@@ -42,6 +45,21 @@ def _listing_conditions(
         if price_max is not None:
             packages = packages.where(CreatorPackageOrm.price_krw <= price_max)
         conditions.append(packages.exists())
+    # 지표 필터(갭 #97) — 자가입력 채널 지표 기반: 팔로워는 전 채널 합(헤더 배지와 동일),
+    # 참여율은 채널 중 최고값(비교 표·vetting과 같은 관점). 지표 미등록 프로필은 제외된다.
+    if followers_min is not None:
+        followers_total = (
+            select(func.coalesce(func.sum(ProfileAnalyticsOrm.followers_count), 0))
+            .where(ProfileAnalyticsOrm.profile_id == CreatorProfileOrm.id)
+            .scalar_subquery()
+        )
+        conditions.append(followers_total >= followers_min)
+    if engagement_min is not None:
+        engaging = select(ProfileAnalyticsOrm.id).where(
+            ProfileAnalyticsOrm.profile_id == CreatorProfileOrm.id,
+            ProfileAnalyticsOrm.engagement_permille >= engagement_min,
+        )
+        conditions.append(engaging.exists())
     return conditions
 
 
@@ -130,10 +148,15 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         price_max: int | None = None,
         location: str | None = None,
         sort: ProfileSort = ProfileSort.LATEST,
+        followers_min: int | None = None,
+        engagement_min: int | None = None,
     ) -> list[CreatorProfile]:
         stmt = select(CreatorProfileOrm).where(
             CreatorProfileOrm.status == status.value,
-            *_listing_conditions(category, q, platform, price_min, price_max, location),
+            *_listing_conditions(
+                category, q, platform, price_min, price_max, location,
+                followers_min, engagement_min,
+            ),
         )
         stmt = stmt.order_by(*_listing_order_by(sort)).limit(limit).offset(offset)
         result = await self._session.execute(stmt)
@@ -218,13 +241,18 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         price_min: int | None = None,
         price_max: int | None = None,
         location: str | None = None,
+        followers_min: int | None = None,
+        engagement_min: int | None = None,
     ) -> int:
         stmt = (
             select(func.count())
             .select_from(CreatorProfileOrm)
             .where(
                 CreatorProfileOrm.status == status.value,
-                *_listing_conditions(category, q, platform, price_min, price_max, location),
+                *_listing_conditions(
+                    category, q, platform, price_min, price_max, location,
+                    followers_min, engagement_min,
+                ),
             )
         )
         result = await self._session.execute(stmt)

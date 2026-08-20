@@ -23,22 +23,25 @@ class _StubRepository:
     async def list_by_status(
         self, status, category, limit, offset, q=None,
         platform=None, price_min=None, price_max=None, location=None,
-        sort=ProfileSort.LATEST,
+        sort=ProfileSort.LATEST, followers_min=None, engagement_min=None,
     ):
         self.list_calls.append(
             {"status": status, "category": category, "limit": limit, "offset": offset, "q": q,
              "platform": platform, "price_min": price_min, "price_max": price_max,
-             "location": location, "sort": sort}
+             "location": location, "sort": sort,
+             "followers_min": followers_min, "engagement_min": engagement_min}
         )
         return self.profiles
 
     async def count_by_status(
         self, status, category, q=None,
         platform=None, price_min=None, price_max=None, location=None,
+        followers_min=None, engagement_min=None,
     ):
         self.count_calls.append(
             {"status": status, "category": category, "q": q, "platform": platform,
-             "price_min": price_min, "price_max": price_max, "location": location}
+             "price_min": price_min, "price_max": price_max, "location": location,
+             "followers_min": followers_min, "engagement_min": engagement_min}
         )
         return len(self.profiles)
 
@@ -107,7 +110,8 @@ async def test_승인된_프로필만_조회하도록_위임한다():
     result = await interactor.list_profiles(
         ProfileListingQuery(category=None, q=None, limit=20, offset=0)
     )
-    _NO_FILTERS = {"platform": None, "price_min": None, "price_max": None, "location": None}
+    _NO_FILTERS = {"platform": None, "price_min": None, "price_max": None, "location": None,
+                       "followers_min": None, "engagement_min": None}
     assert repository.list_calls == [
         {"status": ProfileStatus.APPROVED, "category": None, "limit": 20, "offset": 0, "q": None,
          **_NO_FILTERS, "sort": ProfileSort.LATEST}
@@ -144,6 +148,20 @@ async def test_검색_필터_확장이_목록과_총계에_동일하게_전달�
         assert call["price_min"] == 100000
         assert call["price_max"] == 500000
         assert call["location"] == "서울"
+
+
+async def test_지표_필터가_목록과_총계에_동일하게_전달된다():
+    repository = _StubRepository(profiles=[_profile()])
+    interactor = _interactor(repository=repository)
+    await interactor.list_profiles(
+        ProfileListingQuery(
+            category=None, q=None, limit=20, offset=0,
+            followers_min=10_000, engagement_min=30,  # 팔로워 1만+ · 참여율 3.0%+
+        )
+    )
+    for call in (repository.list_calls[0], repository.count_calls[0]):
+        assert call["followers_min"] == 10_000
+        assert call["engagement_min"] == 30
 
 
 async def test_정렬_기준을_목록_조회에_전달한다():
