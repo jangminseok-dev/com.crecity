@@ -114,6 +114,7 @@ from auth.adapter.outbound.hub.user_directory_gateway import UserDirectoryGatewa
 from chat.adapter.inbound.api.v1.conversation_listing_router import (
     conversation_listing_router,
 )
+from chat.adapter.inbound.api.v1.order_conversation_router import order_conversation_router
 from chat.adapter.inbound.api.v1.conversation_opening_router import (
     conversation_opening_router,
 )
@@ -248,6 +249,8 @@ app.include_router(campaign_listing_router)
 app.include_router(campaign_application_router)
 app.include_router(courier_router)
 app.include_router(conversation_opening_router)
+# 주의: /conversations/{id} 계열과 겹치므로 order 경로를 listing보다 먼저 등록한다
+app.include_router(order_conversation_router)
 app.include_router(conversation_listing_router)
 app.include_router(messaging_router)
 app.include_router(photo_messaging_router)

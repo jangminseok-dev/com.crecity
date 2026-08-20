@@ -9,6 +9,7 @@
 |---|---|---|
 | courier (myself) | `GET /chat/myself` | 자기소개 |
 | conversation_opening | `POST /chat/conversations` | **브랜드만(403)** 크리에이터에게 문의 시작 — 쌍당 1개(있으면 재사용, DB 복합 unique) |
+| order_conversation | `POST /chat/conversations/order/{order_id}` | 주문 당사자 간 대화 열기(갭 #95) — **크리에이터도 열 수 있다**(주문이 있으면 콜드 DM이 아니므로 브랜드 전용 제한을 풀어도 스팸이 안 됨). 당사자 검증은 허브 `OrderParticipantsPort`(리뷰 자격 검증과 같은 계약 — 비당사자 403·없는 주문 404). 대화는 같은 (브랜드,크리에이터) 쌍이면 일반 문의 방을 그대로 재사용. main.py에서 listing보다 먼저 등록(`/conversations/{id}` 경로 겹침) |
 | conversation_listing | `GET /chat/conversations` · `/{id}` · `POST /chat/conversations/{id}/read` | 내 대화 목록(최근 메시지순·미리보기)·상세 — **참여자만(403)** |
 | messaging | `POST·GET /chat/conversations/{id}/messages` | 전송(빈 본문 422)·조회(오래된 순 최근 100) — **참여자만(403)** |
 | offer_management | `POST·GET /chat/conversations/{id}/offers` | 커스텀 오퍼 — 제안은 **해당 대화의 크리에이터만(403)**, 열람은 참여자만. 제목 1~100자·가격 양수(422), PENDING→PAID는 결제 완료 시 허브 경유로만 전이 |

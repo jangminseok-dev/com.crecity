@@ -8,6 +8,7 @@ import { useState } from "react";
 import BrandRatingBadge from "@/components/brand-rating-badge";
 import OrderAdjustmentSection from "@/components/order-adjustment-section";
 import OrderBrandReviewSection from "@/components/order-brand-review-section";
+import OrderChatButton from "@/components/order-chat-button";
 import OrderDeliverablesSection from "@/components/order-deliverables-section";
 import OrderDisputeSection from "@/components/order-dispute-section";
 import OrderReviewSection from "@/components/order-review-section";
@@ -158,9 +159,13 @@ export default function OrderDetailPage() {
           </div>
           <Separator />
           <div>
-            <p className="text-sm text-muted-foreground">
-              {isBrand ? "크리에이터" : "브랜드"}
-            </p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm text-muted-foreground">
+                {isBrand ? "크리에이터" : "브랜드"}
+              </p>
+              {/* 주문 ↔ 채팅 연결(갭 #95) — 크리에이터도 브랜드에게 대화를 열 수 있다 */}
+              <OrderChatButton orderId={order.id} />
+            </div>
             <p className="mt-1 text-sm font-semibold">
               {order.counterpart_slug ? (
                 <Link href={`/creators/${order.counterpart_slug}`} className="hover:underline">
