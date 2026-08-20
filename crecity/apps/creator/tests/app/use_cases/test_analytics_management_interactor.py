@@ -38,11 +38,11 @@ class _StubAnalyticsRepository:
     def __init__(self):
         self.rows: dict[str, ProfileAnalytics] = {}
 
-    async def upsert(self, profile_id, platform, followers_count, engagement_permille, screenshot_file_name, top_audience_region=None, audience=None, flag_reason=None):
+    async def upsert(self, profile_id, platform, followers_count, engagement_permille, avg_views, screenshot_file_name, top_audience_region=None, audience=None, flag_reason=None):
         row = ProfileAnalytics(
             id=len(self.rows) + 1, profile_id=profile_id, platform=platform,
             followers_count=followers_count, engagement_permille=engagement_permille,
-            screenshot_file_name=screenshot_file_name, updated_at=_NOW,
+            avg_views=avg_views, screenshot_file_name=screenshot_file_name, updated_at=_NOW,
             top_audience_region=top_audience_region, audience=tuple(audience or ()),
             flag_reason=flag_reason,
         )
@@ -77,7 +77,8 @@ def _interactor(profile=_PROFILE):
 def _command(platform="INSTAGRAM", followers=25000, engagement=35, owner=OWNER):
     return SubmitAnalyticsCommand(
         requester_user_id=owner, platform=platform, followers_count=followers,
-        engagement_permille=engagement, content=b"img", content_type="image/png",
+        engagement_permille=engagement, avg_views=None,
+        content=b"img", content_type="image/png",
     )
 
 
@@ -151,6 +152,7 @@ async def test_오디언스_비율을_저장한다():
             platform="INSTAGRAM",
             followers_count=12000,
             engagement_permille=35,
+            avg_views=None,
             content=b"img",
             content_type="image/png",
             top_audience_region="서울",
@@ -180,6 +182,7 @@ async def test_같은_축_비율_합이_100퍼센트를_넘으면_거부한다()
                 platform="INSTAGRAM",
                 followers_count=12000,
                 engagement_permille=35,
+                avg_views=None,
                 content=b"img",
                 content_type="image/png",
                 audience=(
@@ -200,3 +203,21 @@ async def test_재제출_급증은_플래그되고_정상_재제출이면_해제
     normal = await interactor.submit(_command(followers=52000))
     assert normal.followers_count == 52000
     assert analytics.rows["INSTAGRAM"].flag_reason is None
+
+
+async def test_평균_조회수_음수는_거부되고_값은_저장된다():
+    interactor, analytics = _interactor()
+    with pytest.raises(ValueError):
+        await interactor.submit(
+            SubmitAnalyticsCommand(
+                requester_user_id=OWNER, platform="INSTAGRAM", followers_count=1000,
+                engagement_permille=None, avg_views=-1, content=b"img", content_type="image/png",
+            )
+        )
+    result = await interactor.submit(
+        SubmitAnalyticsCommand(
+            requester_user_id=OWNER, platform="INSTAGRAM", followers_count=1000,
+            engagement_permille=None, avg_views=250_000, content=b"img", content_type="image/png",
+        )
+    )
+    assert result.avg_views == 250_000

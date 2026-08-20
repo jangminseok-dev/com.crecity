@@ -53,6 +53,8 @@ class AnalyticsManagementInteractor(AnalyticsManagementUseCase):
             0 <= command.engagement_permille <= _MAX_ENGAGEMENT_PERMILLE
         ):
             raise ValueError("참여율은 0~100% 범위여야 합니다.")
+        if command.avg_views is not None and command.avg_views < 0:
+            raise ValueError("평균 조회수는 0 이상이어야 합니다.")
         screenshot = ImageFile(content=command.content, content_type=command.content_type)
         # 오디언스 비율 검증(갭 #67) — 같은 축의 합이 100%를 넘으면 입력을 잘못 본 것이다
         audience = validate_breakdown(list(command.audience))
@@ -81,6 +83,7 @@ class AnalyticsManagementInteractor(AnalyticsManagementUseCase):
             platform=command.platform,
             followers_count=command.followers_count,
             engagement_permille=command.engagement_permille,
+            avg_views=command.avg_views,
             screenshot_file_name=file_name,
             top_audience_region=(command.top_audience_region or None),
             audience=audience,

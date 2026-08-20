@@ -53,6 +53,7 @@ async def submit_analytics(
     platform: str = Form(...),
     followers_count: int = Form(...),
     engagement_permille: int | None = Form(None),
+    avg_views: int | None = Form(None, description="평균 조회수(선택·자가입력, 갭 #102)"),
     top_audience_region: str | None = Form(None),
     # 오디언스 비율(갭 #67) — multipart라 JSON 문자열로 받는다.
     # 예: [{"dimension":"AGE","bucket":"20s","share_permille":450}]
@@ -68,6 +69,7 @@ async def submit_analytics(
                 platform=platform,
                 followers_count=followers_count,
                 engagement_permille=engagement_permille,
+                avg_views=avg_views,
                 content=await file.read(),
                 content_type=file.content_type or "",
                 top_audience_region=top_audience_region,

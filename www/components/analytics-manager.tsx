@@ -72,6 +72,8 @@ export default function AnalyticsManager() {
     if (engagementPercent) {
       form.append("engagement_permille", String(Math.round(Number(engagementPercent) * 10)));
     }
+    const avgViews = String(raw.get("avg_views") ?? "").trim();
+    if (avgViews) form.append("avg_views", avgViews);
     // 오디언스(갭 #67) — 입력한 구간만 보낸다. 비율은 %로 받아 ‰로 바꾼다
     const shares = AUDIENCE_FIELDS.flatMap(({ dimension, bucket, field }) => {
       const percent = String(raw.get(field) ?? "").trim();
@@ -109,6 +111,7 @@ export default function AnalyticsManager() {
                   팔로워 {formatFollowers(row.followers_count)}
                   {row.engagement_permille !== null &&
                     ` · 참여율 ${(row.engagement_permille / 10).toFixed(1)}%`}
+                  {row.avg_views !== null && ` · 평균 조회수 ${formatFollowers(row.avg_views)}`}
                 </span>
                 <button
                   type="button"
@@ -163,6 +166,17 @@ export default function AnalyticsManager() {
                 max={100}
                 step={0.1}
                 placeholder="예: 3.5"
+                className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="analytics-avg-views">평균 조회수 (선택)</Label>
+              <input
+                id="analytics-avg-views"
+                name="avg_views"
+                type="number"
+                min={0}
+                placeholder="예: 250000"
                 className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus:border-primary"
               />
             </div>

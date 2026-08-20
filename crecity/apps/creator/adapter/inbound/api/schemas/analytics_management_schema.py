@@ -19,6 +19,7 @@ class AnalyticsResponseSchema(BaseModel):
     platform: str
     followers_count: int
     engagement_permille: int | None  # 참여율 ×10 (3.5% → 35)
+    avg_views: int | None  # 평균 조회수(갭 #102) — 선택·자가입력
     screenshot_url: str  # 인증 스크린샷
     updated_at: datetime | None
     # 오디언스(§2.1-6, 갭 #67)
@@ -31,6 +32,7 @@ class AnalyticsResponseSchema(BaseModel):
             platform=result.platform,
             followers_count=result.followers_count,
             engagement_permille=result.engagement_permille,
+            avg_views=result.avg_views,
             screenshot_url=f"/uploads/analytics/{result.screenshot_file_name}",
             updated_at=result.updated_at,
             top_audience_region=result.top_audience_region,

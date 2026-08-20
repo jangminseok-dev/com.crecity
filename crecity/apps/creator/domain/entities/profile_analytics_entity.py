@@ -22,6 +22,7 @@ class ProfileAnalytics:
     followers_count: int
     engagement_permille: int | None  # 미입력 허용
     screenshot_file_name: str  # 자가입력 증빙 스크린샷(필수)
+    avg_views: int | None = None  # 평균 조회수(갭 #102) — 선택·자가입력
     updated_at: datetime | None = None
     # 오디언스(§2.1-6, 갭 #67) — 지역은 단일 값, 연령·성별 비율은 별도 행
     top_audience_region: str | None = None

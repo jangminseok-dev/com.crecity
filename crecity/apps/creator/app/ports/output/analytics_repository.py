@@ -17,6 +17,7 @@ class AnalyticsRepository(ABC):
         platform: str,
         followers_count: int,
         engagement_permille: int | None,
+        avg_views: int | None,
         screenshot_file_name: str,
         top_audience_region: str | None = None,
         audience: list[AudienceShare] | None = None,

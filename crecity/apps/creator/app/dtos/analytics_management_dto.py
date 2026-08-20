@@ -15,6 +15,7 @@ class SubmitAnalyticsCommand:
     platform: str
     followers_count: int
     engagement_permille: int | None  # 참여율 ×10 (3.5% → 35)
+    avg_views: int | None  # 평균 조회수(갭 #102) — 선택
     content: bytes  # 인증 스크린샷
     content_type: str
     # 오디언스(§2.1-6, 갭 #67) — 선택. 주면 통째로 교체된다
@@ -35,6 +36,7 @@ class AnalyticsResult:
     platform: str
     followers_count: int
     engagement_permille: int | None
+    avg_views: int | None
     screenshot_file_name: str
     updated_at: datetime | None
     top_audience_region: str | None = None
@@ -46,6 +48,7 @@ class AnalyticsResult:
             platform=analytics.platform,
             followers_count=analytics.followers_count,
             engagement_permille=analytics.engagement_permille,
+            avg_views=analytics.avg_views,
             screenshot_file_name=analytics.screenshot_file_name,
             updated_at=analytics.updated_at,
             top_audience_region=analytics.top_audience_region,

@@ -78,6 +78,12 @@ export default function CreatorAnalyticsSection({ slug }: { slug: string }) {
                 <span className="font-bold">{(row.engagement_permille / 10).toFixed(1)}%</span>
               </p>
             )}
+            {row.avg_views !== null && (
+              <p className="text-sm">
+                <span className="text-muted-foreground">평균 조회수 </span>
+                <span className="font-bold">{formatFollowers(row.avg_views)}</span>
+              </p>
+            )}
           </div>
           <a
             href={`/api/backend${row.screenshot_url}`}

@@ -58,6 +58,7 @@ export type ProfileAnalytics = {
   platform: "INSTAGRAM" | "YOUTUBE" | "TIKTOK" | "NAVER_BLOG";
   followers_count: number;
   engagement_permille: number | null; // 참여율 ×10 (3.5% → 35)
+  avg_views: number | null; // 평균 조회수(갭 #102) — 선택·자가입력
   screenshot_url: string;
   updated_at: string | null;
   // 오디언스(§2.1-6, 갭 #67)
