@@ -7,6 +7,7 @@ import { useState } from "react";
 import { z } from "zod";
 
 import CampaignApplicantCompare from "@/components/campaign-applicant-compare";
+import ContactCreatorButton from "@/components/contact-creator-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -181,7 +182,7 @@ function ApplicationList({ campaignId }: { campaignId: number }) {
             <p className="whitespace-pre-line text-sm text-muted-foreground">
               {application.message}
             </p>
-            <div className="mt-1">
+            <div className="mt-1 flex items-center gap-2">
               {application.order_id ? (
                 <Button
                   variant="outline"
@@ -200,6 +201,8 @@ function ApplicationList({ campaignId }: { campaignId: number }) {
                   }
                 />
               )}
+              {/* 결제 전 문의(갭 #96) — 조건을 물어보고 수락할 수 있게. 프로필이 끊긴 지원자는 제외 */}
+              {application.creator_slug && <ContactCreatorButton slug={application.creator_slug} />}
             </div>
           </CardContent>
         </Card>

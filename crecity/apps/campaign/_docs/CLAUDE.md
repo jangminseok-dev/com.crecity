@@ -15,6 +15,8 @@
 - **지원자 정렬·필터(갭 #70)**: `ApplicationSort`(oldest·latest·price_asc·price_desc)
   + `only_open`(미수락만). 캠페인이 소유한 값으로만 정렬한다 — 팔로워·평점은 다른 스포크
   소유라 DB 정렬이 스포크 경계를 넘는다(갭 #45와 같은 이유).
+- **지원자 결제 전 문의(갭 #96)도 백엔드 미관여** — 지원자 카드의 문의 버튼이 chat의
+  기존 대화 생성(`POST /chat/conversations`)을 그대로 쓴다(프로필 문의와 동일 컴포넌트).
 - **지원자 나란히 비교(갭 #86)는 백엔드 미관여** — 화면(`campaign-applicant-compare.tsx`)이
   지원자별 공개 프로필 API(`/creator/profiles/{slug}`·`/analytics`)를 조합한다(#83과 같은
   원칙). 지원자 목록 응답에 팔로워·거래 실적을 실으려고 허브 포트를 늘리지 말 것 —
