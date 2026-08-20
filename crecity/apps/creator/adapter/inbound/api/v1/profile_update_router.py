@@ -43,4 +43,5 @@ async def update_my_profile(
         primary_category=result.primary_category,
         status=result.status,
         created_at=result.created_at,
+        accepting_orders=result.accepting_orders,
     )

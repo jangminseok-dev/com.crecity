@@ -1,16 +1,25 @@
 import {
+  Baby,
+  Briefcase,
   Camera,
+  Clapperboard,
   Dumbbell,
+  Gamepad2,
+  GraduationCap,
   Home as HomeIcon,
   MessagesSquare,
   Monitor,
+  Music,
   PackageCheck,
+  PawPrint,
   Plane,
   Search,
   Shirt,
   ShieldCheck,
+  Sofa,
   Sparkles,
   Star,
+  Tent,
   Utensils,
   Video,
 } from "lucide-react";
@@ -67,6 +76,16 @@ const CATEGORY_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   라이프: HomeIcon,
   포토: Camera,
   영상: Video,
+  // 국내 강세 세분화(갭 #100)
+  육아: Baby,
+  반려동물: PawPrint,
+  게임: Gamepad2,
+  교육: GraduationCap,
+  리빙: Sofa,
+  아웃도어: Tent,
+  비즈니스: Briefcase,
+  음악: Music,
+  엔터테인먼트: Clapperboard,
 };
 
 type HomeSearchParams = Promise<{

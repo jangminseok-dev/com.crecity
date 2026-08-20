@@ -31,5 +31,8 @@
   판정해 심사 게이트웨이가 허브 `ProfileReviewSummary`에 실어 보낸다. 기준값은 도메인이 아니라
   `core/config`(`VETTING_MIN_FOLLOWERS`·`VETTING_MIN_ENGAGEMENT_PERMILLE`)가 소유하며,
   **자동 승인·반려는 하지 않는다**(자가입력 지표 — 운영자 판단 보조).
+- **카테고리 정본은 `domain/value_objects/category.py`의 `CATEGORIES`**(18개 — 2026-08-20
+  국내 강세 세분화 갭 #100). www `CREATOR_CATEGORIES`·홈 아이콘 세트와 1:1로 맞춘다.
+  **추가만 하고 제거·개명은 하지 않는다** — 기존 프로필의 카테고리 값이 깨진다.
 - 새 ORM 추가 시 `crecity/alembic/env.py`에 import 한 줄 등록 필수(오토젠 대상).
 - (심사는 admin 앱. 키워드 검색·프로필 수정·포트폴리오는 2026-08-10 구축 완료)

@@ -35,4 +35,5 @@ class ProfileUpdateInteractor(ProfileUpdateUseCase):
             primary_category=profile.primary_category,
             status=profile.status.value,
             created_at=profile.created_at,
+            accepting_orders=profile.accepting_orders,
         )

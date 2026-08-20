@@ -26,6 +26,7 @@ export function toProfileSort(value?: string): ProfileSort {
 }
 
 /* 고정 카테고리 목록 — 백엔드 creator/domain/value_objects/category.py와 1:1 */
+/* 백엔드 creator/domain/value_objects/category.py의 CATEGORIES와 1:1 — 추가만, 제거·개명 금지 */
 export const CREATOR_CATEGORIES = [
   "뷰티",
   "패션",
@@ -36,6 +37,16 @@ export const CREATOR_CATEGORIES = [
   "라이프",
   "포토",
   "영상",
+  // 국내 강세 세분화(갭 #100)
+  "육아",
+  "반려동물",
+  "게임",
+  "교육",
+  "리빙",
+  "아웃도어",
+  "비즈니스",
+  "음악",
+  "엔터테인먼트",
 ] as const;
 
 export const PROFILE_STATUS_LABELS: Record<string, string> = {
