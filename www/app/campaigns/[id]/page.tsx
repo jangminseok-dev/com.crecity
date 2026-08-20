@@ -7,6 +7,7 @@ import { useState } from "react";
 import { z } from "zod";
 
 import CampaignApplicantCompare from "@/components/campaign-applicant-compare";
+import CampaignCreatorMatch from "@/components/campaign-creator-match";
 import ContactCreatorButton from "@/components/contact-creator-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -290,6 +291,8 @@ export default function CampaignDetailPage() {
               </Button>
             )}
             <ApplicationList campaignId={campaign.id} />
+            {/* 적합 크리에이터 추천(갭 #99) — 공고가 열려 있을 때만(닫힌 공고에 추천은 무의미) */}
+            {campaign.status === "OPEN" && <CampaignCreatorMatch campaign={campaign} />}
           </>
         ) : user.account_type === "CREATOR" && campaign.status === "OPEN" ? (
           <ApplyForm campaignId={campaign.id} />

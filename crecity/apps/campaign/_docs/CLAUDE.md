@@ -15,6 +15,12 @@
 - **지원자 정렬·필터(갭 #70)**: `ApplicationSort`(oldest·latest·price_asc·price_desc)
   + `only_open`(미수락만). 캠페인이 소유한 값으로만 정렬한다 — 팔로워·평점은 다른 스포크
   소유라 DB 정렬이 스포크 경계를 넘는다(갭 #45와 같은 이유).
+- **적합 크리에이터 추천(갭 #99)도 백엔드 미관여** — 공고 소유 브랜드 화면
+  (`campaign-creator-match.tsx`)이 공고의 타겟 조건(플랫폼·카테고리·지역)+예산을
+  기존 공개 목록 필터(`GET /creator/profiles?platform=&category=&location=&price_max=`)로
+  변환해 후보 4명을 보여준다. **표시만 한다**(자동 초대·발송 없음 — 수락 강요 방지),
+  이미 지원한 크리에이터는 제외, 후보 없으면 섹션 미렌더. Instant Creator Match(§3.2)의
+  규칙 기반판 — #40의 LLM 없는 대체.
 - **지원자 결제 전 문의(갭 #96)도 백엔드 미관여** — 지원자 카드의 문의 버튼이 chat의
   기존 대화 생성(`POST /chat/conversations`)을 그대로 쓴다(프로필 문의와 동일 컴포넌트).
 - **지원자 나란히 비교(갭 #86)는 백엔드 미관여** — 화면(`campaign-applicant-compare.tsx`)이
