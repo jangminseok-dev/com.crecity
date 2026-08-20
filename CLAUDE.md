@@ -167,7 +167,8 @@ cd www && pnpm run typecheck
 
 ## 브랜치 전략
 
-- 원격: `https://github.com/redoceanmap/com.crecity.git`
+- 원격: `https://github.com/jangminseok-dev/com.crecity.git` (2026-08-20 계정명 변경 —
+  구 `redoceanmap` 주소는 리다이렉트에 기대지 말 것)
 - `main` — 원격 기본 브랜치. `min` — 작업 브랜치(이 맥). 커밋·push는 사용자가 요청할 때만 한다.
 
 ---
