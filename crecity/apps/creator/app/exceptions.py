@@ -40,3 +40,7 @@ class AnalyticsNotFoundError(Exception):
 
 class PortfolioLimitExceededError(Exception):
     """프로필당 포트폴리오 상한 초과 — 라우터에서 409로 변환."""
+
+
+class NotRejectedProfileError(Exception):
+    """반려 상태가 아닌 프로필의 재심사 요청(갭 #101) — 라우터에서 409로 변환."""

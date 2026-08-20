@@ -25,6 +25,8 @@ class CreatorProfileOrm(Base):
     # 주문 수신 여부(갭 #64) — 심사 상태와 직교하다. 휴가·마감 중 72h 무응답
     # 랭킹 페널티(갭 #32)를 피하려면 스스로 닫을 수 있어야 한다
     accepting_orders: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    # 반려 사유(갭 #101) — REJECTED일 때만 값이 있고, 재심사 요청·승인 시 비워진다
+    rejection_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

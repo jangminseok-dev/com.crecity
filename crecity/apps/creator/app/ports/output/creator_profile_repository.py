@@ -86,9 +86,15 @@ class CreatorProfileRepository(ABC):
         ...
 
     @abstractmethod
+    async def list_pending_review(self, limit: int) -> list[CreatorProfile]:
+        """심사 대기(PENDING) 목록 — 검색 조건(주문 수신 여부 등) 없이 상태만 본다(갭 #101)."""
+        ...
+
+    @abstractmethod
     async def update_status(
-        self, profile_id: int, status: ProfileStatus
+        self, profile_id: int, status: ProfileStatus, rejection_reason: str | None = None
     ) -> CreatorProfile | None:
+        """심사·재심사 전이 — 반려 시 사유 저장, 승인·재심사(PENDING 복귀) 시 None으로 비운다."""
         """심사 상태 전이(허브 심사 계약용) — 대상 없으면 None."""
         ...
 

@@ -25,5 +25,6 @@ class MyProfileLookupInteractor(MyProfileLookupUseCase):
             primary_category=profile.primary_category,
             status=profile.status.value,
             accepting_orders=profile.accepting_orders,
+            rejection_reason=profile.rejection_reason,
             created_at=profile.created_at,
         )

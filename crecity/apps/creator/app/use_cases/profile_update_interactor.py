@@ -36,4 +36,5 @@ class ProfileUpdateInteractor(ProfileUpdateUseCase):
             status=profile.status.value,
             created_at=profile.created_at,
             accepting_orders=profile.accepting_orders,
+            rejection_reason=profile.rejection_reason,
         )

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
 
@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
 import { CREATOR_CATEGORIES, PROFILE_STATUS_LABELS } from "@/lib/labels";
-import type { CreatorProfile } from "@/lib/types";
+import type { CreatorProfile, MyProfile } from "@/lib/types";
 
 const profileSchema = z.object({
   slug: z
@@ -36,9 +36,9 @@ const profileSchema = z.object({
   primary_category: z.string().min(1, "카테고리를 입력해 주세요.").max(50),
 });
 
-async function fetchMyProfile(): Promise<CreatorProfile | null> {
+async function fetchMyProfile(): Promise<MyProfile | null> {
   try {
-    return await apiFetch<CreatorProfile>("/creator/my/profile");
+    return await apiFetch<MyProfile>("/creator/my/profile");
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
@@ -213,7 +213,47 @@ function ProfileEditForm({ profile, onDone }: { profile: CreatorProfile; onDone:
   );
 }
 
-function ProfileView({ profile, onEdit }: { profile: CreatorProfile; onEdit: () => void }) {
+function RejectionNotice({ reason }: { reason: string | null }) {
+  const queryClient = useQueryClient();
+  const resubmit = useMutation({
+    mutationFn: () => apiFetch("/creator/my/profile/resubmit", { method: "POST" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["myProfile"] }),
+  });
+
+  return (
+    <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm">
+      <p className="font-semibold text-destructive">프로필 심사가 반려되었습니다</p>
+      {reason ? (
+        <p className="mt-1">보완 요청 사유: {reason}</p>
+      ) : (
+        <p className="mt-1 text-muted-foreground">사유가 기록되지 않은 반려입니다.</p>
+      )}
+      <p className="mt-1 text-muted-foreground">
+        아래 수정하기로 내용을 보완한 뒤 재심사를 요청하면 심사 대기열에 다시 들어갑니다.
+      </p>
+      <Button
+        size="sm"
+        className="mt-3"
+        disabled={resubmit.isPending}
+        onClick={() => {
+          if (window.confirm("보완을 마쳤나요? 재심사를 요청하면 심사 대기 상태로 돌아갑니다.")) {
+            resubmit.mutate();
+          }
+        }}
+      >
+        {resubmit.isPending ? "요청 중…" : "보완 후 재심사 요청"}
+      </Button>
+      {resubmit.error && (
+        <p className="mt-2 text-xs text-destructive">
+          {resubmit.error instanceof ApiError ? resubmit.error.detail : "재심사 요청에 실패했습니다."}
+        </p>
+      )}
+    </div>
+  );
+}
+
+
+function ProfileView({ profile, onEdit }: { profile: MyProfile; onEdit: () => void }) {
   return (
     <Card>
       <CardContent className="grid gap-4 p-6">
@@ -235,6 +275,8 @@ function ProfileView({ profile, onEdit }: { profile: CreatorProfile; onEdit: () 
             지금도 가능합니다.
           </p>
         )}
+        {/* 반려 안내 + 재심사 요청(갭 #101) — 반려가 막다른 길이 되지 않게 */}
+        {profile.status === "REJECTED" && <RejectionNotice reason={profile.rejection_reason} />}
         <div className="flex gap-2">
           <Button size="sm" onClick={onEdit}>
             수정하기

@@ -48,8 +48,10 @@ class CreatorProfileReviewGateway(ProfileReviewPort):
 
     async def list_pending_profiles(self) -> list[ProfileReviewSummary]:
         async with session_scope() as session:
-            profiles = await CreatorProfilePgRepository(session).list_by_status(
-                status=ProfileStatus.PENDING, category=None, limit=_PENDING_LIMIT, offset=0
+            # 검색용 list_by_status(주문 수신 중 조건 포함)를 쓰면 수신을 끈 PENDING이
+            # 심사 큐에서 누락된다 — 심사는 상태만 본다(갭 #101에서 발견·수정)
+            profiles = await CreatorProfilePgRepository(session).list_pending_review(
+                limit=_PENDING_LIMIT
             )
             analytics = AnalyticsPgRepository(session)
             checks = {
@@ -60,11 +62,14 @@ class CreatorProfileReviewGateway(ProfileReviewPort):
                 )
                 for profile in profiles
             }
-        # list_by_status는 최신순 — 심사는 오래 기다린 순서가 공정하다
-        return [_to_summary(profile, checks[profile.id]) for profile in reversed(profiles)]
+        # list_pending_review가 등록 오래된 순 — 오래 기다린 순서가 공정하다
+        return [_to_summary(profile, checks[profile.id]) for profile in profiles]
 
-    async def review_profile(self, profile_id: int, approved: bool) -> ProfileReviewSummary | None:
+    async def review_profile(
+        self, profile_id: int, approved: bool, reason: str | None = None
+    ) -> ProfileReviewSummary | None:
         status = ProfileStatus.APPROVED if approved else ProfileStatus.REJECTED
+        rejection_reason = None if approved else reason
         async with session_scope() as session:
             repository = CreatorProfilePgRepository(session)
             target = await repository.find_by_id(profile_id)
@@ -82,11 +87,15 @@ class CreatorProfileReviewGateway(ProfileReviewPort):
                                 "creator_user_id": target.user_id,
                                 "slug": target.slug,
                                 "name": target.name,
+                                # 반려 사유(갭 #101) — 알림 문구에 동봉된다
+                                "reason": rejection_reason,
                             },
                         )
                     ],
                 )
-            profile = await repository.update_status(profile_id, status)
+            profile = await repository.update_status(
+                profile_id, status, rejection_reason=rejection_reason
+            )
         return _to_summary(profile) if profile is not None else None
 
     async def list_flagged_analytics(self) -> list[FlaggedAnalyticsSummary]:

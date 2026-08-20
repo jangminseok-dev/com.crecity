@@ -30,7 +30,7 @@
 | campaign.application_received | 공고를 올린 브랜드 | /campaigns/{id}(지원자 목록) |
 | review.received | 리뷰를 받은 크리에이터 | /creators/{slug}(답글 폼) |
 | review.brand_received | 평가받은 브랜드(갭 #83) | /dashboard/orders/{id} |
-| profile.approved · rejected | 크리에이터 | /dashboard/profile |
+| profile.approved · rejected | 크리에이터 — **반려는 사유 동봉**(갭 #101, payload `reason`) | /dashboard/profile(재심사 요청 버튼) |
 | (모르는 유형) | 알림 없이 발행 마킹만 — 재처리 루프 방지 | — |
 
 - 발행 측: order 리포지토리(`create`/`save_transition`/`save_settlement`의 `events` 인자), chat 메시지

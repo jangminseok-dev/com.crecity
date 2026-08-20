@@ -91,9 +91,11 @@ export default function AdminPage() {
   });
 
   const review = useMutation({
-    mutationFn: ({ profileId, approve }: { profileId: number; approve: boolean }) =>
+    mutationFn: ({ profileId, approve, reason }: { profileId: number; approve: boolean; reason?: string }) =>
       apiFetch(`/admin/profiles/${profileId}/${approve ? "approve" : "reject"}`, {
         method: "POST",
+        // 반려는 사유 필수(갭 #101) — 크리에이터가 보완할 근거가 된다
+        ...(approve ? {} : { body: JSON.stringify({ reason }) }),
       }),
     onSuccess: async () => {
       setReviewError(null);
@@ -170,8 +172,13 @@ export default function AdminPage() {
                     variant="destructive"
                     disabled={review.isPending}
                     onClick={() => {
-                      if (window.confirm(`"${profile.name}" 프로필을 반려할까요?`)) {
-                        review.mutate({ profileId: profile.id, approve: false });
+                      const reason = window.prompt(
+                        `"${profile.name}" 프로필을 반려합니다.\n크리에이터에게 전달할 보완 사유를 적어 주세요 (5자 이상):`,
+                      );
+                      if (reason && reason.trim().length >= 5) {
+                        review.mutate({ profileId: profile.id, approve: false, reason: reason.trim() });
+                      } else if (reason !== null) {
+                        setReviewError("반려 사유를 5자 이상 적어야 합니다.");
                       }
                     }}
                   >

@@ -1,8 +1,14 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from hub.app.dtos.profile_review_dto import ProfileReviewSummary
+
+
+class ProfileRejectRequestSchema(BaseModel):
+    """반려 요청(갭 #101) — 사유 필수(5~500자): 크리에이터가 보완할 근거가 된다."""
+
+    reason: str = Field(min_length=5, max_length=500)
 
 
 class ProfileReviewResponseSchema(BaseModel):

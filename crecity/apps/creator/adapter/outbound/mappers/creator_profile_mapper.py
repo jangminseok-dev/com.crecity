@@ -17,6 +17,7 @@ class CreatorProfileMapper:
             primary_category=orm.primary_category,
             status=ProfileStatus(orm.status),
             accepting_orders=orm.accepting_orders,
+            rejection_reason=orm.rejection_reason,
             user_id=orm.user_id,
             created_at=orm.created_at,
         )

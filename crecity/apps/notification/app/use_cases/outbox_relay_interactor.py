@@ -143,7 +143,14 @@ def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
     if t == "profile.approved":
         return [NotificationDraft(p["creator_user_id"], t, "프로필 심사가 승인되었습니다 — 마켓 목록에 노출됩니다.", "/dashboard/profile")]
     if t == "profile.rejected":
-        return [NotificationDraft(p["creator_user_id"], t, "프로필 심사가 반려되었습니다 — 내용을 보완해 보세요.", "/dashboard/profile")]
+        # 사유를 동봉해야 보완할 수 있다(갭 #101) — 재심사 요청은 대시보드에서
+        reason = p.get("reason")
+        body = (
+            f"프로필 심사가 반려되었습니다 — 사유: {reason}. 보완 후 재심사를 요청해 보세요."
+            if reason
+            else "프로필 심사가 반려되었습니다 — 보완 후 재심사를 요청해 보세요."
+        )
+        return [NotificationDraft(p["creator_user_id"], t, body, "/dashboard/profile")]
     return []
 
 

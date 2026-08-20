@@ -42,6 +42,11 @@ export type CreatorProfile = {
   trusted_creator: boolean;
 };
 
+/* 내 프로필(대시보드) 전용 필드 — 공개 조회에는 없다 */
+export type MyProfile = CreatorProfile & {
+  rejection_reason: string | null; // 반려 사유(갭 #101) — REJECTED일 때만
+};
+
 export type ProfileFaq = {
   id: number;
   question: string;

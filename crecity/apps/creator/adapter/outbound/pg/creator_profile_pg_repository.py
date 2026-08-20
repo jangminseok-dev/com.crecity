@@ -162,6 +162,15 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         result = await self._session.execute(stmt)
         return [CreatorProfileMapper.to_entity(orm) for orm in result.scalars()]
 
+    async def list_pending_review(self, limit: int) -> list[CreatorProfile]:
+        result = await self._session.execute(
+            select(CreatorProfileOrm)
+            .where(CreatorProfileOrm.status == ProfileStatus.PENDING.value)
+            .order_by(CreatorProfileOrm.created_at.asc(), CreatorProfileOrm.id.asc())
+            .limit(limit)
+        )
+        return [CreatorProfileMapper.to_entity(orm) for orm in result.scalars()]
+
     async def list_by_user_ids(
         self, user_ids: list[int], status: ProfileStatus
     ) -> list[CreatorProfile]:
@@ -184,12 +193,13 @@ class CreatorProfilePgRepository(CreatorProfileRepository):
         return list(result.scalars())
 
     async def update_status(
-        self, profile_id: int, status: ProfileStatus
+        self, profile_id: int, status: ProfileStatus, rejection_reason: str | None = None
     ) -> CreatorProfile | None:
         result = await self._session.execute(
             update(CreatorProfileOrm)
             .where(CreatorProfileOrm.id == profile_id)
-            .values(status=status.value)
+            # 반려 사유는 상태와 함께 움직인다 — 승인·재심사 전이는 None으로 비워진다(갭 #101)
+            .values(status=status.value, rejection_reason=rejection_reason)
             .returning(CreatorProfileOrm)
         )
         orm = result.scalar_one_or_none()

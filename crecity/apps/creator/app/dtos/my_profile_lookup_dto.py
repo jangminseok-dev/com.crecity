@@ -21,3 +21,4 @@ class MyProfileResult:
     status: str
     created_at: datetime | None
     accepting_orders: bool = True  # 주문 수신 여부(갭 #64) — 대시보드 토글이 읽는다
+    rejection_reason: str | None = None  # 반려 사유(갭 #101) — REJECTED일 때만 값이 있다

@@ -18,10 +18,12 @@ class ProfileReviewInteractor(ProfileReviewUseCase):
         return await self._profiles.list_pending_profiles()
 
     async def review(self, command: ReviewDecisionCommand) -> ProfileReviewSummary:
-        result = await self._profiles.review_profile(command.profile_id, command.approved)
+        result = await self._profiles.review_profile(
+            command.profile_id, command.approved, reason=command.reason
+        )
         if result is None:
             raise ReviewTargetNotFoundError(f"심사 대상을 찾을 수 없습니다: {command.profile_id}")
-        decision = "승인" if command.approved else "반려"
+        decision = "승인" if command.approved else f"반려(사유: {command.reason})"
         await self._record.record(
             subject="profile_review",
             note=(

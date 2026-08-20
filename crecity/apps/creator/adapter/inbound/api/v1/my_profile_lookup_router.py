@@ -30,5 +30,6 @@ async def get_my_profile(
         primary_category=result.primary_category,
         status=result.status,
         accepting_orders=result.accepting_orders,
+        rejection_reason=result.rejection_reason,
         created_at=result.created_at,
     )

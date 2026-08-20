@@ -49,6 +49,7 @@ from creator.adapter.inbound.api.v1.portfolio_management_router import (
 )
 from creator.adapter.inbound.api.v1.profile_router import profile_router
 from creator.adapter.inbound.api.v1.profile_update_router import profile_update_router
+from creator.adapter.inbound.api.v1.profile_resubmission_router import profile_resubmission_router
 from auth.dependencies.access_token_verifier_provider import build_access_token_verifier
 from creator.adapter.outbound.hub.package_summary_gateway import CreatorPackageSummaryGateway
 from auth.adapter.outbound.hub.account_metrics_gateway import AuthAccountMetricsGateway
@@ -208,6 +209,7 @@ app.include_router(similar_profiles_router)
 app.include_router(market_rates_router)
 app.include_router(my_profile_lookup_router)
 app.include_router(profile_update_router)
+app.include_router(profile_resubmission_router)
 app.include_router(portfolio_management_router)
 app.include_router(analytics_management_router)
 app.include_router(faq_management_router)

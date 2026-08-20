@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 
-from admin.adapter.inbound.api.schemas.profile_review_schema import ProfileReviewResponseSchema
+from admin.adapter.inbound.api.schemas.profile_review_schema import (
+    ProfileRejectRequestSchema,
+    ProfileReviewResponseSchema,
+)
 from admin.app.dtos.profile_review_dto import ReviewDecisionCommand
 from admin.app.exceptions import ReviewTargetNotFoundError
 from admin.app.ports.input.profile_review_use_case import ProfileReviewUseCase
@@ -24,7 +27,11 @@ async def list_pending_profiles(
 
 
 async def _review(
-    profile_id: int, approved: bool, user: VerifiedUser, use_case: ProfileReviewUseCase
+    profile_id: int,
+    approved: bool,
+    user: VerifiedUser,
+    use_case: ProfileReviewUseCase,
+    reason: str | None = None,
 ) -> ProfileReviewResponseSchema:
     try:
         result = await use_case.review(
@@ -33,6 +40,7 @@ async def _review(
                 approved=approved,
                 reviewer_id=user.id,
                 reviewer_email=user.email,
+                reason=reason,
             )
         )
     except ReviewTargetNotFoundError as error:
@@ -56,7 +64,9 @@ async def approve_profile(
 )
 async def reject_profile(
     profile_id: int,
+    body: ProfileRejectRequestSchema,
     user: VerifiedUser = Depends(_reviewer),
     use_case: ProfileReviewUseCase = Depends(get_profile_review_use_case),
 ) -> ProfileReviewResponseSchema:
-    return await _review(profile_id, False, user, use_case)
+    """반려는 사유가 필수(갭 #101) — 사유 없는 반려는 크리에이터가 보완할 수 없다."""
+    return await _review(profile_id, False, user, use_case, reason=body.reason)

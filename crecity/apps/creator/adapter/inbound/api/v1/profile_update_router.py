@@ -44,4 +44,5 @@ async def update_my_profile(
         status=result.status,
         created_at=result.created_at,
         accepting_orders=result.accepting_orders,
+        rejection_reason=result.rejection_reason,
     )

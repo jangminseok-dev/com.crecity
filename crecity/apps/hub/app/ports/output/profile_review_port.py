@@ -17,8 +17,14 @@ class ProfileReviewPort(ABC):
         ...
 
     @abstractmethod
-    async def review_profile(self, profile_id: int, approved: bool) -> ProfileReviewSummary | None:
-        """승인(APPROVED)/반려(REJECTED) 전이 — 대상 없으면 None."""
+    async def review_profile(
+        self, profile_id: int, approved: bool, reason: str | None = None
+    ) -> ProfileReviewSummary | None:
+        """승인(APPROVED)/반려(REJECTED) 전이 — 대상 없으면 None.
+
+        반려는 사유(reason)를 함께 저장·알림한다(갭 #101) — 사유 없는 반려는
+        크리에이터가 보완할 수 없다. 승인 시 reason은 무시된다.
+        """
         ...
 
     @abstractmethod
