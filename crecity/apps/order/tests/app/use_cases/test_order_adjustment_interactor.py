@@ -53,8 +53,10 @@ class _StubOrderRepository:
 class _StubAdjustmentRepository:
     def __init__(self):
         self.rows: list[OrderAdjustment] = []
+        self.published: list = []  # 함께 적재된 알림 이벤트(갭 #104)
 
-    async def create(self, order_id, extra_amount_krw, reason):
+    async def create(self, order_id, extra_amount_krw, reason, events=None):
+        self.published += list(events or [])
         row = OrderAdjustment(
             id=len(self.rows) + 1, order_id=order_id, extra_amount_krw=extra_amount_krw,
             reason=reason, status=AdjustmentStatus.REQUESTED,
@@ -73,7 +75,8 @@ class _StubAdjustmentRepository:
             r.order_id == order_id and r.status is AdjustmentStatus.REQUESTED for r in self.rows
         )
 
-    async def save_status(self, adjustment_id, status):
+    async def save_status(self, adjustment_id, status, events=None):
+        self.published += list(events or [])
         self.rows = [
             OrderAdjustment(
                 id=r.id, order_id=r.order_id, extra_amount_krw=r.extra_amount_krw,
@@ -190,3 +193,18 @@ async def test_없는_주문이면_OrderNotFoundError():
                 order_id=99, actor_user_id=CREATOR, extra_amount_krw=1000, reason="사유"
             )
         )
+
+
+async def test_요청과_거절에_알림_이벤트가_함께_실린다():
+    """갭 #104 — 기능은 있는데 상대가 모르면 결제도 거절도 일어나지 않는다."""
+    interactor, adjustments = _interactor()
+    await interactor.request(_command())
+    requested = adjustments.published[-1]
+    assert requested.event_type == "order.adjustment_requested"
+    assert requested.payload["extra_amount_krw"] == 100000
+    assert requested.payload["brand_user_id"] == BRAND
+
+    await interactor.decline(DeclineAdjustmentCommand(adjustment_id=1, actor_user_id=BRAND))
+    declined = adjustments.published[-1]
+    assert declined.event_type == "order.adjustment_declined"
+    assert declined.payload["creator_user_id"] == CREATOR

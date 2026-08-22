@@ -11,7 +11,7 @@
 | order_progress | `POST /order/orders/{id}/accept·reject·submit-draft·approve-draft·submit·request-revision·approve` | 상태 전이 — 규칙·행위자 검증은 도메인 `Order`가 강제(403/409). 거절→크레딧 환불, 승인→적립+수수료 확정. **초안 검토(갭 #85)는 선택 단계**: IN_PROGRESS→초안 제출(납품물 ≥1 전제)→DRAFT_REVIEW(72h, 무응답 자동 컨펌)→컨펌·수정 요청→IN_PROGRESS. 컨펌 표식(`draft_approved`) 후 초안 재제출 409. 수정 요청은 초안·최종 검토가 **같은 한도(revision_limit) 공유**(스냅샷 계약 조건 의미 보존). 취소·분쟁·금액 변경도 DRAFT_REVIEW에서 허용 |
 | deliverable_submission | `POST /order/orders/{id}/deliverables/files·links` · `GET /order/orders/{id}/deliverables` | 납품물(파일·링크) — 등록은 **IN_PROGRESS의 크리에이터만**(도메인 `ensure_can_attach_deliverable`), 열람은 당사자만(403). append-only(분쟁 근거 보존), 파일은 `/uploads/deliverables/` 로컬 저장(이미지·영상·PDF·ZIP, 100MB). 링크는 게시물 본문(`caption`, 3000자, 선택)을 함께 받아 **광고 표기 자동 검수**(갭 #17) |
 | order_cancellation | `POST /order/orders/{id}/cancel-request·cancel-consent·cancel-decline` | 양측 합의 취소 — 요청은 IN_PROGRESS·IN_REVIEW의 당사자 누구나(중복 409), 동의·거부는 **상대방만**(403). 동의 시 CANCELLED + 브랜드 전액 크레딧 환불(단일 트랜잭션). `orders.cancel_requested_by`가 대기 상태 표현 |
-| order_adjustment | `POST·GET /order/orders/{id}/adjustments` · `POST /order/adjustments/{id}/decline` | 진행 중 금액 변경(§3.8·§6, 갭 #31) — 요청은 **IN_PROGRESS·IN_REVIEW의 크리에이터만**(대기 중 중복 409), 거절은 브랜드만. **수락은 추가 결제**(payment `/checkouts/adjustment` → 허브 `OrderAdjustmentPort`로 주문 증액+증가분 예치 단일 트랜잭션). 감액은 미지원(합의 취소로) |
+| order_adjustment | `POST·GET /order/orders/{id}/adjustments` · `POST /order/adjustments/{id}/decline` | 진행 중 금액 변경(§3.8·§6, 갭 #31) — 요청은 **IN_PROGRESS·IN_REVIEW의 크리에이터만**(대기 중 중복 409), 거절은 브랜드만. **수락은 추가 결제**(payment `/checkouts/adjustment` → 허브 `OrderAdjustmentPort`로 주문 증액+증가분 예치 단일 트랜잭션). 감액은 미지원(합의 취소로). **요청·거절은 상대에게 알린다**(갭 #104) — `order.adjustment_requested`(→브랜드, 금액 동봉)·`order.adjustment_declined`(→크리에이터)를 요청 저장·상태 갱신과 **단일 트랜잭션**으로 적재(`create`·`save_status`의 `events` 인자). 모르면 결제도 거절도 일어나지 않아 주문이 멈춘다 |
 | dispute | `POST·GET /order/orders/{id}/disputes` | 분쟁 신고·이력(§3.8 지원팀 중재, 갭 #4) — 신고는 **IN_PROGRESS·IN_REVIEW의 당사자**(사유 10~2000자, 대기 중 분쟁이 있으면 409), 열람은 당사자만. **판정은 admin**(허브 `DisputeResolutionPort`) — 환불(CANCELLED+전액 크레딧)·지급(COMPLETED+적립)·기각(주문 유지). 대기 분쟁이 있으면 `find_expired`가 그 주문을 건너뛴다(자동 승인 보류) |
 | revision_lookup | `GET /order/orders/{id}/revisions` | 수정 요청 이력(갭 #84) — **당사자만(403)**, 요청순. 기록은 `request-revision`이 코멘트(5~2000자 필수)를 `save_transition(revision_comment=…)`으로 전이와 **단일 트랜잭션** 저장(`order_revision_requests`, append-only). `requested_in`(전이 전 상태)이 초안/최종 검토를 구분한다. 횟수 정본은 `orders.revisions_used`(도입 이전 포함) — 이 테이블은 본문 이력 |
 | order_lookup | `GET /order/orders` · `GET /order/orders/{id}` | 내 주문 목록(최신순)·상세 — **당사자만(403)**. 응답에 **조회자 기준 거래 상대**(`counterpart_name`·`counterpart_slug`, 갭 #63)를 붙인다 — 허브 `CreatorRefPort`·`UserDirectoryPort` 경유, 상대 id를 모아 한 번씩만 조회(N+1 회피). 참조가 끊겨도 조회는 성공 |
@@ -56,7 +56,8 @@ IN_PROGRESS·DRAFT_REVIEW·IN_REVIEW ──취소 요청→상대 동의──�
 - **전이 + 원장 기입 + Outbox 이벤트 = 단일 트랜잭션**(`OrderRepository.create/save_transition`의
   `events` 인자 — BOUNDARIES §1). 이벤트는 `app/events.py`의 `order_event`로 만든다
   (order.placed/accepted/rejected/submitted/revision_requested/completed/
-  cancel_requested/cancelled/cancel_declined — notification이 소비).
+  cancel_requested/cancelled/cancel_declined/adjustment_requested/adjustment_declined
+  — notification이 소비).
 - **수락 만료 페널티(갭 #32)**: 72h 무응답 만료는 `accept_expired` 표식을 남겨 거절 환불과
   구분한다 — 인기 랭킹 점수 = 성사 주문 − 만료×`RANKING_ACCEPT_EXPIRY_PENALTY`(core/config).
 - 원장(`ledger_entries`)은 append-only. 잔액 = 적립 합(`BALANCE_CREDIT_TYPES`) −

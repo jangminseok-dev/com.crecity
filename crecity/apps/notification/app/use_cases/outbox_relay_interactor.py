@@ -124,6 +124,24 @@ def _to_drafts(record: OutboxRecord) -> list[NotificationDraft]:
         ]
     if t == "order.cancel_declined":
         return [NotificationDraft(p["requested_by"], t, f"취소 요청이 거부되어 주문이 계속 진행됩니다: {title}", _order_link(p))]
+    if t == "order.adjustment_requested":
+        # 크리에이터가 올린 추가 금액 요청 — 결제할 수 있는 브랜드에게(갭 #104)
+        extra = p.get("extra_amount_krw")
+        amount = f"{extra:,}원 " if isinstance(extra, int) else ""
+        return [
+            NotificationDraft(
+                p["brand_user_id"],
+                t,
+                f"{amount}금액 변경 요청이 도착했습니다 — 결제 또는 거절을 선택해 주세요: {title}",
+                _order_link(p),
+            )
+        ]
+    if t == "order.adjustment_declined":
+        return [
+            NotificationDraft(
+                p["creator_user_id"], t, f"금액 변경 요청이 거절되었습니다: {title}", _order_link(p)
+            )
+        ]
     if t == "order.dispute_raised":
         # 수신자 = 신고자의 상대방
         recipient = (

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+from hub.app.dtos.outbox_event_dto import OutboxEvent
+
 from order.domain.entities.ledger_entry_entity import LedgerEntryDraft
 from order.domain.entities.order_adjustment_entity import AdjustmentStatus, OrderAdjustment
 from order.domain.entities.order_entity import Order
@@ -12,8 +14,14 @@ class AdjustmentRepository(ABC):
 
     @abstractmethod
     async def create(
-        self, order_id: int, extra_amount_krw: int, reason: str
-    ) -> OrderAdjustment: ...
+        self,
+        order_id: int,
+        extra_amount_krw: int,
+        reason: str,
+        events: list[OutboxEvent] | None = None,
+    ) -> OrderAdjustment:
+        """요청과 알림 이벤트(갭 #104)를 같은 트랜잭션으로 적재한다."""
+        ...
 
     @abstractmethod
     async def find_by_id(self, adjustment_id: int) -> OrderAdjustment | None: ...
@@ -29,7 +37,12 @@ class AdjustmentRepository(ABC):
         ...
 
     @abstractmethod
-    async def save_status(self, adjustment_id: int, status: AdjustmentStatus) -> None: ...
+    async def save_status(
+        self,
+        adjustment_id: int,
+        status: AdjustmentStatus,
+        events: list[OutboxEvent] | None = None,
+    ) -> None: ...
 
     @abstractmethod
     async def apply_payment(

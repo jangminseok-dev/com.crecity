@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from order.app.events import order_event
 from order.app.dtos.order_adjustment_dto import (
     AdjustmentListQuery,
     AdjustmentResult,
@@ -45,7 +46,17 @@ class OrderAdjustmentInteractor(OrderAdjustmentUseCase):
             raise DuplicateAdjustmentError("이미 대기 중인 금액 변경 요청이 있습니다.")
 
         adjustment = await self._adjustments.create(
-            order_id=order.id, extra_amount_krw=command.extra_amount_krw, reason=reason
+            order_id=order.id,
+            extra_amount_krw=command.extra_amount_krw,
+            reason=reason,
+            # 요청 사실을 모르면 추가 결제를 할 수 없다(갭 #104) — 요청 저장과 같은 커밋
+            events=[
+                order_event(
+                    "order.adjustment_requested",
+                    order,
+                    extra_amount_krw=command.extra_amount_krw,
+                )
+            ],
         )
         return AdjustmentResult.from_entity(adjustment)
 
@@ -58,7 +69,15 @@ class OrderAdjustmentInteractor(OrderAdjustmentUseCase):
             raise NotOrderActorError("주문한 브랜드만 거절할 수 있습니다.")
 
         declined = adjustment.decline()  # 이미 처리됐으면 InvalidAdjustmentError
-        await self._adjustments.save_status(declined.id, declined.status)
+        await self._adjustments.save_status(
+            declined.id,
+            declined.status,
+            events=[
+                order_event(
+                    "order.adjustment_declined", order, extra_amount_krw=declined.extra_amount_krw
+                )
+            ],
+        )
         return AdjustmentResult.from_entity(declined)
 
     async def list_by_order(self, query: AdjustmentListQuery) -> list[AdjustmentResult]:

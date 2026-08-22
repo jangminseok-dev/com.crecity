@@ -22,6 +22,8 @@
 | order.cancel_requested | 요청자의 상대방(payload `requested_by`로 판정) | /dashboard/orders/{id} |
 | order.cancelled | 브랜드(환불 안내)+크리에이터 양측 | /dashboard/orders/{id} |
 | order.cancel_declined | 요청자(payload `requested_by`) | /dashboard/orders/{id} |
+| order.adjustment_requested(갭 #104 — 요청 금액 표기) | 브랜드(결제·거절할 쪽) | /dashboard/orders/{id} |
+| order.adjustment_declined(갭 #104) | 크리에이터(요청한 쪽) | /dashboard/orders/{id} |
 | order.dispute_raised | 신고자의 상대방(payload `raised_by`로 판정) | /dashboard/orders/{id} |
 | order.dispute_resolved | 브랜드+크리에이터 양측(판정 결과 문구 분기) | /dashboard/orders/{id} |
 | order.deadline_soon | payload `recipient_user_id`(움직여야 하는 쪽) | /dashboard/orders/{id} |

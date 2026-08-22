@@ -3,6 +3,9 @@ from __future__ import annotations
 from sqlalchemy import exists, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from hub.adapter.outbound.pg.outbox_pg_store import enqueue_events
+from hub.app.dtos.outbox_event_dto import OutboxEvent
+
 from order.adapter.outbound.orm.ledger_entry_orm import LedgerEntryOrm
 from order.adapter.outbound.orm.order_adjustment_orm import OrderAdjustmentOrm
 from order.adapter.outbound.orm.order_orm import OrderOrm
@@ -29,7 +32,11 @@ class AdjustmentPgRepository(AdjustmentRepository):
         self._session = session
 
     async def create(
-        self, order_id: int, extra_amount_krw: int, reason: str
+        self,
+        order_id: int,
+        extra_amount_krw: int,
+        reason: str,
+        events: list[OutboxEvent] | None = None,
     ) -> OrderAdjustment:
         result = await self._session.execute(
             insert(OrderAdjustmentOrm)
@@ -42,6 +49,7 @@ class AdjustmentPgRepository(AdjustmentRepository):
             .returning(OrderAdjustmentOrm)
         )
         orm = result.scalar_one()
+        enqueue_events(self._session, events or [])  # 요청+알림 = 단일 커밋
         await self._session.commit()
         return _to_entity(orm)
 
@@ -68,12 +76,18 @@ class AdjustmentPgRepository(AdjustmentRepository):
         )
         return bool(result.scalar())
 
-    async def save_status(self, adjustment_id: int, status: AdjustmentStatus) -> None:
+    async def save_status(
+        self,
+        adjustment_id: int,
+        status: AdjustmentStatus,
+        events: list[OutboxEvent] | None = None,
+    ) -> None:
         await self._session.execute(
             update(OrderAdjustmentOrm)
             .where(OrderAdjustmentOrm.id == adjustment_id)
             .values(status=status.value)
         )
+        enqueue_events(self._session, events or [])
         await self._session.commit()
 
     async def apply_payment(

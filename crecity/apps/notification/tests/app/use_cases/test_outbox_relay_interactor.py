@@ -150,6 +150,22 @@ async def test_인출_실패는_잔액_복원을_함께_알린다():
     assert "500,000원" in draft.body and "복원" in draft.body
 
 
+async def test_금액_변경_알림은_결제할_쪽과_요청한_쪽에_간다():
+    """갭 #104 — 요청은 결제할 브랜드에게, 거절은 요청한 크리에이터에게."""
+    store = _StubRelayStore(
+        [_record(event_type="order.adjustment_requested", extra_amount_krw=100000)]
+    )
+    await OutboxRelayInteractor(store).relay()
+    draft = store.published[0][1][0]
+    assert draft.user_id == BRAND
+    assert "100,000원" in draft.body
+    assert draft.link == "/dashboard/orders/7"
+
+    store = _StubRelayStore([_record(event_type="order.adjustment_declined")])
+    await OutboxRelayInteractor(store).relay()
+    assert store.published[0][1][0].user_id == CREATOR
+
+
 async def test_모르는_이벤트는_알림_없이_발행_마킹만_된다():
     store = _StubRelayStore([_record(event_type="future.unknown")])
     result = await OutboxRelayInteractor(store).relay()
