@@ -6,6 +6,8 @@ from campaign.app.dtos.campaign_application_dto import (
     ApplicationResult,
     ApplicationsQuery,
     ApplyCommand,
+    MyApplicationResult,
+    MyApplicationsQuery,
 )
 from campaign.app.events import application_received_event
 from campaign.app.exceptions import (
@@ -90,3 +92,28 @@ class CampaignApplicationInteractor(CampaignApplicationUseCase):
             query.campaign_id, sort=query.sort, only_open=query.only_open
         )
         return [await self._to_result(application) for application in applications]
+
+    async def list_my_applications(
+        self, query: MyApplicationsQuery
+    ) -> list[MyApplicationResult]:
+        if query.account_type != "CREATOR":
+            raise NotCreatorAccountError("크리에이터 계정만 지원 내역을 볼 수 있습니다.")
+        results = []
+        for application in await self._applications.list_by_creator(query.creator_user_id):
+            campaign = await self._campaigns.find_by_id(application.campaign_id)
+            if campaign is None:  # 공고가 사라진 지원은 보여줄 게 없다
+                continue
+            results.append(
+                MyApplicationResult(
+                    id=application.id,
+                    campaign_id=campaign.id,
+                    campaign_title=campaign.title,
+                    campaign_status=campaign.status.value,
+                    campaign_deadline_at=campaign.deadline_at,
+                    message=application.message,
+                    proposed_price_krw=application.proposed_price_krw,
+                    order_id=application.order_id,
+                    created_at=application.created_at,
+                )
+            )
+        return results

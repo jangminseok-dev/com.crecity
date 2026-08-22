@@ -180,6 +180,17 @@ def check_creator(page: Page) -> None:
     see(page, "인출 요청", "인출 폼 표시")
     see(page, "지급명세서", "지급명세서 섹션 표시")
 
+    # 내 지원 내역(갭 #103) — 같은 URL이 브랜드에겐 공고 등록 폼이다(계정 유형 분기)
+    see(page, "내 지원", "크리에이터 탭에 내 지원 노출")
+    page.goto(f"{FRONTEND}/dashboard/campaigns")
+    # 지원 상태 배지 또는 빈 안내 — 조회가 끝날 때까지 기다린 뒤 본다(즉시 count는 스켈레톤을 센다)
+    see(page, "/검토 대기|미선정|선정|아직 지원한 공고가 없습니다/", "지원 내역 상태 또는 빈 안내 표시")
+    check(
+        page.locator("text=공고 등록").count() == 0,
+        "크리에이터 화면에 브랜드 공고 폼 없음",
+        page=page,
+    )
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="브라우저 E2E 화면 회귀")

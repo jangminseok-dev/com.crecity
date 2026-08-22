@@ -1,6 +1,10 @@
 import pytest
 
-from campaign.app.dtos.campaign_application_dto import ApplicationsQuery, ApplyCommand
+from campaign.app.dtos.campaign_application_dto import (
+    ApplicationsQuery,
+    ApplyCommand,
+    MyApplicationsQuery,
+)
 from campaign.app.exceptions import (
     AlreadyAppliedError,
     CampaignNotFoundError,
@@ -66,6 +70,9 @@ class _StubApplicationRepository:
     async def list_by_campaign(self, campaign_id, sort=None, only_open=False):
         return [a for a in self.applications if a.campaign_id == campaign_id]
 
+    async def list_by_creator(self, creator_user_id):
+        return [a for a in self.applications if a.creator_user_id == creator_user_id]
+
 
 class _StubCreatorRefPort:
     def __init__(self, ref: CreatorRef | None = _REF):
@@ -82,6 +89,13 @@ def _campaign(status=CampaignStatus.OPEN):
     return Campaign(
         id=1, brand_user_id=BRAND, title="신제품 릴스", description="설명",
         platform=CampaignPlatform.INSTAGRAM, budget_krw=500000, status=status,
+    )
+
+
+def _application():
+    return CampaignApplication(
+        id=1, campaign_id=1, creator_user_id=CREATOR,
+        message="제안", proposed_price_krw=400000,
     )
 
 
@@ -171,3 +185,41 @@ async def test_지원하면_공고를_올린_브랜드에게_알림이_간다():
     event = applications.published[0]
     assert event.event_type == "campaign.application_received"
     assert event.payload["brand_user_id"] == BRAND
+
+
+async def test_내_지원_내역은_공고_정보를_함께_준다():
+    """갭 #103 — 지원 뒤 상태를 확인할 경로. 상태는 공고 정보에서 파생한다."""
+    interactor = _interactor(
+        campaign=_campaign(status=CampaignStatus.CLOSED),
+        applications=_StubApplicationRepository([_application()]),
+    )
+
+    results = await interactor.list_my_applications(
+        MyApplicationsQuery(creator_user_id=CREATOR, account_type="CREATOR")
+    )
+
+    assert len(results) == 1
+    assert results[0].campaign_title == "신제품 릴스"
+    assert results[0].campaign_status == "CLOSED"  # 미선정 판단 근거
+    assert results[0].order_id is None
+
+
+async def test_공고가_사라진_지원은_내역에서_빠진다():
+    interactor = CampaignApplicationInteractor(
+        campaigns=_StubCampaignRepository(None),
+        applications=_StubApplicationRepository([_application()]),
+        creators=_StubCreatorRefPort(),
+    )
+
+    results = await interactor.list_my_applications(
+        MyApplicationsQuery(creator_user_id=CREATOR, account_type="CREATOR")
+    )
+
+    assert results == []
+
+
+async def test_브랜드_계정은_지원_내역을_볼_수_없다():
+    with pytest.raises(NotCreatorAccountError):
+        await _interactor().list_my_applications(
+            MyApplicationsQuery(creator_user_id=BRAND, account_type="BRAND")
+        )

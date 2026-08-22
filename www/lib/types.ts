@@ -160,6 +160,18 @@ export type CampaignApplication = {
   created_at: string | null;
 };
 
+export type MyCampaignApplication = {
+  id: number;
+  campaign_id: number;
+  campaign_title: string;
+  campaign_status: "OPEN" | "CLOSED";
+  campaign_deadline_at: string | null;
+  message: string;
+  proposed_price_krw: number;
+  order_id: number | null; // 선정(결제)되면 생성된 주문 id
+  created_at: string | null;
+};
+
 export type ChatConversation = {
   id: number;
   counterpart_name: string;

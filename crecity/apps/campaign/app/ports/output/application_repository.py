@@ -36,6 +36,11 @@ class ApplicationRepository(ABC):
         ...
 
     @abstractmethod
+    async def list_by_creator(self, creator_user_id: int) -> list[CampaignApplication]:
+        """크리에이터 본인의 지원 — 최신순(갭 #103)."""
+        ...
+
+    @abstractmethod
     async def find_by_id(self, application_id: int) -> CampaignApplication | None: ...
 
     @abstractmethod

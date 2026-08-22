@@ -10,8 +10,12 @@
 | campaign_posting | `POST /campaign/campaigns` · `POST /campaign/campaigns/{id}/close` | 공고 등록(**브랜드만 403**, OPEN 시작) · 마감(소유 브랜드만 403, 재마감 409 — 도메인 검증) |
 | campaign_listing | `GET /campaign/campaigns` · `/{id}` · `GET /campaign/my/campaigns` | OPEN 목록·상세(로그인 필수)·브랜드 내 공고 |
 | campaign_application | `POST·GET /campaign/campaigns/{id}/applications` | 지원(**크리에이터만·프로필 필수 403**, 공고당 1회 409, 마감 공고·마감일 경과 409) · 지원자 열람(**공고 브랜드만 403**). 지원 저장과 **같은 트랜잭션**으로 `campaign.application_received`를 적재해 공고를 올린 브랜드에게 알린다(갭 #73) |
+| campaign_application (내 지원) | `GET /campaign/my/applications` | 크리에이터 본인의 지원 내역 — 최신순(**크리에이터만 403**). 응답에 공고 제목·상태·마감일을 함께 실어 **화면이 상태를 파생**한다(갭 #103) |
 | campaign_deadline_sweep | (HTTP 없음) | 지원 마감일 스캔 — `scripts/campaign_deadline_sweep.py`를 cron이 주기 실행(갭 #27). 마감일 경과 OPEN 공고 → CLOSED |
 
+- **지원 상태 컬럼을 만들지 않는다(갭 #103)**: "선정"은 `campaign_applications.order_id`,
+  "미선정"은 공고의 `status`·`deadline_at`에서 나온다 — 같은 사실을 두 곳에 두면 어긋난다.
+  공고가 사라진 지원은 내역에서 제외한다(보여줄 맥락이 없다).
 - **지원자 정렬·필터(갭 #70)**: `ApplicationSort`(oldest·latest·price_asc·price_desc)
   + `only_open`(미수락만). 캠페인이 소유한 값으로만 정렬한다 — 팔로워·평점은 다른 스포크
   소유라 DB 정렬이 스포크 경계를 넘는다(갭 #45와 같은 이유).

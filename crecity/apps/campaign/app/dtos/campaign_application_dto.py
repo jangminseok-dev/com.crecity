@@ -25,6 +25,33 @@ class ApplicationsQuery:
 
 
 @dataclass(frozen=True)
+class MyApplicationsQuery:
+    """크리에이터 본인의 지원 내역 조회(갭 #103)."""
+
+    creator_user_id: int
+    account_type: str  # CREATOR만
+
+
+@dataclass(frozen=True)
+class MyApplicationResult:
+    """내 지원 1건 — 공고 정보를 함께 실어 상태를 화면에서 파생한다(갭 #103).
+
+    지원 상태는 별도 컬럼이 아니라 `order_id`(선정)와 공고 상태·마감일(마감)에서
+    나온다 — 같은 사실을 두 곳에 두지 않는다.
+    """
+
+    id: int
+    campaign_id: int
+    campaign_title: str
+    campaign_status: str  # OPEN | CLOSED
+    campaign_deadline_at: datetime | None
+    message: str
+    proposed_price_krw: int
+    order_id: int | None  # 선정(결제)되면 생성된 주문 id
+    created_at: datetime | None
+
+
+@dataclass(frozen=True)
 class ApplicationResult:
 
     id: int

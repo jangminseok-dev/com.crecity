@@ -6,6 +6,8 @@ from campaign.app.dtos.campaign_application_dto import (
     ApplicationResult,
     ApplicationsQuery,
     ApplyCommand,
+    MyApplicationResult,
+    MyApplicationsQuery,
 )
 
 
@@ -28,5 +30,16 @@ class CampaignApplicationUseCase(ABC):
 
         Raises:
             CampaignNotFoundError · NotCampaignOwnerError(도메인, 403)
+        """
+        ...
+
+    @abstractmethod
+    async def list_my_applications(
+        self, query: MyApplicationsQuery
+    ) -> list[MyApplicationResult]:
+        """크리에이터 본인의 지원 내역 — 최신순(갭 #103).
+
+        Raises:
+            NotCreatorAccountError(403)
         """
         ...

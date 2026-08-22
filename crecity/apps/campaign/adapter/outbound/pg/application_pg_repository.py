@@ -74,6 +74,16 @@ class ApplicationPgRepository(ApplicationRepository):
         result = await self._session.execute(statement.order_by(*_order_by(sort)))
         return [CampaignMapper.application_to_entity(orm) for orm in result.scalars()]
 
+    async def list_by_creator(self, creator_user_id: int) -> list[CampaignApplication]:
+        result = await self._session.execute(
+            select(CampaignApplicationOrm)
+            .where(CampaignApplicationOrm.creator_user_id == creator_user_id)
+            .order_by(
+                CampaignApplicationOrm.created_at.desc(), CampaignApplicationOrm.id.desc()
+            )
+        )
+        return [CampaignMapper.application_to_entity(orm) for orm in result.scalars()]
+
     async def find_by_id(self, application_id: int) -> CampaignApplication | None:
         orm = await self._session.get(CampaignApplicationOrm, application_id)
         return CampaignMapper.application_to_entity(orm) if orm is not None else None

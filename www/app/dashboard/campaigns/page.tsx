@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { z } from "zod";
 
-import AccountTypeGuard from "@/components/account-type-guard";
+import MyApplications from "@/components/my-applications";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { BRIEF_SKELETON } from "@/lib/campaign-brief";
 import { CREATOR_CATEGORIES, PLATFORM_LABELS, formatKrw } from "@/lib/labels";
 import type { Campaign } from "@/lib/types";
@@ -203,15 +204,11 @@ function CampaignManager() {
   );
 }
 
-/* 크리에이터가 URL로 직접 열면 공고 폼 대신 안내(갭 #93) — 지원은 공고 목록에서 */
+/* 같은 URL이 계정 유형에 따라 갈린다 — 브랜드는 공고 관리, 크리에이터는 내 지원 내역(갭 #103).
+   #93의 안내 화면을 크리에이터에게 실제로 쓸모 있는 화면으로 바꾼 것이다. */
 export default function DashboardCampaignsPage() {
-  return (
-    <AccountTypeGuard
-      require="BRAND"
-      feature="공고 관리"
-      hint={{ href: "/campaigns", label: "공고 목록에서 지원하러 가기" }}
-    >
-      <CampaignManager />
-    </AccountTypeGuard>
-  );
+  const user = useAuthStore((s) => s.user);
+
+  if (!user) return <Skeleton className="h-40 w-full" />;
+  return user.account_type === "CREATOR" ? <MyApplications /> : <CampaignManager />;
 }

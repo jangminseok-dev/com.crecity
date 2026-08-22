@@ -113,6 +113,7 @@ def check_auth_required() -> None:
         "/admin/dashboard/metrics",
         "/admin/reports/open",
         "/admin/orders",
+        "/campaign/my/applications",
     ):
         expect(f"{BACKEND}{path}", 401, f"미인증 차단 {path}")
 
@@ -139,6 +140,21 @@ def check_with_tokens() -> None:
 
     # 권한 없는 계정은 운영 API에 닿지 못한다
     expect(f"{BACKEND}/admin/reports/open", 403, "권한 없는 운영 API 차단", token=brand)
+
+    # 내 지원 내역(갭 #103) — 크리에이터 전용, 응답에 공고 정보가 실려야 상태를 파생할 수 있다
+    status, applications = request(f"{BACKEND}/campaign/my/applications", creator)
+    check(status == 200 and applications is not None, "크리에이터 내 지원 내역")
+    if applications:
+        check(
+            all(
+                {"campaign_title", "campaign_status", "order_id"} <= set(application)
+                for application in applications
+            ),
+            "지원 내역에 공고 제목·상태·주문 포함",
+        )
+    expect(
+        f"{BACKEND}/campaign/my/applications", 403, "브랜드 지원 내역 차단", token=brand
+    )
 
     # 응답 필드 — 화면이 읽는 값이 실제로 오는지(타입 검사로는 못 잡는 부분)
     status, profile = request(f"{BACKEND}/creator/my/profile", creator)

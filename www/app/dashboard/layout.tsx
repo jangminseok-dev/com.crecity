@@ -11,6 +11,7 @@ const CREATOR_TABS = [
   { href: "/dashboard/profile", label: "내 프로필" },
   { href: "/dashboard/packages", label: "판매 패키지" },
   { href: "/dashboard/orders", label: "주문 관리" },
+  { href: "/dashboard/campaigns", label: "내 지원" },
   { href: "/dashboard/balance", label: "잔액" },
   { href: "/dashboard/settings", label: "설정" },
 ];

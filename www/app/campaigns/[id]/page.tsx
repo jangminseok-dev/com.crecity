@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { PLATFORM_LABELS, formatKrw } from "@/lib/labels";
-import type { Campaign, CampaignApplication } from "@/lib/types";
+import type { Campaign, CampaignApplication, MyCampaignApplication } from "@/lib/types";
 
 const applySchema = z.object({
   message: z.string().min(10, "제안 내용을 10자 이상 작성해 주세요."),
@@ -33,6 +33,29 @@ function ApplyForm({ campaignId }: { campaignId: number }) {
     error: null,
     done: false,
   });
+  // 이미 지원했는지(갭 #103) — 눌러서 409로 알게 되지 않도록 미리 본다
+  const { data: mine } = useQuery({
+    queryKey: ["myApplications"],
+    queryFn: () => apiFetch<MyCampaignApplication[]>("/campaign/my/applications"),
+  });
+
+  if (mine?.some((application) => application.campaign_id === campaignId)) {
+    return (
+      <Card>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
+          <p className="text-sm text-muted-foreground">
+            이미 지원한 공고입니다 — 진행 상태는 내 지원에서 볼 수 있어요.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            render={<Link href="/dashboard/campaigns">내 지원 보기</Link>}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (form.done) {
     return (

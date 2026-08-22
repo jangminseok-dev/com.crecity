@@ -3,8 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from campaign.adapter.inbound.api.schemas.campaign_application_schema import (
     ApplicationResponseSchema,
     ApplyRequestSchema,
+    MyApplicationResponseSchema,
 )
-from campaign.app.dtos.campaign_application_dto import ApplicationsQuery, ApplyCommand
+from campaign.app.dtos.campaign_application_dto import (
+    ApplicationsQuery,
+    ApplyCommand,
+    MyApplicationsQuery,
+)
 from campaign.app.exceptions import (
     AlreadyAppliedError,
     CampaignNotFoundError,
@@ -96,3 +101,33 @@ async def list_applications(
     except NotCampaignOwnerError as error:
         raise HTTPException(status_code=403, detail=str(error))
     return [_to_schema(result) for result in results]
+
+
+@campaign_application_router.get(
+    "/my/applications", response_model=list[MyApplicationResponseSchema]
+)
+async def list_my_applications(
+    user: VerifiedUser = Depends(get_current_user),
+    use_case: CampaignApplicationUseCase = Depends(get_campaign_application_use_case),
+) -> list[MyApplicationResponseSchema]:
+    """내가 지원한 공고 — 최신순(갭 #103)."""
+    try:
+        results = await use_case.list_my_applications(
+            MyApplicationsQuery(creator_user_id=user.id, account_type=user.account_type)
+        )
+    except NotCreatorAccountError as error:
+        raise HTTPException(status_code=403, detail=str(error))
+    return [
+        MyApplicationResponseSchema(
+            id=result.id,
+            campaign_id=result.campaign_id,
+            campaign_title=result.campaign_title,
+            campaign_status=result.campaign_status,
+            campaign_deadline_at=result.campaign_deadline_at,
+            message=result.message,
+            proposed_price_krw=result.proposed_price_krw,
+            order_id=result.order_id,
+            created_at=result.created_at,
+        )
+        for result in results
+    ]
