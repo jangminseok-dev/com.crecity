@@ -1,0 +1,11 @@
+[Unit]
+Description=crecity 공고 마감 스캔 10분 주기
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=10min
+AccuracySec=30s
+Unit=crecity-campaign-sweep.service
+
+[Install]
+WantedBy=timers.target

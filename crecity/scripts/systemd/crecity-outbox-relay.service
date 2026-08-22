@@ -1,0 +1,21 @@
+[Unit]
+Description=crecity Outbox 릴레이 — 미발행 이벤트를 인앱 알림으로 변환
+Documentation=file:///srv/crecity/crecity/_docs/BOUNDARIES.md
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=crecity
+Group=crecity
+WorkingDirectory=/srv/crecity/crecity
+Environment=PYTHONPATH=/srv/crecity/crecity:/srv/crecity/crecity/apps
+ExecStart=/srv/crecity/.venv/bin/python scripts/notification_outbox_worker.py
+SyslogIdentifier=crecity-outbox-relay
+# 주기(60s)보다 짧게 — 매달린 실행이 다음 주기를 계속 밀어내지 않도록 끊는다.
+# 발행 마킹 전 죽어도 다음 주기가 재처리한다(유실 없음).
+TimeoutStartSec=45s
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes

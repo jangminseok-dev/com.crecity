@@ -1,0 +1,19 @@
+[Unit]
+Description=crecity 공고 지원 마감일 스캔 — 마감일 경과 공고 자동 CLOSED
+Documentation=file:///srv/crecity/crecity/_docs/BOUNDARIES.md
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=crecity
+Group=crecity
+WorkingDirectory=/srv/crecity/crecity
+Environment=PYTHONPATH=/srv/crecity/crecity:/srv/crecity/crecity/apps
+ExecStart=/srv/crecity/.venv/bin/python scripts/campaign_deadline_sweep.py
+SyslogIdentifier=crecity-campaign-sweep
+TimeoutStartSec=4min
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes

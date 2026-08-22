@@ -1,0 +1,11 @@
+[Unit]
+Description=crecity 주문 마감 스캔 5분 주기
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=15s
+Unit=crecity-order-sweep.service
+
+[Install]
+WantedBy=timers.target

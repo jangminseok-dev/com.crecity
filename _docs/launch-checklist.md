@@ -21,7 +21,7 @@
 
 | # | 항목 | 비고 |
 | --- | --- | --- |
-| L-6 | cron 3종 등록 — `scripts/order_deadline_sweep.py`(5분) · `scripts/campaign_deadline_sweep.py`(10분) · `scripts/notification_outbox_worker.py`(1분) | **유닛 파일 작성은 에이전트가 도울 수 있음**(launchd/systemd/crontab + 로깅·중복 실행 방지) |
+| L-6 | cron 3종 **등록** — 유닛 파일은 2026-08-21 작성 완료(`crecity/scripts/systemd/` — service+timer 3쌍 + README) | 남은 것은 배포 호스트에서 경로 치환 후 `systemctl enable --now` 3줄. 중복 실행 방지는 systemd oneshot이, 로깅은 journald가 담당(별도 락·로테이션 없음) |
 | L-7 | 업로드 디렉토리(`UPLOAD_DIR`) 영속 볼륨 확인 · 백업 | 포트폴리오·스크린샷·납품물이 여기 쌓임 |
 | L-8 | 약관·개인정보 처리방침(`/terms`·`/privacy`) 법률 검토 | 현재 템플릿 수준 — L-5 이후 |
 | L-9 | 도메인·HTTPS·프로덕션 `.env` 분리 | |

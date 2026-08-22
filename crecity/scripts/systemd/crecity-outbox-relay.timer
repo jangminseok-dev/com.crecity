@@ -1,0 +1,12 @@
+[Unit]
+Description=crecity Outbox 릴레이 1분 주기
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+# 기본 정확도 1분은 1분 주기에서 실행 간격이 최대 2배로 벌어진다.
+AccuracySec=5s
+Unit=crecity-outbox-relay.service
+
+[Install]
+WantedBy=timers.target
