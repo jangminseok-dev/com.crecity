@@ -59,6 +59,10 @@ function WithdrawalSection({ balanceKrw }: { balanceKrw: number }) {
     },
   });
 
+  // 직전 인출 계좌를 채워 준다(갭 #105) — 목록은 최신순이라 첫 행이 마지막 계좌다.
+  // 계좌는 지급 시점 스냅샷이라 요청마다 다시 실려 나간다(기본 계좌 테이블을 만들지 않는다).
+  const lastAccount = withdrawals?.[0];
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formElement = e.currentTarget;
@@ -72,8 +76,13 @@ function WithdrawalSection({ balanceKrw }: { balanceKrw: number }) {
           <h2 className="font-semibold">인출 요청</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             원천징수 3.3%를 제외한 금액이 입금됩니다. 이체는 영업일 기준 순차 처리돼요.
+            {lastAccount && " 계좌는 직전 인출 정보로 채워 뒀어요 — 바뀌었다면 고쳐 주세요."}
           </p>
-          <form onSubmit={handleSubmit} className="mt-4 grid gap-4">
+          <form
+            key={lastAccount?.id ?? "empty"}
+            onSubmit={handleSubmit}
+            className="mt-4 grid gap-4"
+          >
             <div className="grid gap-1.5">
               <Label htmlFor="amount_krw">인출 금액 (원)</Label>
               <Input
@@ -89,15 +98,33 @@ function WithdrawalSection({ balanceKrw }: { balanceKrw: number }) {
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="grid gap-1.5">
                 <Label htmlFor="bank_name">은행명</Label>
-                <Input id="bank_name" name="bank_name" placeholder="국민은행" required />
+                <Input
+                  id="bank_name"
+                  name="bank_name"
+                  placeholder="국민은행"
+                  defaultValue={lastAccount?.bank_name}
+                  required
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="account_number">계좌번호</Label>
-                <Input id="account_number" name="account_number" placeholder="000-000-000000" required />
+                <Input
+                  id="account_number"
+                  name="account_number"
+                  placeholder="000-000-000000"
+                  defaultValue={lastAccount?.account_number}
+                  required
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="account_holder">예금주</Label>
-                <Input id="account_holder" name="account_holder" placeholder="홍길동" required />
+                <Input
+                  id="account_holder"
+                  name="account_holder"
+                  placeholder="홍길동"
+                  defaultValue={lastAccount?.account_holder}
+                  required
+                />
               </div>
             </div>
             {request.error && (
