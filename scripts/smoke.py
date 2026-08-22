@@ -35,11 +35,17 @@ BRAND_EMAIL = "jang037@naver.com"
 CREATOR_EMAIL = "kim-beauty@sample.crecity.local"
 
 _results: list[tuple[bool, str]] = []
+_skipped: list[str] = []
 
 
 def check(ok: bool, label: str, detail: str = "") -> bool:
     _results.append((ok, f"{label}{f' — {detail}' if detail else ''}"))
     return ok
+
+
+def skip(label: str, reason: str) -> None:
+    """검사할 데이터가 없어 건너뛴 항목 — 통과 건수만 보면 사라진 걸 눈치채지 못한다."""
+    _skipped.append(f"{label} — {reason}")
 
 
 def request(url: str, token: str | None = None, method: str = "GET", body: dict | None = None):
@@ -152,6 +158,8 @@ def check_with_tokens() -> None:
             ),
             "지원 내역에 공고 제목·상태·주문 포함",
         )
+    else:
+        skip("지원 내역에 공고 제목·상태·주문 포함", "지원 데이터 없음")
     expect(
         f"{BACKEND}/campaign/my/applications", 403, "브랜드 지원 내역 차단", token=brand
     )
@@ -277,7 +285,10 @@ def main() -> int:
     failures = [label for ok, label in _results if not ok]
     for label in failures:
         print(f"  ✕ {label}")
-    print(f"\n통과 {len(_results) - len(failures)} · 실패 {len(failures)}")
+    for label in _skipped:
+        print(f"  ⊘ {label}")
+    skipped = f" · 건너뜀 {len(_skipped)}" if _skipped else ""
+    print(f"\n통과 {len(_results) - len(failures)} · 실패 {len(failures)}{skipped}")
     return 1 if failures else 0
 
 
