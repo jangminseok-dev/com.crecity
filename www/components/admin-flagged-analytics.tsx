@@ -42,18 +42,21 @@ export default function AdminFlaggedAnalytics() {
       setError(mutationError instanceof ApiError ? mutationError.detail : "처리에 실패했습니다."),
   });
 
-  if (!flagged || flagged.length === 0) return null; // 큐가 비면 섹션 자체를 숨긴다
-
   return (
     <section className="mt-12">
       <h2 className="text-xl font-bold tracking-[-0.02em]">지표 재검토</h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        자가 입력 지표에서 이상치가 감지됐습니다 — 스크린샷과 대조해 확인 처리하거나, 문제가
-        있으면 프로필을 반려하세요.
+        자가 입력 지표에서 이상치가 감지되면 여기에 쌓입니다 — 스크린샷과 대조해 확인 처리하거나,
+        문제가 있으면 프로필을 반려하세요.
       </p>
       {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
       <div className="mt-4 grid gap-3">
-        {flagged.map((item) => (
+        {!flagged || flagged.length === 0 ? (
+          <p className="rounded-xl border border-dashed py-12 text-center text-sm text-muted-foreground">
+            재검토할 지표가 없습니다.
+          </p>
+        ) : (
+        flagged.map((item) => (
           <Card key={item.id}>
             <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
               <div>
@@ -80,7 +83,8 @@ export default function AdminFlaggedAnalytics() {
               </Button>
             </CardContent>
           </Card>
-        ))}
+        ))
+        )}
       </div>
     </section>
   );

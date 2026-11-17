@@ -54,6 +54,16 @@ class _StubDeliverableRepository:
         return self.count
 
 
+class _StubDisputeRepository:
+    """대기 분쟁 유무만 답한다 — 승인·취소 동의 보류 판단에 쓰는 메서드만."""
+
+    def __init__(self, open_order_ids=()):
+        self.open_order_ids = set(open_order_ids)
+
+    async def find_open_by_order(self, order_id):
+        return object() if order_id in self.open_order_ids else None
+
+
 def _order(status=OrderStatus.PENDING_ACCEPT, deadline_at=_NOW + timedelta(hours=72)):
     return Order(
         id=1,
@@ -70,14 +80,22 @@ def _order(status=OrderStatus.PENDING_ACCEPT, deadline_at=_NOW + timedelta(hours
     )
 
 
-def _interactor(order, deliverable_count=1):
+def _interactor(order, deliverable_count=1, open_dispute=False):
     repo = _StubOrderRepository(order)
     interactor = OrderProgressInteractor(
         orders=repo,
         deliverables=_StubDeliverableRepository(deliverable_count),
+        disputes=_StubDisputeRepository([order.id] if open_dispute and order else []),
         review_deadline=timedelta(hours=72),
     )
     return interactor, repo
+
+
+async def test_대기_분쟁이_있으면_승인이_보류된다():
+    interactor, repo = _interactor(_order(status=OrderStatus.IN_REVIEW), open_dispute=True)
+    with pytest.raises(InvalidOrderTransitionError, match="분쟁"):
+        await interactor.approve(OrderTransitionCommand(order_id=1, actor_user_id=BRAND))
+    assert repo.saved == []  # 전이·원장 기입 없음
 
 
 async def test_수락하면_작업중으로_저장된다():

@@ -8,8 +8,9 @@ from order.app.events import order_event
 from order.app.exceptions import OrderNotFoundError
 from order.app.ports.input.order_progress_use_case import OrderProgressUseCase
 from order.app.ports.output.deliverable_repository import DeliverableRepository
+from order.app.ports.output.dispute_repository import DisputeRepository
 from order.app.ports.output.order_repository import OrderRepository
-from order.domain.entities.order_entity import Order
+from order.domain.entities.order_entity import InvalidOrderTransitionError, Order
 
 
 class OrderProgressInteractor(OrderProgressUseCase):
@@ -18,10 +19,12 @@ class OrderProgressInteractor(OrderProgressUseCase):
         self,
         orders: OrderRepository,
         deliverables: DeliverableRepository,
+        disputes: DisputeRepository,
         review_deadline: timedelta,
     ) -> None:
         self._orders = orders
         self._deliverables = deliverables
+        self._disputes = disputes
         self._review_deadline = review_deadline
 
     async def _get(self, order_id: int) -> Order:
@@ -82,6 +85,12 @@ class OrderProgressInteractor(OrderProgressUseCase):
         return OrderResult.from_order(order)
 
     async def approve(self, command: OrderTransitionCommand) -> OrderResult:
+        # 대기 분쟁이 있는데 승인으로 COMPLETED가 되면 운영자가 환불·지급 판정을 내릴 수 없는
+        # 고아 분쟁이 남는다 — 자동 승인(find_expired)과 같은 이유로 보류한다
+        if await self._disputes.find_open_by_order(command.order_id) is not None:
+            raise InvalidOrderTransitionError(
+                "분쟁이 처리 중인 주문은 승인할 수 없습니다 — 운영자 판정을 기다려 주세요."
+            )
         order, entries = (await self._get(command.order_id)).approve(command.actor_user_id)
         await self._orders.save_transition(
             order,

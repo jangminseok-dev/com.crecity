@@ -109,9 +109,16 @@ def check_admin(page: Page) -> None:
     print("\n[운영 콘솔 — admin]")
     page.goto(f"{FRONTEND}/admin")
     see(page, "운영 콘솔", "운영 콘솔 진입")
-    see(page, "운영 현황", "지표 섹션")
-    see(page, "주문 검색", "주문 검색 섹션")
-    see(page, "감사 로그", "감사 로그 섹션")
+    see(page, "운영 현황", "지표 섹션(기본 탭)")
+    # 왼쪽 탭 목록 — 탭을 눌러야 해당 섹션 제목(h2)이 그려진다(2026-09-02 탭 구조 전환)
+    for label in ("주문 검색", "감사 로그"):
+        page.get_by_role("button", name=label, exact=True).click()
+        try:
+            page.wait_for_selector(f"h2:has-text('{label}')", timeout=WAIT_MS)
+            check(True, f"{label} 탭 전환")
+        except PlaywrightTimeout:
+            check(False, f"{label} 탭 전환", "섹션 제목 미표시", page)
+    check("tab=audit" in page.url, "탭이 URL(?tab=)에 유지", page.url)
 
     # 회귀: 리뷰 블러 고정 — 로그인 상태로 프로필 직접 진입 시 원문·답글 UI가 보여야 한다
     # (세션 복원 전 공개 API 조회가 게스트 응답으로 캐시되던 버그, 2026-08-18 수정)

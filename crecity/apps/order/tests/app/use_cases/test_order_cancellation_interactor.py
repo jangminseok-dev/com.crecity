@@ -6,7 +6,7 @@ from order.app.dtos.order_cancellation_dto import CancellationCommand
 from order.app.exceptions import OrderNotFoundError
 from order.app.use_cases.order_cancellation_interactor import OrderCancellationInteractor
 from order.domain.entities.ledger_entry_entity import LedgerEntryType
-from order.domain.entities.order_entity import Order, OrderStatus
+from order.domain.entities.order_entity import InvalidOrderTransitionError, Order, OrderStatus
 
 _NOW = datetime(2026, 8, 11, 12, 0, tzinfo=timezone.utc)
 BRAND, CREATOR = 100, 200
@@ -33,6 +33,16 @@ class _StubOrderRepository:
         raise NotImplementedError
 
 
+class _StubDisputeRepository:
+    """대기 분쟁 유무만 답한다 — 승인·취소 동의 보류 판단에 쓰는 메서드만."""
+
+    def __init__(self, open_order_ids=()):
+        self.open_order_ids = set(open_order_ids)
+
+    async def find_open_by_order(self, order_id):
+        return object() if order_id in self.open_order_ids else None
+
+
 def _order(status=OrderStatus.IN_PROGRESS, cancel_requested_by=None):
     return Order(
         id=1,
@@ -50,9 +60,17 @@ def _order(status=OrderStatus.IN_PROGRESS, cancel_requested_by=None):
     )
 
 
-def _interactor(order):
+def _interactor(order, open_dispute=False):
     repo = _StubOrderRepository(order)
-    return OrderCancellationInteractor(orders=repo), repo
+    disputes = _StubDisputeRepository([order.id] if open_dispute and order else [])
+    return OrderCancellationInteractor(orders=repo, disputes=disputes), repo
+
+
+async def test_대기_분쟁이_있으면_취소_동의가_보류된다():
+    interactor, repo = _interactor(_order(cancel_requested_by=BRAND), open_dispute=True)
+    with pytest.raises(InvalidOrderTransitionError, match="분쟁"):
+        await interactor.consent(CancellationCommand(order_id=1, actor_user_id=CREATOR))
+    assert repo.saved == []
 
 
 async def test_취소_요청이_저장되고_이벤트에_요청자가_실린다():

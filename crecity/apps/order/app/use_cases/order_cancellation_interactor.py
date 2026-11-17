@@ -5,14 +5,16 @@ from order.app.dtos.order_result_dto import OrderResult
 from order.app.events import order_event
 from order.app.exceptions import OrderNotFoundError
 from order.app.ports.input.order_cancellation_use_case import OrderCancellationUseCase
+from order.app.ports.output.dispute_repository import DisputeRepository
 from order.app.ports.output.order_repository import OrderRepository
-from order.domain.entities.order_entity import Order
+from order.domain.entities.order_entity import InvalidOrderTransitionError, Order
 
 
 class OrderCancellationInteractor(OrderCancellationUseCase):
 
-    def __init__(self, orders: OrderRepository) -> None:
+    def __init__(self, orders: OrderRepository, disputes: DisputeRepository) -> None:
         self._orders = orders
+        self._disputes = disputes
 
     async def _get(self, order_id: int) -> Order:
         order = await self._orders.find_by_id(order_id)
@@ -30,6 +32,11 @@ class OrderCancellationInteractor(OrderCancellationUseCase):
         return OrderResult.from_order(order)
 
     async def consent(self, command: CancellationCommand) -> OrderResult:
+        # 분쟁 판정 전에 합의 취소로 CANCELLED가 되면 분쟁이 판정 불가 상태로 남는다(승인과 동일)
+        if await self._disputes.find_open_by_order(command.order_id) is not None:
+            raise InvalidOrderTransitionError(
+                "분쟁이 처리 중인 주문은 취소에 동의할 수 없습니다 — 운영자 판정을 기다려 주세요."
+            )
         order, entries = (await self._get(command.order_id)).consent_cancellation(
             command.actor_user_id
         )

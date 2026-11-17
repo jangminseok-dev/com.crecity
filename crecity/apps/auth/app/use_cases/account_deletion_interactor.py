@@ -10,6 +10,7 @@ from auth.app.ports.input.account_deletion_use_case import AccountDeletionUseCas
 from auth.app.ports.output.refresh_token_store import RefreshTokenStore
 from auth.app.ports.output.social_identity_repository import SocialIdentityRepository
 from auth.app.ports.output.user_repository import UserRepository
+from auth.app.ports.output.user_revocation_store import UserRevocationStore
 from hub.app.ports.output.active_order_port import ActiveOrderPort
 from hub.app.ports.output.credit_balance_port import CreditBalancePort
 from hub.app.ports.output.profile_deactivation_port import ProfileDeactivationPort
@@ -28,6 +29,8 @@ class AccountDeletionInteractor(AccountDeletionUseCase):
         active_orders: ActiveOrderPort,
         balances: CreditBalancePort,
         profiles: ProfileDeactivationPort,
+        revocations: UserRevocationStore,
+        access_ttl_seconds: int,
     ) -> None:
         self._users = users
         self._identities = identities
@@ -35,6 +38,8 @@ class AccountDeletionInteractor(AccountDeletionUseCase):
         self._active_orders = active_orders
         self._balances = balances
         self._profiles = profiles
+        self._revocations = revocations
+        self._access_ttl_seconds = access_ttl_seconds
 
     async def delete(self, command: DeleteAccountCommand) -> None:
         user = await self._users.find_by_id(command.user_id)
@@ -57,3 +62,5 @@ class AccountDeletionInteractor(AccountDeletionUseCase):
         )
         if command.refresh_token:
             await self._refresh_tokens.pop(command.refresh_token)
+        # 이미 발급된 액세스 토큰은 서명만으로 통과한다 — TTL 동안 폐기 목록으로 막는다
+        await self._revocations.revoke(user.id, self._access_ttl_seconds)

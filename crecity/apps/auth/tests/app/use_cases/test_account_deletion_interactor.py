@@ -73,6 +73,17 @@ class _StubBalancePort:
         return self.balance
 
 
+class _StubRevocationStore:
+    def __init__(self):
+        self.revoked: list[tuple[int, int]] = []
+
+    async def revoke(self, user_id, ttl_seconds):
+        self.revoked.append((user_id, ttl_seconds))
+
+    async def is_revoked(self, user_id):
+        return any(uid == user_id for uid, _ in self.revoked)
+
+
 class _StubProfileDeactivationPort:
     def __init__(self):
         self.deactivated: list[int] = []
@@ -86,6 +97,7 @@ def _interactor(user=_USER, active=False, balance=0):
     identities = _StubIdentityRepository()
     tokens = _StubRefreshTokenStore()
     profiles = _StubProfileDeactivationPort()
+    revocations = _StubRevocationStore()
     interactor = AccountDeletionInteractor(
         users=users,
         identities=identities,
@@ -93,12 +105,14 @@ def _interactor(user=_USER, active=False, balance=0):
         active_orders=_StubActiveOrderPort(active),
         balances=_StubBalancePort(balance),
         profiles=profiles,
+        revocations=revocations,
+        access_ttl_seconds=1800,
     )
-    return interactor, users, identities, tokens, profiles
+    return interactor, users, identities, tokens, profiles, revocations
 
 
 async def test_탈퇴하면_익명화되고_연결이_모두_정리된다():
-    interactor, users, identities, tokens, profiles = _interactor()
+    interactor, users, identities, tokens, profiles, revocations = _interactor()
     await interactor.delete(DeleteAccountCommand(user_id=USER_ID, refresh_token="tok"))
 
     assert users.deleted[0][0] == USER_ID
@@ -106,24 +120,26 @@ async def test_탈퇴하면_익명화되고_연결이_모두_정리된다():
     assert identities.deleted == [USER_ID]  # 소셜 연결 해제(재가입 가능)
     assert profiles.deactivated == [USER_ID]  # 공개 프로필 비활성화
     assert tokens.popped == ["tok"]  # 리프레시 토큰 폐기
+    # 손에 남은 액세스 토큰은 TTL 동안 폐기 목록으로 막는다
+    assert revocations.revoked == [(USER_ID, 1800)]
 
 
 async def test_진행_중_주문이_있으면_탈퇴할_수_없다():
-    interactor, users, _, _, _ = _interactor(active=True)
+    interactor, users, _, _, _, _ = _interactor(active=True)
     with pytest.raises(ActiveOrderExistsError):
         await interactor.delete(DeleteAccountCommand(user_id=USER_ID, refresh_token=None))
     assert users.deleted == []
 
 
 async def test_잔액이_남아_있으면_탈퇴할_수_없다():
-    interactor, users, _, _, _ = _interactor(balance=50000)
+    interactor, users, _, _, _, _ = _interactor(balance=50000)
     with pytest.raises(RemainingBalanceError):
         await interactor.delete(DeleteAccountCommand(user_id=USER_ID, refresh_token=None))
     assert users.deleted == []
 
 
 async def test_없는_계정이면_UserNotFoundError():
-    interactor, _, _, _, _ = _interactor(user=None)
+    interactor, _, _, _, _, _ = _interactor(user=None)
     with pytest.raises(UserNotFoundError):
         await interactor.delete(DeleteAccountCommand(user_id=USER_ID, refresh_token=None))
 
@@ -133,6 +149,6 @@ async def test_이미_탈퇴한_계정은_다시_탈퇴할_수_없다():
     from datetime import datetime, timezone
 
     deleted_user = replace(_USER, deleted_at=datetime(2026, 8, 1, tzinfo=timezone.utc))
-    interactor, _, _, _, _ = _interactor(user=deleted_user)
+    interactor, _, _, _, _, _ = _interactor(user=deleted_user)
     with pytest.raises(UserNotFoundError):
         await interactor.delete(DeleteAccountCommand(user_id=USER_ID, refresh_token=None))

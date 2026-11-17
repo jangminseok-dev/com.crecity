@@ -23,7 +23,7 @@ def get_access_token_verifier() -> AccessTokenVerifier:
     return _verifier
 
 
-def get_current_user(
+async def get_current_user(
     authorization: str | None = Header(None, description="Bearer <액세스 토큰>"),
     verifier: AccessTokenVerifier = Depends(get_access_token_verifier),
 ) -> VerifiedUser:
@@ -34,12 +34,12 @@ def get_current_user(
     if scheme.lower() != "bearer" or not token:
         raise HTTPException(status_code=401, detail="Authorization 헤더는 'Bearer <토큰>' 형식이어야 합니다.")
     try:
-        return verifier.verify(token)
+        return await verifier.verify(token)
     except InvalidAccessTokenError as error:
         raise HTTPException(status_code=401, detail=str(error))
 
 
-def get_optional_user(
+async def get_optional_user(
     authorization: str | None = Header(None, description="Bearer <액세스 토큰> (선택)"),
     verifier: AccessTokenVerifier = Depends(get_access_token_verifier),
 ) -> VerifiedUser | None:
@@ -50,7 +50,7 @@ def get_optional_user(
     if scheme.lower() != "bearer" or not token:
         return None
     try:
-        return verifier.verify(token)
+        return await verifier.verify(token)
     except InvalidAccessTokenError:
         return None
 

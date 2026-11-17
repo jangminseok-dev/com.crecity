@@ -13,10 +13,12 @@ class AccessTokenVerifier(ABC):
     """
 
     @abstractmethod
-    def verify(self, token: str) -> VerifiedUser:
-        """서명·만료를 검증하고 토큰 주인을 돌려준다 (CPU-bound).
+    async def verify(self, token: str) -> VerifiedUser:
+        """서명·만료를 검증하고 토큰 주인을 돌려준다.
+
+        서명 검증은 CPU-bound지만 탈퇴 계정 폐기 목록 조회(I/O)가 함께 붙어 async다.
 
         Raises:
-            InvalidAccessTokenError: 무효·만료·위조 토큰.
+            InvalidAccessTokenError: 무효·만료·위조 토큰, 또는 탈퇴한 계정의 토큰.
         """
         ...
